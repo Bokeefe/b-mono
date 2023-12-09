@@ -1,0 +1,24 @@
+.resume {
+ // Add your styles here
+}
+body {
+    background-repeat: repeat;
+    background-size: 200px;
+    background-image:url('../../assets/grex.jpg'), linear-gradient(130deg, #814000, #4e0068, #163b00);
+    animation: gradient 360s ease infinite;
+    background-color: green;
+
+   }
+
+
+@keyframes gradient {
+    0% {
+      background-position: 10% 0%;
+    }
+    50% {
+      background-position: 91% 100%;
+    }
+    100% {
+      background-position: 10% 0%;
+    }
+   }
