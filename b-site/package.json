@@ -1,14 +1,15 @@
 {
-  "name": "b-site",
+  "name": "ls",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -37,5 +38,24 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bokeefe/b-mono.git"
+  },
+  "keywords": [
+    "resume",
+    "heroku"
+  ],
+  "author": "brendan okeefe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Bokeefe/b-mono/issues"
+  },
+  "homepage": "https://github.com/Bokeefe/b-mono#readme",
+  "engines": {
+    "node": "18.x"
   }
 }
