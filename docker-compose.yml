@@ -1,0 +1,16 @@
+services:
+  nest-server:
+    build:
+      context: .
+      dockerfile: nest-server/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on: 
+      - react-fe
+  
+  react-fe:
+    build:
+      context: .
+      dockerfile: react-fe/Dockerfile
+    ports:
+      - "80:80"
