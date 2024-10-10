@@ -138,7 +138,6 @@
     "forwarded": "^0.2.0",
     "fresh": "^0.5.2",
     "fs.realpath": "^1.0.0",
-    "fsevents": "^2.3.3",
     "function-bind": "^1.1.2",
     "functions-have-names": "^1.2.3",
     "gensync": "^1.0.0-beta.2",
@@ -427,6 +426,9 @@
     "yargs-parser": "^21.1.1",
     "yn": "^3.1.1",
     "yocto-queue": "^0.1.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
   },
   "devDependencies": {},
 
