@@ -15,16 +15,21 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '20.11.0'  # Ensure this matches your local version
+        node-version: '20.11.0'  # Specify your exact Node.js version
 
     - name: Install Root Dependencies
-      run: npm install
+      run: npm install  # Installs dependencies defined in the root package.json
+
+    - name: Clean and Install Frontend Dependencies
+      run: |
+        rm -rf ./react-fe/node_modules  # Remove existing node_modules for clean slate
+        npm install --prefix ./react-fe  # Install dependencies from the react-fe directory
 
     - name: Build Frontend
-      run: npm run build:fe
+      run: npm run build:fe  # Builds the React frontend
 
     - name: Start Backend Server
-      run: npm run start:server
+      run: npm run start:server  # Starts the Nest backend server
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -38,12 +43,12 @@ jobs:
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
     - name: Build, tag, and push Docker image
-      run: npm run prod
+      run: npm run prod  # Uses the prod script to build and push Docker containers
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: b-mono:3
+        task-definition: b-mono:3  # Your task definition ARN or name
         service: your-ecs-service-name
         cluster: your-ecs-cluster-name
         region: us-west-2
