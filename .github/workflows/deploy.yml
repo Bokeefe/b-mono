@@ -1,42 +1,52 @@
-name: Deploy to Elastic Beanstalk
+name: Deploy to AWS
 
 on:
   push:
-    branches:
-      - main  # or whichever branch you want to deploy from
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20.x'  # use the Node.js version your app requires
+    - name: Install dependencies
+      run: npm install
 
-      - name: Install dependencies
-        run: npm install
+    - name: Run tests
+      run: npm test
 
-      - name: Build Docker image
-        run: docker build -t my-app .
+    - name: Build
+      run: npm run build
 
-      - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
 
-      - name: Tag and push Docker image
-        run: |
-          docker tag my-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:latest
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:latest
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
-      - name: Deploy to Elastic Beanstalk
-        run: |
-          eb init -p docker my-app --region ${{ secrets.AWS_REGION }}
-          eb deploy
+    - name: Build, tag, and push image to ECR
+      run: |
+        docker build -t b-mono .
+        docker tag b-mono:latest 692859927760.dkr.ecr.us-west-2.amazonaws.com/b-mono:latest
+        docker push 692859927760.dkr.ecr.us-west-2.amazonaws.com/b-mono:latest
+
+    - name: Deploy to ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: b-mono:3
+        service: your-ecs-service-name
+        cluster: your-ecs-cluster-name
+        region: us-west-2
