@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build:fe": "npm --prefix ./react-fe run build",
-    "start:server": "npm --prefix ./nest-server start",
+    "start:server": "npm --prefix ./nest-server run start",
     "start": "npm run build:fe && npm run start:server",
     "prod":"sudo docker-compose up --build"
   },

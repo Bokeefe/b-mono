@@ -27,9 +27,12 @@ jobs:
 
     - name: Build Frontend
       run: npm run build:fe  # Builds the React frontend
+      
+    - name: Install Nest Server Dependencies
+      run: npm install --prefix ./nest-server
 
     - name: Start Backend Server
-      run: npm run start:server  # Starts the Nest backend server
+      run: npm run start:server 
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
