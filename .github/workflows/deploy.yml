@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -17,11 +17,14 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Install dependencies
+    - name: Install Root Dependencies
       run: npm install
 
-    - name: Build
-      run: npm run build
+    - name: Build Frontend
+      run: npm run build:fe  # This will access the react-fe's built script
+
+    - name: Start Backend Server
+      run: npm run start:server  # This will trigger the nest-server's start command
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -34,11 +37,8 @@ jobs:
       run: |
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
-    - name: Build, tag, and push image to ECR
-      run: |
-        docker build -t b-mono .
-        docker tag b-mono:latest 692859927760.dkr.ecr.us-west-2.amazonaws.com/b-mono:latest
-        docker push 692859927760.dkr.ecr.us-west-2.amazonaws.com/b-mono:latest
+    - name: Build, tag, and push Docker image
+      run: npm run prod  # Use the prod script for Docker commands
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
