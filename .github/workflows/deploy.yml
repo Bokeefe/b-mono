@@ -58,7 +58,8 @@ jobs:
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: b-mono:3  # Your task definition ARN or name
+        task-definition: b-mono:4  # Replace with the correct ARN or name if necessary
         service: b-mono-service
         cluster: bverse
-        region: us-west-2
+        desired-count: 1  # Specify desired count for the service
+        wait-for-service-stability: true
