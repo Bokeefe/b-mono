@@ -27,7 +27,7 @@ jobs:
 
     - name: Build Frontend
       run: npm run build:fe  # Builds the React frontend
-      
+
     - name: Install Nest Server Dependencies
       run: npm install --prefix ./nest-server
 
@@ -45,13 +45,16 @@ jobs:
       run: |
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
-    - name: Build, tag, and push Docker image
-      run: npm run prod  # Uses the prod script to build and push Docker containers
+    - name: Build and push Docker image
+      run: |
+        docker-compose -f docker-compose.yml build  # Build your application
+        docker-compose -f docker-compose.yml push    # Push the image to ECR
+
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: b-mono:3  # Your task definition ARN or name
-        service: your-ecs-service-name
-        cluster: your-ecs-cluster-name
+        service: b-mono-service
+        cluster: bverse
         region: us-west-2
