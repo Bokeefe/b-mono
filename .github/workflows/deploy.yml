@@ -60,6 +60,6 @@ jobs:
       with:
         task-definition: task-definition.json
         service: b-mono-service
-        cluster: bverse
+        cluster: b-mono-cluster
         desired-count: 1  # Specify desired count for the service
         wait-for-service-stability: true
