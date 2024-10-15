@@ -52,7 +52,7 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker-compose -f docker-compose.yml build  # Build your application
+        docker-compose -f docker-compose.yml build --no-cache  # Build your application
         docker-compose -f docker-compose.yml push    # Push the image to ECR
 
     - name: Deploy to ECS
