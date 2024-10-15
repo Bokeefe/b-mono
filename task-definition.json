@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "name": "b-mono-container",
-            "image": "692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono:latest",
+            "image": "692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono",
             "cpu": 0,
             "portMappings": [
                 {
