@@ -55,12 +55,13 @@ jobs:
         AWS_ACCOUNT_ID: 692859927760
         AWS_REGION: us-west-2
       run: |
-        docker-compose -f docker-compose.yml build
-        # Tag and push each service
-        docker tag b-mono_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
-        docker tag b-mono_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
+        docker-compose build  # Use docker-compose to build both images
+        # Tag and push nest-server (backend)
+        docker tag b-mono_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:nest-server-latest
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:nest-server-latest
+        # Tag and push react-fe (frontend)
+        docker tag b-mono_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:react-fe-latest
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:react-fe-latest
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
