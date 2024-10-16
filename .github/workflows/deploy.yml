@@ -26,13 +26,18 @@ jobs:
         npm install --prefix ./react-fe  # Install dependencies from the react-fe directory
 
     - name: Build Frontend
-      run: npm run build:fe  # Builds the React frontend
+      run: npm run build --prefix ./react-fe  # Ensure build from frontend directory
 
     - name: Install Nest Server Dependencies
       run: npm install --prefix ./nest-server
 
-    - name: Start Backend Server
-      run: npm run start:server 
+    - name: Build Backend Docker Image
+      run: |
+        docker build -t my-backend:latest ./nest-server  # Adjust this path as necessary
+
+    - name: Tag Backend Image for ECR
+      run: |
+        docker tag my-backend:latest 692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono:latest
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -41,24 +46,18 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-west-2
 
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
-
     - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
-    - name: Build and Push Docker Image
+    - name: Push Backend Docker Image to ECR
       run: |
-        docker-compose -f docker-compose.yml build --no-cache  # Build your application
-        docker-compose -f docker-compose.yml push    # Push the image to ECR
+        docker push 692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono:latest
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: b-mono-task-definition
+        task-definition: task-definition.json 
         service: b-mono-service
         cluster: b-mono-cluster
         desired-count: 1  # Specify desired count for the service
