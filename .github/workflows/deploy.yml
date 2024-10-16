@@ -56,9 +56,10 @@ jobs:
         AWS_REGION: us-west-2
       run: |
         docker-compose -f docker-compose.yml build
-        docker tag myrepo_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
-        docker tag myrepo_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
+        # Tag and push each service
+        docker tag b-mono_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
         docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
+        docker tag b-mono_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
         docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
 
     - name: Deploy to ECS
