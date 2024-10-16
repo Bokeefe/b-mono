@@ -15,51 +15,35 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '20.11.0'  # Specify your exact Node.js version
+        node-version: '20.11.0'
 
-    - name: Install Root Dependencies
-      run: npm install  # Installs dependencies defined in the root package.json
-
-    - name: Clean and Install Frontend Dependencies
-      run: |
-        rm -rf ./react-fe/node_modules  # Remove existing node_modules for clean slate
-        npm install --prefix ./react-fe  # Install dependencies from the react-fe directory
-
-    - name: Build Frontend
-      run: npm run build:fe  # Builds the React frontend
-
-    - name: Install Nest Server Dependencies
-      run: npm install --prefix ./nest-server
-
-    - name: Start Backend Server
-      run: npm run start:server 
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-west-2
-
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
+    - name: Install Dependencies
+      run: npm install
 
     - name: Login to Amazon ECR
-      run: |
-        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
+      uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build and Push Docker Image
+    - name: Build and Push Docker Images
+      env:
+        AWS_ACCOUNT_ID: 692859927760
+        AWS_REGION: us-west-2
       run: |
-        docker-compose -f docker-compose.yml build --no-cache  # Build your application
-        docker-compose -f docker-compose.yml push    # Push the image to ECR
+        # Build both images using Docker Compose
+        docker-compose -f docker-compose.yml build
+
+        # Tag each service's image with the appropriate ECR repository URI
+        docker tag my-repo_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
+        docker tag my-repo_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
+
+        # Push both images to ECR
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/react-fe:latest
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: task-definition.json
+        task-definition: task-definition.json  
         service: b-mono-service
         cluster: b-mono-cluster
-        desired-count: 1  # Specify desired count for the service
+        desired-count: 1
         wait-for-service-stability: true
