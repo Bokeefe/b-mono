@@ -66,8 +66,8 @@ jobs:
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: task-definition.json
-        service: b-mono-service
-        cluster: b-mono-cluster
-        desired-count: 1  # Specify desired count for the service
-        wait-for-service-stability: true
+        task-definition: b-mono-task-definition:5  # Point directly to your task definition name and its latest revision
+        service: b-mono-service                   # Specify your ECS service name
+        cluster: b-mono-cluster                   # Specify your ECS cluster
+        desired-count: 1                          # Specify the desired count for your service
+        wait-for-service-stability: true 
