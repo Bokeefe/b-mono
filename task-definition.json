@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-west-2:692859927760:task-definition/b-mono-task-definition:1",
+    "taskDefinitionArn": "arn:aws:ecs:us-west-2:692859927760:task-definition/b-mono-task-definition:5",
     "containerDefinitions": [
         {
             "name": "b-mono-container",
-            "image": "692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono",
+            "image": "692859927760.dkr.ecr.us-west-2.amazonaws.com/bverse/b-mono:latest",
             "cpu": 0,
             "portMappings": [
                 {
@@ -23,10 +23,8 @@
             ],
             "essential": true,
             "environment": [],
-            "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
-            "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -36,8 +34,7 @@
                     "max-buffer-size": "25m",
                     "awslogs-region": "us-west-2",
                     "awslogs-stream-prefix": "ecs"
-                },
-                "secretOptions": []
+                }
             },
             "healthCheck": {
                 "command": [
@@ -54,7 +51,7 @@
     "family": "b-mono-task-definition",
     "executionRoleArn": "arn:aws:iam::692859927760:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 1,
+    "revision": 5,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -103,7 +100,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2024-10-15T22:11:50.256Z",
-    "registeredBy": "arn:aws:iam::692859927760:root",
+    "registeredAt": "2024-10-16T18:09:18.881Z",
+    "registeredBy": "arn:aws:iam::692859927760:user/brendan",
     "tags": []
 }
