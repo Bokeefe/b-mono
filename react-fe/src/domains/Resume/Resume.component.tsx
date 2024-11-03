@@ -6,6 +6,9 @@ function Resume() {
  return (
  <div className='resume'>
     <Header />
+    <div>
+      
+    </div>
  </div>
  )
 }

@@ -1,17 +1,18 @@
-
-import { BrowserRouter } from 'react-router-dom'
-import './App.scss'
-import Dash from './components/Dash/Dash.component'
+import { BrowserRouter } from "react-router-dom";
+import "./App.scss";
+import Dash from "./components/Dash/Dash.component";
 
 function App() {
-
   return (
     <>
       <BrowserRouter>
-         <Dash />
-      </BrowserRouter>,
+        <div className="app-container">
+          <Dash />
+        </div>
+      </BrowserRouter>
+      ,
     </>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -9,7 +9,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "jest",
-     "start": "npx nest start"
+    "start": "npx nest start"
   },
   "dependencies": {
     "express": "^4.18.2",

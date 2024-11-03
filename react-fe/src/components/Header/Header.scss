@@ -1,7 +1,13 @@
 .header {
- width: 100%;
  background-color: black;
- margin: auto;
  position: absolute;
  top: 0;
+ left: 0;
+ color: white;
+ width: 100vw;
+
+}
+.header-container {
+    display: flex;
+    align-items: center;
 }
