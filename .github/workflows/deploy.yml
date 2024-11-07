@@ -15,24 +15,13 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '20.11.0'  # Specify your exact Node.js version
+        node-version: '20-alpine'
 
     - name: Install Root Dependencies
-      run: npm install  # Installs dependencies defined in the root package.json
+      run: npm install  # If you have a root package.json, otherwise skip or adjust accordingly
 
-    - name: Clean and Install Frontend Dependencies
-      run: |
-        rm -rf ./react-fe/node_modules  # Remove existing node_modules for clean slate
-        npm install --prefix ./react-fe  # Install dependencies from the react-fe directory
-
-    - name: Build Frontend
-      run: npm run build:fe  # Builds the React frontend
-
-    - name: Install Nest Server Dependencies
-      run: npm install --prefix ./nest-server
-
-    - name: Start Backend Server
-      run: npm run start:server 
+    - name: Build Application
+      run: npm run build  # Make sure this command handles building both the frontend and the backend
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -50,18 +39,14 @@ jobs:
       run: |
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
 
-    - name: Build and Push Docker Images
+    - name: Build and Push Docker Image
       env:
         AWS_ACCOUNT_ID: 692859927760
         AWS_REGION: us-west-2
       run: |
-        docker-compose build  # Use docker-compose to build both images
-        # Tag and push nest-server (backend)
-        docker tag b-mono_nest-server:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:nest-server-latest
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:nest-server-latest
-        # Tag and push react-fe (frontend)
-        docker tag b-mono_react-fe:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:react-fe-latest
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:react-fe-latest
+        docker build -t b-mono .  # Build the single consolidated image
+        docker tag b-mono:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
 
     - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
