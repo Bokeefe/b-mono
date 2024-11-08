@@ -7,6 +7,7 @@
     "build:fe": "npm --prefix ./react-fe run build",
     "start:server": "npm --prefix ./nest-server run start",
     "start": "npm run build:fe && npm run start:server",
+    "build": "npm run build:fe && npm --prefix ./nest-server run build",
     "prod": "sudo docker-compose up --build"
   },
   "dependencies": {

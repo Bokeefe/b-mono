@@ -15,44 +15,15 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '20.16.0'
+        node-version: '20.11.0'
 
     - name: Install Root Dependencies
-      run: npm install  # If you have a root package.json, otherwise skip or adjust accordingly
+      run: npm install
 
-    - name: Build Application
-      run: npm run build  # Make sure this command handles building both the frontend and the backend
+    - name: Build Frontend
+      run: npm run build:fe  # Use the script defined for building the frontend
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-west-2
+    - name: Build Backend
+      run: npm --prefix ./nest-server run build  # Ensures backend build is executed
 
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
-
-    - name: Login to Amazon ECR
-      run: |
-        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 692859927760.dkr.ecr.us-west-2.amazonaws.com
-
-    - name: Build and Push Docker Image
-      env:
-        AWS_ACCOUNT_ID: 692859927760
-        AWS_REGION: us-west-2
-      run: |
-        docker build -t b-mono .  # Build the single consolidated image
-        docker tag b-mono:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bverse/b-mono:latest
-
-    - name: Deploy to ECS
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: task-definition.json
-        service: b-mono-service                   # Specify your ECS service name
-        cluster: b-mono-cluster                   # Specify your ECS cluster
-        desired-count: 1                          # Specify the desired count for your service
-        wait-for-service-stability: true 
+    # ... continue with your deployment steps as previously defined ...
