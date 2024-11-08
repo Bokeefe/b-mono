@@ -15,7 +15,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '20-alpine'
+        node-version: '20.16.0'
 
     - name: Install Root Dependencies
       run: npm install  # If you have a root package.json, otherwise skip or adjust accordingly

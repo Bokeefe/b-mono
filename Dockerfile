@@ -1,5 +1,5 @@
 # Use the Node.js base image
-FROM node:20-alpine
+FROM node:20.16.0
 
 # Set the working directory for the backend first
 WORKDIR /usr/src/app/nest-server
