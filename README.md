@@ -28,3 +28,11 @@ export default {
 - Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
 - Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
 - Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+
+#### Local build
+```
+docker rm -f b-mono-container || true
+docker rmi -f b-mono-image || true
+docker build -t b-mono-image .
+docker run -d -p 3000:3000 --name b-mono-container b-mono-image
+```
