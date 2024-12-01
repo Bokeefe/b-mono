@@ -9,9 +9,7 @@ on:
 jobs:
 
   build:
-
     runs-on: self-hosted
-
     steps:
     - name: Pull Docker image
       run: sudo docker pull bokeefe96/b-mono-instance:latest
