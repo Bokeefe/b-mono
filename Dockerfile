@@ -36,7 +36,7 @@ RUN mkdir -p ./nest-server/public
 RUN cp -r ./react-fe/dist/* ./nest-server/public/
 
 # Expose the port the NestJS server will run on
-EXPOSE 3000
+EXPOSE 4171
 
 # Command to start the application
 CMD ["node", "nest-server/dist/main.js"]

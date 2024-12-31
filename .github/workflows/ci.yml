@@ -1,4 +1,5 @@
 name: CI Pipeline
+
 on:
   push:
     branches: [ "main" ]
@@ -13,8 +14,6 @@ jobs:
         DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - name: Build the Docker image
-      run: docker build -t bokeefe96/b-mono .
+      run: docker build -t ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest .
     - name: Push to Dockerhub
-      run: docker push bokeefe96/b-mono:latest
-
-      
+      run: docker push ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest

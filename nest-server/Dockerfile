@@ -17,7 +17,7 @@ COPY ./nest-server ./
 RUN npm run build  # Make sure you have a build script defined in your package.json
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 471
 
 # Command to run the app
 CMD ["node", "dist/main.js"]

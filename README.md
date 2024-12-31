@@ -34,5 +34,8 @@ export default {
 docker rm -f b-mono-container || true
 docker rmi -f b-mono-image || true
 docker build -t b-mono-image .
-docker run -d -p 3000:3000 --name b-mono-container b-mono-image
+docker run -d -p 4171:4171 --name b-mono-container b-mono-image
 ```
+
+deployment reference:
+https://youtu.be/rRes9LM-Jh8?si=RRhQxepFsgoXeT6G
