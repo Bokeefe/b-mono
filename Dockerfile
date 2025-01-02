@@ -33,7 +33,7 @@ WORKDIR /usr/src/app
 RUN mkdir -p ./nest-server/public
 
 # Optional: move frontend build artifacts to the backend's public directory
-RUN mkdir -p /usr/share/nginx/html && cp -r ./react-fe/dist/* /usr/share/nginx/html/
+RUN cp -r ./react-fe/dist/* ./nest-server/public/
 
 # Expose the port the NestJS server will run on
 EXPOSE 4171
