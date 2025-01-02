@@ -14,13 +14,13 @@ COPY ./react-fe ./
 # Build the React app
 RUN npm run build
 
-# Debugging: List the contents of the dist folder
+# List the contents of the dist folder for debugging purposes
 RUN ls -R /usr/src/app/react-fe/dist
 
 # Stage 2: Serve the application using Nginx
 FROM nginx:alpine
 
-# Ensure Nginx serves files from dist
+# Copy the built artifacts from the build stage
 COPY --from=build /usr/src/app/react-fe/dist /usr/share/nginx/html/
 
 # Expose the port Nginx will run on
