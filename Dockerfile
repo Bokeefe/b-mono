@@ -40,4 +40,4 @@ COPY --from=build /usr/src/app/react-fe/dist/* /usr/share/nginx/html/
 EXPOSE 80
 
 # Command to start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["sh", "-c", "node nest-server/dist/main.js & nginx -g 'daemon off;'"]
