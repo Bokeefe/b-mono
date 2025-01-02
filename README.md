@@ -33,5 +33,7 @@ sudo chown -R ubuntu:ubuntu ~/actions-runner
 chmod -R u+rwx ~/actions-runner
 // start runner in background
 ./run.sh &
+// OR TRY
+nohup ./run.sh > runner.log 2>&1 &
 // install docker in EC2 machine
 //log in to dockerhub via EC2
