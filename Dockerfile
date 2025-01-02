@@ -1,7 +1,7 @@
-# Use the Node.js base image
+# Stage 1: Build the application using Node.js base image
 FROM node:alpine as build
 
-# Set the working directory for the backend first
+# Set the working directory for the backend
 WORKDIR /usr/src/app/nest-server
 
 # Copy and install backend dependencies
@@ -13,14 +13,6 @@ COPY ./nest-server ./
 
 # Build the NestJS application
 RUN npm run build
-
-RUN npm run build
-
-# List the contents of the dist folder for debugging purposes
-RUN ls -R /usr/src/app/react-fe/dist
-
-# Move frontend build artifacts to Nginx's default serving directory
-RUN mkdir -p /usr/share/nginx/html && cp -r /usr/src/app/react-fe/dist/* /usr/share/nginx/html/
 
 # Set the working directory for the frontend
 WORKDIR /usr/src/app/react-fe
@@ -35,16 +27,17 @@ COPY ./react-fe ./
 # Build the React app
 RUN npm run build
 
-# Move back to the main application working directory
-WORKDIR /usr/src/app
+# List the contents of the dist folder for debugging purposes
+RUN ls -R /usr/src/app/react-fe/dist
 
-RUN mkdir -p ./nest-server/public
+# Stage 2: Serve the application using Nginx
+FROM nginx:alpine
 
-# Optional: move frontend build artifacts to the backend's public directory
-RUN cp -r ./react-fe/dist/* ./nest-server/public/
+# Copy the built artifacts from the build stage
+COPY --from=build /usr/src/app/react-fe/dist/* /usr/share/nginx/html/
 
-# Expose the port the NestJS server will run on
-EXPOSE 4171
+# Expose the port Nginx will run on
+EXPOSE 80
 
-# Command to start the application
-CMD ["node", "nest-server/dist/main.js"]
+# Command to start Nginx
+CMD ["nginx", "-g", "daemon off;"]
