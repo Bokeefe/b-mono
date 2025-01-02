@@ -40,4 +40,3 @@ EXPOSE 4171
 
 # Command to start the application
 CMD ["node", "nest-server/dist/main.js"]
-# 
