@@ -5,7 +5,11 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use('/', express.static(join(__dirname, '..', '..', 'react-fe', 'dist')));
+  app.use(
+    '/',
+    express.static(join(__dirname, '..', 'react-fe', 'dist', 'assets')),
+  );
+
   await app.listen(4171);
 }
 

@@ -37,6 +37,11 @@ docker build -t b-mono-image .
 docker run -d -p 4171:4171 --name b-mono-container b-mono-image
 ```
 
+useful commands
+ `docker inspect \
+   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' bokeefe96/b-mono-image`
+   # 172.17.0.2
+
 deployment reference:
 https://youtu.be/rRes9LM-Jh8?si=RRhQxepFsgoXeT6G
 
