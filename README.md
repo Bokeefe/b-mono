@@ -39,3 +39,19 @@ docker run -d -p 4171:4171 --name b-mono-container b-mono-image
 
 deployment reference:
 https://youtu.be/rRes9LM-Jh8?si=RRhQxepFsgoXeT6G
+
+
+// set up runner
+SSH into EC2
+sudo su
+// upgrade the machine
+sudo apt update
+sudo apt-get upgrade -y
+// copy/paste runner commands from GitHub
+// I needed to set permissions
+sudo chown -R ubuntu:ubuntu ~/actions-runner
+chmod -R u+rwx ~/actions-runner
+// start runner in background
+./run.sh &
+// install docker in EC2 machine
+//log in to dockerhub via EC2
