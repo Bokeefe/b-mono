@@ -1,5 +1,5 @@
 # Use the Node.js base image
-FROM nginx:alpine
+FROM node:alpine as build
 
 # Set the working directory for the backend first
 WORKDIR /usr/src/app/nest-server
