@@ -5,6 +5,7 @@ function Header() {
     <div className="header">
       <div className="header-container">
         <p>Experience</p>
+        <p>Triumph</p>
       </div>
     </div>
   );
