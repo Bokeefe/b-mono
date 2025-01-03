@@ -16,11 +16,13 @@ COPY ./react-fe ./
 # Build the React application
 RUN npm run build
 
+RUN ls -l /usr/src/app/react-fe/dist
+
 # Start a production server to serve the React app
 FROM nginx:alpine
 
 # Copy build files from the previous stage
-COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+COPY --from=build /usr/src/app/react-fe/dist /usr/share/nginx/html
 
 # Expose the port the app runs on
 EXPOSE 80

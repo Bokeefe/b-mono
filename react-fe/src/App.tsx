@@ -1,14 +1,19 @@
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.scss";
-import Dash from "./components/Dash/Dash.component";
+import Home from "./components/Home/Home.component";
+import Resume from "./domains/Resume/Resume.component";
+import MainLayout from "./components/MainLayout/MainLayout.component";
 
 function App() {
   return (
     <>
       <BrowserRouter>
-        <div className="app-container">
-          <Dash />
-        </div>
+        <Routes>
+          <Route path="/" element={<Home />} />{" "}
+          <Route element={<MainLayout />}>
+            <Route path="/resume" element={<Resume />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
       ,
     </>
