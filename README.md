@@ -4,6 +4,7 @@ I'll be trying to store all app ideas, personal projects, and resume examples he
 currently running on an AWS EC2 instance here:
 <a href="http://ec2-54-212-4-20.us-west-2.compute.amazonaws.com/">http://ec2-54-212-4-20.us-west-2.compute.amazonaws.com/</a>
 
+54.212.4.20 
 #### Local build
 ```
 docker rm -f b-mono-container || true

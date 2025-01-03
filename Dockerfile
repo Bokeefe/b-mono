@@ -31,7 +31,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy the built artifacts from the build stage
-COPY --from=build /usr/src/app/react-fe/dist /usr/share/nginx/html/
+COPY --from=build /usr/src/app/react-fe/dist/ /usr/share/nginx/html/
 
 # Expose the port Nginx will run on
 EXPOSE 80
