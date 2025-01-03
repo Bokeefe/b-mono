@@ -15,5 +15,3 @@ jobs:
       run: sudo docker rm -f b-mono || true
     - name: Run Docker Container
       run: sudo docker run -d -p 4171:4171 --name b-mono bokeefe96/b-mono-image
-    # - name: Copy index.html to Nginx directory
-    #   run: scp -i /path/to/your/private/key -o StrictHostKeyChecking=no index.html ubuntu@EC2_INSTANCE_IP:/var/www/html/

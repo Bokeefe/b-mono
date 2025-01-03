@@ -43,4 +43,3 @@ nohup ./run.sh > runner.log 2>&1 &
 // install docker in EC2 machine
 //log in to dockerhub via EC2
 // dummy commit 
-
