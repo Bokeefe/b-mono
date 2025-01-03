@@ -25,7 +25,7 @@ side encounters.`,
     title: "Senior Software Engineer/ Team Lead",
     period: "Nov 2019 - Dec 2023",
     description: [
-      `I served as lead of a greenfield project to get a business idea to production, on an app that was used by about 90k consumers. This
+      `I served as lead of a greenfield project to get a new business concept to production, on an app that was used by about 90k consumers. This
 team was made of 7 developers whom I supported as lead. We worked on business-facing applications that served entire school districts, fire
 districts, and banks franchises with thousands of users. As lead, I spent about half of my time helping the business side articulate their
 goals for the dev team, removing any obstacles for the team, tasking out sprints as well as half of my time as a developer. I was also
