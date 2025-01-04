@@ -27,14 +27,17 @@ COPY ./react-fe ./
 # Build the React app
 RUN npm run build
 
-# Stage 2: Serve the application using Nginx
-FROM nginx:alpine
+# Stage 2: Production stage
+FROM node:alpine
 
-# Copy the built artifacts from the build stage
-COPY --from=build /usr/src/app/react-fe/dist/ /usr/share/nginx/html/
+# Copy built backend
+WORKDIR /usr/src/app
+COPY --from=build /usr/src/app/nest-server/dist ./dist
+COPY --from=build /usr/src/app/nest-server/package*.json ./
+COPY --from=build /usr/src/app/react-fe/dist ./public
 
-# Expose the port Nginx will run on
-EXPOSE 80
+RUN npm ci --only=production
 
-# Command to start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 4171  
+
+CMD ["serve", "-s", "dist", "-l", "4171"]
