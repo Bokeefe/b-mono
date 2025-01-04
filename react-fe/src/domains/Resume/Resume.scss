@@ -1,0 +1,19 @@
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .action-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    
+    &:hover {
+      background: #0056b3;
+    }
+  }

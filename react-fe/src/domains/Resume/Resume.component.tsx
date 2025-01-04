@@ -33,9 +33,44 @@ const resumeData = {
   // ... other sections
 };
 
+const handleExportText = () => {
+  const resumeText = jobsCopy
+    .map(
+      (job) => `
+${job.company}
+${job.title}
+${job.period}
+
+${job.description.join("\n")}
+
+Technologies: ${job.technologies.join(", ")}
+-------------------
+`
+    )
+    .join("\n");
+
+  const blob = new Blob([resumeText], { type: "text/plain" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "brendan_okeefe_resume.txt";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
 function Resume() {
   return (
     <div className="resume">
+      <div className="button-container">
+        {/* <button onClick={handlePrintPDF} className="action-button">
+          Export PDF
+        </button> */}
+        <button onClick={handleExportText} className="action-button">
+          Download Resume .txt
+        </button>
+      </div>
       <div>
         <Section
           job={{
