@@ -3,17 +3,14 @@ import MobileButton from "../MobileButton/MobileButton";
 import "./Home.scss";
 
 const Home = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleButtonClick = () => {
-        navigate('/resume')
-      };
+  const handleButtonClick = () => {
+    navigate("/resume");
+  };
   return (
     <div className="home">
-       <MobileButton onClick={handleButtonClick}>
-        Click Me!
-      </MobileButton>
-
+      <MobileButton onClick={handleButtonClick}>Resumé</MobileButton>
     </div>
   );
 };
