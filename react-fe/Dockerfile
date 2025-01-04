@@ -1,4 +1,3 @@
-# react-fe/Dockerfile
 FROM node:20 as build
 
 # Set the working directory
@@ -16,16 +15,11 @@ COPY ./react-fe ./
 # Build the React application
 RUN npm run build
 
-RUN ls -l /usr/src/app/react-fe/dist
-
-# Start a production server to serve the React app
-FROM nginx:alpine
-
-# Copy build files from the previous stage
-COPY --from=build /usr/src/app/react-fe/dist /usr/share/nginx/html
+# Install serve for static file serving
+RUN npm install -g serve
 
 # Expose the port the app runs on
 EXPOSE 80
 
-# Start Nginx Service
-CMD ["nginx", "-g", "daemon off;"]
+# Start serve with the build directory
+CMD ["serve", "-s", "dist", "-l", "80"]
