@@ -3,6 +3,7 @@ import "./App.scss";
 import Home from "./components/Home/Home.component";
 import Resume from "./domains/Resume/Resume.component";
 import MainLayout from "./components/MainLayout/MainLayout.component";
+import "./style/variables.css";
 
 function App() {
   return (

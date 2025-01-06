@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
 import "./Header.scss";
 // import Button from "@mui/material/Button";
+import { IconButton } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 
 function Header() {
   const navigate = useNavigate();
@@ -10,7 +12,14 @@ function Header() {
   return (
     <div className="header">
       <div className="header-container">
-        <button onClick={handleBack}>Back</button>
+        <IconButton
+          className="back-button"
+          onClick={handleBack}
+          aria-label="back"
+          size="large"
+        >
+          <ArrowBack />
+        </IconButton>
       </div>
     </div>
   );

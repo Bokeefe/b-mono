@@ -1,3 +1,5 @@
+@use './../../style/theme' as theme;
+
 .button-container {
     display: flex;
     justify-content: center;
@@ -8,12 +10,14 @@
   .action-button {
     padding: 8px 16px;
     border-radius: 4px;
-    background: #007bff;
-    color: white;
-    border: none;
+    background: var(--lavender);
+    opacity: 0.95;
+    color: var(--dark-grey);
+
+    border: .5px solid var(--light-beige);
     cursor: pointer;
     
     &:hover {
-      background: #0056b3;
+      background: --olive;
     }
   }

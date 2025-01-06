@@ -1,6 +1,12 @@
+@use './style/theme' as theme;
+
 body {
-  background: linear-gradient( to bottom,#5100ff, #9500ff), url('./assets/grex.jpg');
-  background-blend-mode: multiply; 
+  background: linear-gradient(
+    to bottom,
+    var(--lavender),
+    var(--brown)
+  ), url('./assets/grex.jpg');
+  background-blend-mode: multiply;
   animation: gradient 500s ease infinite;
   background-size: 200px;
   min-height: 100vh; 

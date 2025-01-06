@@ -1,8 +1,9 @@
 .mobile-btn {
     width: 64px;
     height: 64px;
-    background: rgba(255, 255, 255, 0.545);
-    color: black;
-    outline: black;
+    background: var(--light-beige);
+    opacity: 0.95;
+    color: var(--dark-grey);
+    outline: var(--dark-grey);
     border-radius: 10px;
 }

@@ -1,12 +1,16 @@
+@use './../../style/theme' as theme;
+
 .header {
- background-color: black;
+ background-color: rgba(175, 160, 208, .95);
  position: absolute;
  top: 0;
  left: 0;
- color: white;
  width: 100vw;
 }
 .header-container {
     display: flex;
     align-items: center;
+    .back-button {
+        color: var(--dark-grey);
+    }
 }
