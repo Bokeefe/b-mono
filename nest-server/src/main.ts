@@ -10,7 +10,7 @@ async function bootstrap() {
     next();
   });
   app.use('/', express.static(join(__dirname, '..', '..', 'react-fe', 'dist')));
-  await app.listen(4171);
+  await app.listen(4171, '0.0.0.0');
 }
 
 bootstrap();
