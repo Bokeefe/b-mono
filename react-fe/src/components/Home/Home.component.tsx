@@ -32,7 +32,6 @@ const Home = () => {
       <div>
         {health && <p>API Status: {health}</p>}
         <MobileButton onClick={handleButtonClick}>Resumé</MobileButton>
-        <MobileButton onClick={() => {}}>Another</MobileButton>
       </div>
     </div>
   );
