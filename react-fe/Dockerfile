@@ -1,38 +1,25 @@
-# Stage 1: Build
 FROM node:20 as build
 
-# Build Backend
-WORKDIR /usr/src/app/nest-server
-COPY ./nest-server/package*.json ./
-RUN npm install
-COPY ./nest-server ./
-RUN npm run build
-
-# Build Frontend
-WORKDIR /usr/src/app/react-fe
-COPY ./react-fe/package*.json ./
-RUN npm install
-COPY ./react-fe ./
-RUN npm run build
-
-# Stage 2: Production
-FROM node:20-alpine
-
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy backend build and dependencies
-COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
-COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/
-RUN cd nest-server && npm install --production
+# Copy package.json and package-lock.json
+COPY ./react-fe/package*.json ./
 
-# Copy frontend build
-COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
+# Install dependencies
+RUN npm install
 
-# Install serve for frontend
+# Copy the rest of the application files
+COPY ./react-fe ./
+
+# Build the React application
+RUN npm run build
+
+# Install serve for static file serving
 RUN npm install -g serve
 
-# Expose both ports
-EXPOSE 80 4171
+# Expose the port the app runs on
+EXPOSE 80
 
-# Start both servers
-CMD ["sh", "-c", "serve -s react-fe/dist -l 80 & cd nest-server && node dist/main.js"]
+# Start serve with the build directory
+CMD ["serve", "-s", "dist", "-l", "80"]
