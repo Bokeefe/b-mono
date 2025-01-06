@@ -18,6 +18,9 @@ RUN npm run build
 # Install serve for static file serving
 RUN npm install -g serve
 
+COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
+COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
+
 # Expose the port the app runs on
 EXPOSE 80
 EXPOSE 4171
