@@ -1,29 +1,38 @@
+# Stage 1: Build
 FROM node:20 as build
 
-# Set the working directory
-WORKDIR /usr/src/app
-
-# Copy package.json and package-lock.json
-COPY ./react-fe/package*.json ./
-
-# Install dependencies
+# Build Backend
+WORKDIR /usr/src/app/nest-server
+COPY ./nest-server/package*.json ./
 RUN npm install
-
-# Copy the rest of the application files
-COPY ./react-fe ./
-
-# Build the React application
+COPY ./nest-server ./
 RUN npm run build
 
-# Install serve for static file serving
+# Build Frontend
+WORKDIR /usr/src/app/react-fe
+COPY ./react-fe/package*.json ./
+RUN npm install
+COPY ./react-fe ./
+RUN npm run build
+
+# Stage 2: Production
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+# Copy backend build and dependencies
+COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
+COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/
+RUN cd nest-server && npm install --production
+
+# Copy frontend build
+COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
+
+# Install serve for frontend
 RUN npm install -g serve
 
-COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
-COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
+# Expose both ports
+EXPOSE 80 4171
 
-# Expose the port the app runs on
-EXPOSE 80
-EXPOSE 4171
-
-# Start serve with the build directory
-CMD ["serve", "-s", "dist", "-l", "80"]
+# Start both servers
+CMD ["sh", "-c", "serve -s react-fe/dist -l 80 & cd nest-server && node dist/main.js"]
