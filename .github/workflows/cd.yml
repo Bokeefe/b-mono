@@ -9,6 +9,16 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
+    - name: Clean up old containers and images
+      run: |
+        # Remove stopped containers
+        sudo docker container prune -f
+        # Remove unused images
+        sudo docker image prune -af
+        # Remove unused volumes
+        sudo docker volume prune -f
+        # Remove build cache
+        sudo docker builder prune -af
     - name: Pull Docker image
       run: sudo docker pull bokeefe96/b-mono-image:latest
     - name: Delete Old docker container
