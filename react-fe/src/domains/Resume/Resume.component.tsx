@@ -1,6 +1,9 @@
 import { Job, jobsCopy } from "./jobsCopy";
 import "./Resume.scss";
 import Section from "./section/Section.component";
+import DownloadIcon from "@mui/icons-material/Download";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import { jsPDF } from "jspdf";
 
 const resumeData = {
   header: {
@@ -9,8 +12,9 @@ const resumeData = {
     contact: {
       email: "brendanokeefe96@gmail.com",
       phone: "319-530-8544",
-      linkedin: "linkedin.com/in/brendanokeefe96",
-      gitHub: "github.com/brendanokeefe",
+      linkedin: "https://linkedin.com/in/brendanokeefe96",
+      gitHub: "https://github.com/Bokeefe",
+      website: "http://bverse.world/resume",
     },
     technologies: [
       `Languages: Java (SpringBoot, Groovy) JavaScript (Node.js, TypeScript), HTML, CSS, SCSS
@@ -59,15 +63,85 @@ Technologies: ${job.technologies.join(", ")}
   window.URL.revokeObjectURL(url);
 };
 
+const handleDownloadPDF = () => {
+  const doc = new jsPDF();
+  const lineHeight = 7;
+  const margin = 20;
+
+  // Header
+  doc.setFontSize(24);
+  doc.text(resumeData.header.name, margin, 20);
+
+  doc.setFontSize(16);
+  doc.text(resumeData.header.title, margin, 30);
+
+  // Contact info
+  doc.setFontSize(10);
+  doc.text(
+    [
+      `Email: ${resumeData.header.contact.email}`,
+      `Phone: ${resumeData.header.contact.phone}`,
+      `LinkedIn: ${resumeData.header.contact.linkedin}`,
+      `GitHub: ${resumeData.header.contact.gitHub}`,
+    ],
+    margin,
+    40
+  );
+
+  // Description
+  doc.setFontSize(10);
+  const splitDesc = doc.splitTextToSize(resumeData.header.description, 170);
+  doc.text(splitDesc, margin, 65);
+
+  let yPos = 115;
+
+  // Experience section
+  doc.setFontSize(16);
+  doc.text("Experience", margin, yPos);
+  yPos += lineHeight * 1;
+
+  // Add experience
+  jobsCopy.forEach((job) => {
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.setFontSize(14);
+    doc.text(`${job.company} - ${job.title}`, margin, yPos);
+    yPos += lineHeight;
+
+    doc.setFontSize(12);
+    doc.text(job.period, margin, yPos);
+    yPos += lineHeight;
+
+    // Description
+    doc.setFontSize(10);
+    const splitJobDesc = doc.splitTextToSize(job.description.join("\n"), 170);
+    doc.text(splitJobDesc, margin, yPos);
+    yPos += splitJobDesc.length * (lineHeight * 0.6);
+
+    // Technologies
+    doc.setFontSize(10);
+    const techText = doc.splitTextToSize(
+      `Technologies: ${job.technologies.join(", ")}`,
+      140
+    );
+    doc.text(techText, margin, yPos);
+    yPos += techText.length * (lineHeight * 1.2);
+  });
+
+  doc.save("brendan_okeefe_resume.pdf");
+};
+
 function Resume() {
   return (
     <div className="resume">
       <div className="button-container">
-        {/* <button onClick={handlePrintPDF} className="action-button">
-          Export PDF
-        </button> */}
+        <button onClick={handleDownloadPDF} className="action-button">
+          <PictureAsPdfIcon /> PDF
+        </button>
         <button onClick={handleExportText} className="action-button">
-          Download Resume .txt
+          <DownloadIcon /> TXT
         </button>
       </div>
       <div>

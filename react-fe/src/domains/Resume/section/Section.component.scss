@@ -2,14 +2,13 @@
     background: var(--light-beige);
     opacity: 0.95;
     border-radius: 16px;
-    margin: 24px;
+    margin: 24px auto;
     padding: 24px;
+    max-width: 800px;
     .tech-stack {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        > * {
-            white-space: nowrap;  // Prevent breaking within tech stack items
-        }
+
     };
 }

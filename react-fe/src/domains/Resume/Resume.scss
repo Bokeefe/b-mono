@@ -1,23 +1,29 @@
 @use './../../style/theme' as theme;
 
 .button-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-  }
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
   
   .action-button {
-    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
     border-radius: 4px;
-    background: var(--lavender);
-    opacity: 0.95;
-    color: var(--dark-grey);
-
-    border: .5px solid var(--light-beige);
+    background-color: var(--blue);
+    color: white;
     cursor: pointer;
-    
+    transition: background-color 0.2s;
+
     &:hover {
-      background: --olive;
+      background-color: var(--dark-grey);
+    }
+
+    svg {
+      font-size: 1.2rem;
     }
   }
+}
