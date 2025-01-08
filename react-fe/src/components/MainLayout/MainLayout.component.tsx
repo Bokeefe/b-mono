@@ -1,11 +1,11 @@
 import { Outlet } from "react-router-dom";
-import Header from "../Header/Header.component";
+// import Header from "../Header/Header.component";
 import "./MainLayout.scss";
 
 const MainLayout = () => {
   return (
     <>
-      <Header />
+      {/* <Header /> */}
       <div className="outlet">
         <Outlet />
       </div>
