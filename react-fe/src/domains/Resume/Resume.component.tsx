@@ -4,6 +4,10 @@ import Section from "./section/Section.component";
 import DownloadIcon from "@mui/icons-material/Download";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { jsPDF } from "jspdf";
+import { IconButton } from "@mui/material";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import EmailIcon from "@mui/icons-material/Email";
 
 const resumeData = {
   header: {
@@ -143,6 +147,31 @@ function Resume() {
         <button onClick={handleExportText} className="action-button">
           <DownloadIcon /> TXT
         </button>
+      </div>
+      <div className="button-container">
+        <IconButton
+          href="https://github.com/Bokeefe"
+          target="_blank"
+          aria-label="github"
+          className="social-button"
+        >
+          <GitHubIcon />
+        </IconButton>
+        <IconButton
+          href="https://linkedin.com/in/brendanokeefe96"
+          target="_blank"
+          aria-label="linkedin"
+          className="social-button"
+        >
+          <LinkedInIcon />
+        </IconButton>
+        <IconButton
+          href="mailto:brendanokeefe96@gmail.com"
+          aria-label="email"
+          className="social-button"
+        >
+          <EmailIcon />
+        </IconButton>
       </div>
       <div>
         <Section
