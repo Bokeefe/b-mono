@@ -1,0 +1,14 @@
+.sandbox {
+    margin:24px;
+    border:2px dotted purple;
+    padding: 24px;
+    background-color: var(--light-beige);
+  opacity: 0.95;
+  border-radius: 12px;
+  height: 85vh;
+
+  .animal-image {
+    width: 100px;
+    height: 100px;
+  }
+}

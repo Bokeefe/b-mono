@@ -3,11 +3,12 @@ import { faker } from '@faker-js/faker';
 
 @Injectable()
 export class FakerService {
-  getAnimal() {
+  getAnimal(animalName: string) {
     return {
-      name: faker.animal.type(),
+      name: animalName,
       age: faker.number.int({ min: 1, max: 100 }),
       color: faker.color.human(),
+      image: faker.image.url(),
     };
   }
 

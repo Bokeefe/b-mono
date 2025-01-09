@@ -2,7 +2,7 @@
 interface Environment {
   api: {
     url: string;
-    port: number;
+    port?: number;
   };
 }
 
@@ -16,7 +16,6 @@ const development: Environment = {
 const production: Environment = {
   api: {
     url: "http://bverse.world", // or window.location.origin
-    port: 4171,
   },
 };
 export const env: Environment =

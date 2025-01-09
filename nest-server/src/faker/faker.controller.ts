@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { FakerService } from './faker.service';
 
 @Controller('api/faker')
@@ -10,8 +10,8 @@ export class FakerController {
     return this.fakerService.getAnimals(20);
   }
 
-  @Get('animal')
-  getAnimal() {
-    return this.fakerService.getAnimal();
+  @Get('animal/:name')
+  getAnimal(@Param('name') name: string) {
+    return this.fakerService.getAnimal(name);
   }
 }
