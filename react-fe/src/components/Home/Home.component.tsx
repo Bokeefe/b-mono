@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import MobileButton from "../MobileButton/MobileButton";
 import "./Home.scss";
 import { apiService } from "../../services/api.service";

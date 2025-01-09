@@ -7,7 +7,7 @@ import { ArrowBack } from "@mui/icons-material";
 function Header() {
   const navigate = useNavigate();
   const handleBack = () => {
-    navigate(-1); // Go back one step in history
+    navigate("/");
   };
   return (
     <div className="header">

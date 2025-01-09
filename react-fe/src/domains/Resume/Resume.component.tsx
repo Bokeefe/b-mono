@@ -1,4 +1,3 @@
-import { Job, jobsCopy } from "./jobsCopy";
 import "./Resume.scss";
 import Section from "./section/Section.component";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -8,55 +7,35 @@ import { IconButton } from "@mui/material";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import EmailIcon from "@mui/icons-material/Email";
-
-const resumeData = {
-  header: {
-    name: "Brendan O'Keefe",
-    title: "Software Engineer",
-    contact: {
-      email: "brendanokeefe96@gmail.com",
-      phone: "319-530-8544",
-      linkedin: "https://linkedin.com/in/brendanokeefe96",
-      gitHub: "https://github.com/Bokeefe",
-      website: "http://bverse.world/resume",
-    },
-    technologies: [
-      `Languages: Java (SpringBoot, Groovy) JavaScript (Node.js, TypeScript), HTML, CSS, SCSS
-`,
-      `Frameworks: React, Next.js, Spring,Angular, RxJs, Nest.js
-`,
-      `Databases: MongoDB, MySQL
-`,
-      `Cloud Platforms: AWS (EC2), DigitalOcean, Jenkins, BitBucket, Github
-`,
-      `Tools & Technologies: GraphQL, JPA, Spring Boot, Eclipse, Visual Studio Code, SQL Developer, JUnit, Vite, Storybook
-`,
-      `Methodologies: Agile, Kanban, OOP, WET
-`,
-    ],
-    description: `An accomplished and results-focused software engineer with over eight years of experience in designing, developing, and deploying high-performance web applications.  Possessing a strong track record of successfully leading and contributing to diverse projects, consistently exceeding expectations and delivering innovative solutions. Extensive expertise across the full stack, from front-end development using React, Angular, and related technologies, to back-end development with Java, Spring Boot, Node.js, and GraphQL.  My experience encompasses working with various databases (MongoDB, MySQL), cloud platforms (AWS), and development methodologies (Agile, Kanban).  Years of mentoring junior developers, streamlining development processes, and consistently improving application performance and scalability. Adept at navigating complex technical challenges, effectively collaborating with cross-functional teams, and delivering high-quality results on time and within budget.`,
-  },
-  experience: jobsCopy, // your existing jobs data
-  // ... other sections
-};
+import { jobsCopy } from "./jobsCopy";
 
 const handleExportText = () => {
-  const resumeText = jobsCopy
-    .map(
-      (job) => `
-${job.company}
-${job.title}
-${job.period}
+  let txtFormat = "";
+  // Header formatting
+  txtFormat += `${jobsCopy.header.name} - ${jobsCopy.header.title}\n\n`;
+  txtFormat += `Contact: \nEmail: ${jobsCopy.header.contact.email}\nPhone: ${jobsCopy.header.contact.phone}\n`;
+  txtFormat += `LinkedIn: ${jobsCopy.header.contact.linkedin}\nGitHub: ${jobsCopy.header.contact.gitHub}\nWebsite: ${jobsCopy.header.contact.website}\n\n`;
 
-${job.description.join("\n")}
+  // Technologies
+  txtFormat += "Technologies:\n";
+  txtFormat += "Description:\n" + jobsCopy.header.description + "\n\n";
+  txtFormat += jobsCopy.header.technologies.join("\n");
 
-Technologies: ${job.technologies.join(", ")}
--------------------
-`
-    )
-    .join("\n");
+  // Jobs
+  jobsCopy.jobs.forEach((job) => {
+    txtFormat += "\n\n";
+    txtFormat += `Company: ${job.company}\n`;
+    txtFormat += `Title: ${job.title}\n`;
+    txtFormat += `Period: ${job.period}\n`;
+    txtFormat += "Responsibilities:\n";
+    job.description.forEach((desc) => {
+      txtFormat += `- ${desc}\n`;
+    });
+    txtFormat += "Technologies:\n";
+    txtFormat += job.technologies ? job.technologies.join(", ") : "" + "\n \n";
+  });
 
-  const blob = new Blob([resumeText], { type: "text/plain" });
+  const blob = new Blob([txtFormat], { type: "text/plain" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -74,19 +53,19 @@ const handleDownloadPDF = () => {
 
   // Header
   doc.setFontSize(24);
-  doc.text(resumeData.header.name, margin, 20);
+  doc.text(jobsCopy.header.name, margin, 20);
 
   doc.setFontSize(16);
-  doc.text(resumeData.header.title, margin, 30);
+  doc.text(jobsCopy.header.title, margin, 30);
 
   // Contact info
   doc.setFontSize(10);
   doc.text(
     [
-      `Email: ${resumeData.header.contact.email}`,
-      `Phone: ${resumeData.header.contact.phone}`,
-      `LinkedIn: ${resumeData.header.contact.linkedin}`,
-      `GitHub: ${resumeData.header.contact.gitHub}`,
+      `Email: ${jobsCopy.header.contact.email}`,
+      `Phone: ${jobsCopy.header.contact.phone}`,
+      `LinkedIn: ${jobsCopy.header.contact.linkedin}`,
+      `GitHub: ${jobsCopy.header.contact.gitHub}`,
     ],
     margin,
     40
@@ -94,7 +73,7 @@ const handleDownloadPDF = () => {
 
   // Description
   doc.setFontSize(10);
-  const splitDesc = doc.splitTextToSize(resumeData.header.description, 170);
+  const splitDesc = doc.splitTextToSize(jobsCopy.header.description, 170);
   doc.text(splitDesc, margin, 65);
 
   let yPos = 115;
@@ -105,7 +84,7 @@ const handleDownloadPDF = () => {
   yPos += lineHeight * 1;
 
   // Add experience
-  jobsCopy.forEach((job) => {
+  jobsCopy.jobs.forEach((job) => {
     if (yPos > 250) {
       doc.addPage();
       yPos = 20;
@@ -176,16 +155,16 @@ function Resume() {
       <div>
         <Section
           job={{
-            title: resumeData.header.name,
-            company: resumeData.header.title,
-            description: [resumeData.header.description],
-            technologies: resumeData.header.technologies,
+            title: jobsCopy.header.name,
+            company: jobsCopy.header.title,
+            description: [jobsCopy.header.description],
+            technologies: jobsCopy.header.technologies,
             period: "",
           }}
         />
       </div>
       <div>
-        {jobsCopy.map((job: Job, index: number) => {
+        {jobsCopy.jobs.map((job: Job, index: number) => {
           // Ensure all required fields are present before passing to Section
           const safeJob = {
             company: job.company || "",
