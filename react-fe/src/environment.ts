@@ -8,14 +8,14 @@ interface Environment {
 
 const development: Environment = {
   api: {
-    url: "http://localhost",
+    url: "https://localhost",
     port: 4171,
   },
 };
 
 const production: Environment = {
   api: {
-    url: "http://bverse.world", // or window.location.origin
+    url: window.location.origin,
   },
 };
 export const env: Environment =
