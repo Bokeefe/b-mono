@@ -4,7 +4,7 @@ class FakerApiService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${env.api.url}:${env.api.port}`;
+    this.baseUrl = `${env.api.url}${env.api.port ? `:${env.api.port}` : ""}`;
   }
 
   async getAnimals() {
