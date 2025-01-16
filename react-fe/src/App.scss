@@ -1,15 +1,12 @@
-@use './style/theme' as theme;
+@use "./style/theme" as theme;
 
 body {
-  background: linear-gradient(
-    to bottom,
-    var(--lavender),
-    var(--brown)
-  ), url('./assets/grex.jpg');
+  background: linear-gradient(to bottom, var(--lavender), var(--brown)),
+    url("./assets/grex.jpg");
   background-blend-mode: multiply;
   animation: gradient 500s ease infinite;
   background-size: 200px;
-  min-height: 100vh; 
+  min-height: 100vh;
 }
 
 @keyframes gradient {
@@ -24,3 +21,11 @@ body {
   }
 }
 
+.page-container {
+  background: var(--light-beige);
+  opacity: 0.95;
+  border-radius: 16px;
+  margin: auto;
+  padding: 24px;
+  max-width: 800px;
+}

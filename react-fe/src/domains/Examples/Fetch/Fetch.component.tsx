@@ -10,9 +10,8 @@ const FetchExample = () => {
   useEffect(() => {
     fakerApiService.getAnimals().then((animals: string[]) => {
       setAnimalArr(animals);
-      setIsLoading(false);
     });
-  }, []);
+  }, [isLoading]);
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -22,12 +21,15 @@ const FetchExample = () => {
         updatedImages.push(animalData.image);
       });
       await Promise.all(promises);
-      setImageArr(updatedImages);
-      setIsLoading(false);
+
+      if (updatedImages.length) {
+        setImageArr(updatedImages);
+        setIsLoading(false);
+      }
     };
 
     fetchAnimals();
-  }, [animalArr]);
+  }, [animalArr, isLoading]);
 
   return (
     <div className="sandbox">

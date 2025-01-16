@@ -1,0 +1,33 @@
+.about {
+  //   display: flex;
+  //   align-items: center;
+  //   justify-content: space-between;
+  //   padding: 20px;
+  //   background-color: #f5f5f5;
+}
+
+.img-cont {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.mini-b {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+}
+
+.text-cont {
+  margin-left: 20px;
+}
+
+.text-heading {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.text-paragraph {
+  font-size: 16px;
+  color: #333;
+}

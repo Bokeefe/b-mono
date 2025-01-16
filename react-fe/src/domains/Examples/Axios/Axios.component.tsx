@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "../Fetch/Fetch.scss";
-import { env } from "../../../environment";
+import { baseUrl } from "../../../environment";
 
 const AxiosExample = () => {
-  const baseURL = `${env?.api?.url}:${env?.api?.port}`;
   const [animalArr, setAnimalArr] = useState<string[]>([]);
   const [imageArr, setImageArr] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,7 +11,7 @@ const AxiosExample = () => {
   useEffect(() => {
     const fetchAnimals = async () => {
       try {
-        const response = await axios.get(`${baseURL}/api/faker/animals`);
+        const response = await axios.get(`${baseUrl}/api/faker/animals`);
         console.log("Fetched animals:", response.data);
         setAnimalArr(response.data);
       } catch (error) {
@@ -23,7 +22,7 @@ const AxiosExample = () => {
     };
 
     fetchAnimals();
-  }, [baseURL]);
+  }, []);
 
   useEffect(() => {
     const fetchAnimalImages = async () => {
@@ -31,7 +30,7 @@ const AxiosExample = () => {
       const promises = animalArr.map(async (animal) => {
         try {
           const response = await axios.get(
-            `${baseURL}/api/faker/animal/${animal}`
+            `${baseUrl}/api/faker/animal/${animal}`
           );
           updatedImages.push(response.data.image);
         } catch (error) {
@@ -46,7 +45,7 @@ const AxiosExample = () => {
     if (animalArr.length > 0) {
       fetchAnimalImages();
     }
-  }, [animalArr, baseURL]);
+  }, [animalArr]);
 
   return (
     <div className="sandbox">

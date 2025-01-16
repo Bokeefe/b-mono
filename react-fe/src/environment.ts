@@ -8,7 +8,7 @@ interface Environment {
 
 const development: Environment = {
   api: {
-    url: "https://localhost",
+    url: "http://localhost",
     port: 4171,
   },
 };
@@ -18,8 +18,11 @@ const production: Environment = {
     url: window.location.origin,
   },
 };
+
 export const env: Environment =
   typeof import.meta !== "undefined" &&
   (import.meta as any).env?.MODE === "production"
     ? production
     : development;
+
+export const baseUrl = `${env.api.url}${env.api.port ? `:${env.api.port}` : ""}`;

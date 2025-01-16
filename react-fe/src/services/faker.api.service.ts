@@ -1,15 +1,9 @@
-import { env } from "../environment";
+import { baseUrl } from "../environment";
 
 class FakerApiService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = `${env.api.url}${env.api.port ? `:${env.api.port}` : ""}`;
-  }
-
   async getAnimals() {
     try {
-      const response = await fetch(`${this.baseUrl}/api/faker/animals`);
+      const response = await fetch(`${baseUrl}/api/faker/animals`);
       return await response.json();
     } catch (error) {
       console.error("Health check failed:", error);
@@ -19,7 +13,7 @@ class FakerApiService {
 
   async getAnimal(id: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/faker/animal/${id}`);
+      const response = await fetch(`${baseUrl}/api/faker/animal/${id}`);
       return await response.json();
     } catch (error) {
       console.error("Health check failed:", error);

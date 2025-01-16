@@ -7,8 +7,8 @@ import { apiService } from "../../services/api.service";
 const Home = () => {
   const navigate = useNavigate();
 
-  const handleButtonClick = () => {
-    navigate("/resume");
+  const handleNav = (route: string) => {
+    navigate(`/${route}`);
   };
 
   const checkHealth = async () => {
@@ -27,7 +27,8 @@ const Home = () => {
   return (
     <div className="home">
       <div>
-        <MobileButton onClick={handleButtonClick}>Resumé</MobileButton>
+        <MobileButton onClick={() => handleNav("resume")}>Resumé</MobileButton>
+        <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
       </div>
     </div>
   );
