@@ -6,7 +6,7 @@ class FakerApiService {
       const response = await fetch(`${baseUrl}/api/faker/animals`);
       return await response.json();
     } catch (error) {
-      console.error("get animals failed:", error);
+      console.error("Health check failed:", error);
       throw error;
     }
   }
@@ -16,7 +16,7 @@ class FakerApiService {
       const response = await fetch(`${baseUrl}/api/faker/animal/${id}`);
       return await response.json();
     } catch (error) {
-      console.error("get animal failed:", error);
+      console.error("Health check failed:", error);
       throw error;
     }
   }
