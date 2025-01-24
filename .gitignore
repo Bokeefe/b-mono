@@ -25,3 +25,5 @@ dist-ssr
 *.docker
 **/node_modules
 *.log
+
+secrets.env
