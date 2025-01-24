@@ -22,4 +22,13 @@ export class UsersService {
     const newUser = this.usersRepository.create(userData);
     return await this.usersRepository.save(newUser);
   }
+
+  async update(id: number, userData: Partial<User>): Promise<User> {
+    await this.usersRepository.update(id, userData);
+    return this.usersRepository.findOneBy({ id });
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.usersRepository.delete(id);
+  }
 }
