@@ -1,6 +1,14 @@
 # Stage 1: Build
 FROM node:20 as build
 
+# Add MySQL client
+RUN apk add --no-cache mysql-client
+ENV DB_HOST=${DB_HOST}
+ENV DB_PORT=${DB_PORT}
+ENV DB_USERNAME=${DB_USERNAME}
+ENV DB_PASSWORD=${DB_PASSWORD}
+ENV DB_DATABASE=${DB_DATABASE}
+
 # Build Backend
 WORKDIR /usr/src/app/nest-server
 COPY ./nest-server/package*.json ./

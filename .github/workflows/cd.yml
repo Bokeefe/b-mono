@@ -11,17 +11,60 @@ jobs:
     steps:
     - name: Clean up old containers and images
       run: |
-        # Remove stopped containers
+        if [ "${GITHUB_REF#refs/heads/}" = "test/mysql-deploy" ]; then
+          # Clean test environment
+          sudo docker rm -f b-mono-test || true
+        else
+          # Clean production environment
+          sudo docker rm -f b-mono || true
+        fi
+        # Common cleanup
         sudo docker container prune -f
-        # Remove unused images
         sudo docker image prune -af
-        # Remove unused volumes
         sudo docker volume prune -f
-        # Remove build cache
         sudo docker builder prune -af
+
     - name: Pull Docker image
       run: sudo docker pull bokeefe96/b-mono-image:latest
-    - name: Delete Old docker container
-      run: sudo docker rm -f b-mono || true
-    - name: Run Docker Container
-      run: sudo docker run -d -p 80:80 -p 4171:4171 --name b-mono bokeefe96/b-mono-image
+
+    - name: Deploy Container
+      run: |
+        if [ "${GITHUB_REF#refs/heads/}" = "test/mysql-deploy" ]; then
+          # Test Deployment
+          echo "Deploying test environment..."
+          sudo docker run -d \
+            -p 8080:80 \
+            -p 4172:4171 \
+            --name b-mono-test \
+            -e DB_HOST=${{ secrets.DB_HOST }} \
+            -e DB_PORT=${{ secrets.DB_PORT }} \
+            -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e DB_DATABASE=${{ secrets.DB_DATABASE }} \
+            bokeefe96/b-mono-image
+        else
+          # Production Deployment
+          echo "Deploying production environment..."
+          sudo docker run -d \
+            -p 80:80 \
+            -p 4171:4171 \
+            --name b-mono \
+            bokeefe96/b-mono-image
+        fi
+
+    - name: Verify Deployment
+      run: |
+        sleep 10
+        if [ "${GITHUB_REF#refs/heads/}" = "test/mysql-deploy" ]; then
+          if ! docker ps | grep b-mono-test; then
+            echo "Test deployment failed"
+            docker logs b-mono-test
+            exit 1
+          fi
+        else
+          if ! docker ps | grep b-mono; then
+            echo "Production deployment failed"
+            docker logs b-mono
+            exit 1
+          fi
+        fi
