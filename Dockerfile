@@ -1,13 +1,8 @@
 # Stage 1: Build
 FROM node:20 as build
 
-# Add MySQL client
-RUN apk add --no-cache mysql-client
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
-ENV DB_USERNAME=${DB_USERNAME}
-ENV DB_PASSWORD=${DB_PASSWORD}
-ENV DB_DATABASE=${DB_DATABASE}
+# Add MySQL client (using apt for Debian)
+RUN apt-get update && apt-get install -y default-mysql-client netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 # Build Backend
 WORKDIR /usr/src/app/nest-server
@@ -28,13 +23,21 @@ FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
-# Copy backend build and dependencies
+# Copy backend build, dependencies, and migrations
 COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
 COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/
+COPY --from=build /usr/src/app/nest-server/src/migrations ./nest-server/src/migrations
+COPY --from=build /usr/src/app/nest-server/src/data-source.ts ./nest-server/src/
 RUN cd nest-server && npm install --production
 
 # Copy frontend build
 COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
+
+# Install serve and netcat
+RUN apk add --no-cache mysql-client netcat-openbsd
+
+# Install TypeScript and ts-node for migrations
+RUN cd nest-server && npm install typescript ts-node @types/node
 
 # Install serve
 RUN npm install -g serve
@@ -42,6 +45,13 @@ RUN npm install -g serve
 # Copy startup script
 COPY startup.sh .
 RUN chmod +x startup.sh
+
+# Environment variables
+ENV DB_HOST=${DB_HOST}
+ENV DB_PORT=${DB_PORT}
+ENV DB_USERNAME=${DB_USERNAME}
+ENV DB_PASSWORD=${DB_PASSWORD}
+ENV DB_DATABASE=${DB_DATABASE}
 
 # Expose ports
 EXPOSE 80 4171
