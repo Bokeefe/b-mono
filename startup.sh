@@ -1,6 +1,6 @@
 #!/bin/sh
 cd /usr/src/app/nest-server && node dist/main.js &
-cd /usr/src/app && serve -s react-fe/dist -l 80
+cd /usr/src/app/react-fe && serve -s dist -l 80
 
 echo "Waiting for MySQL..."
 while ! nc -z $DB_HOST $DB_PORT; do
