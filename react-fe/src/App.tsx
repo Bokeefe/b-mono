@@ -12,7 +12,6 @@ import "./style/variables.css";
 function App() {
   return (
     <>
-      {/* <BrowserRouter> */}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
