@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router";
 import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { apiService } from "../../services/api.service";
 import MobileButton from "../MobileButton/MobileButton";
 import "./Home.scss";
-import { apiService } from "../../services/api.service";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const Home = () => {
   const checkHealth = async () => {
     try {
       const data = await apiService.healthCheck();
-      console.log(data.status);
+      console.log("Health response:", data.status);
     } catch (error) {
       console.log("error", error);
     }
