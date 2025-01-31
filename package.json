@@ -9,7 +9,8 @@
     "dev:frontend": "cd react-fe && npm run dev",
     "install:all": "npm install && cd nest-server && npm install && cd ../react-fe && npm install",
     "build": "cd nest-server && npm run build && cd ../react-fe && npm run build",
-    "start": "cd nest-server && npm run start:prod"
+    "start": "cd nest-server && npm run start:prod",
+    "docker:test": "docker build -t b-mono-image . && docker stop b-mono || true && docker rm b-mono || true && docker run -d -p 4171:4171 -p 80:80 --name b-mono b-mono-image"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
