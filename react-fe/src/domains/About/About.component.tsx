@@ -43,8 +43,9 @@ function About() {
           </p>
           <p>
             Outside of work I concentrate on non-laptop hobbies like playing
-            guitar, hiking, growing plants in my garden and hydroponically, or
-            reading first-contact explorer accounts or seafaring journals.
+            guitar, hiking, fermenting foods, sourdough, growing plants in my
+            garden and hydroponically, or reading first-contact explorer
+            accounts or seafaring journals.
           </p>
         </div>
       </div>
