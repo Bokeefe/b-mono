@@ -1,8 +1,7 @@
-import { users } from '../mock-db/mock-db';
-
+import { getUsers } from "../utils";
 export const resolvers = {
     Query: {
-      users: () => users,
+      users: () => getUsers(),
     },
   };
   
