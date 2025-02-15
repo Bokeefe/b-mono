@@ -11,9 +11,11 @@ RUN npm run build
 # Build Frontend
 WORKDIR /usr/src/app/react-fe
 COPY ./react-fe/package*.json ./
+RUN ls -la && echo "Package.json contents:" && cat package.json
 RUN npm install
 COPY ./react-fe ./
-RUN npm run build
+RUN ls -la && echo "Directory contents after copy:"
+RUN npm run build --verbose
 
 # Stage 2: Production
 FROM node:20-alpine
