@@ -7,6 +7,7 @@ body {
   animation: gradient 500s ease infinite;
   background-size: 200px;
   min-height: 100vh;
+  font-family: 'Quicksand', sans-serif; 
 }
 
 @keyframes gradient {
@@ -28,4 +29,38 @@ body {
   margin: auto;
   padding: 24px;
   max-width: 800px;
+}
+
+@font-face {
+  font-family: 'Caesar';
+  src: url('./style/fonts/Caesar_Dressing/CaesarDressing-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+.caesar-font {
+  font-family: 'Caesar', sans-serif;
+}
+
+@font-face {
+  font-family: 'Oxygen';
+  src: url('./style/fonts/Oxygen_Mono/OxygenMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.oxygen-font {
+  font-family: 'Oxygen', sans-serif;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('./style/fonts/Quicksand/Quicksand-VariableFont_wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.oxygen-font {
+  font-family: 'Quicksand', sans-serif;
 }

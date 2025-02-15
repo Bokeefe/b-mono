@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { apiService } from "../../services/api.service";
 import MobileButton from "../MobileButton/MobileButton";
+
 import "./Home.scss";
 
 const Home = () => {
@@ -29,6 +30,7 @@ const Home = () => {
       <div>
         <MobileButton onClick={() => handleNav("resume")}>Resumé</MobileButton>
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
+        <MobileButton onClick={() => handleNav("lunch")}>Lunch</MobileButton>
       </div>
     </div>
   );

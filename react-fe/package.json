@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "-": "^0.0.1",
+    "@b-mono/models": "file:../models",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.3.1",
@@ -30,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.1",
     "react-to-print": "^3.0.4",
+    "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.14"
   },
   "devDependencies": {
