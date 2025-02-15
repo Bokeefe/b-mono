@@ -14,10 +14,6 @@ jobs:
         DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - name: Build the Docker image
-      run: |
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        docker build -t ${{secrets.DOCKER_USERNAME}}/b-mono-image:${BRANCH_NAME} .
+      run: docker build -t ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest .
     - name: Push to Dockerhub
-      run: |
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        docker push ${{secrets.DOCKER_USERNAME}}/b-mono-image:${BRANCH_NAME}
+      run: docker push ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
