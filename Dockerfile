@@ -1,6 +1,13 @@
 # Stage 1: Build
 FROM node:20 as build
 
+# Build Models first
+WORKDIR /usr/src/app/models
+COPY ./models ./
+RUN npm install -g typescript
+RUN npm install
+RUN npm run build
+
 # Build Backend
 WORKDIR /usr/src/app/nest-server
 COPY ./nest-server/package*.json ./
@@ -10,13 +17,10 @@ RUN npm run build
 
 # Build Frontend
 WORKDIR /usr/src/app/react-fe
-COPY ./models ../models/
 COPY ./react-fe/package*.json ./
-RUN ls -la && echo "Package.json contents:" && cat package.json
 RUN npm install
 COPY ./react-fe ./
-RUN ls -la && echo "Directory contents after copy:"
-RUN npm run build --verbose
+RUN npm run build
 
 # Stage 2: Production
 FROM node:20-alpine
