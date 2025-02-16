@@ -10,6 +10,7 @@ RUN npm run build
 
 # Build Frontend
 WORKDIR /usr/src/app/react-fe
+COPY ./models ../models/
 COPY ./react-fe/package*.json ./
 RUN ls -la && echo "Package.json contents:" && cat package.json
 RUN npm install
