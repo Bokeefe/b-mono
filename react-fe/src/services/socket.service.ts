@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { baseUrl } from '../environment';
 
 class SocketService {
     private socket: Socket | null = null;
@@ -15,7 +16,8 @@ class SocketService {
 
     connect() {
         if (!this.socket) {
-            this.socket = io('http://localhost:4171');
+            // Use environment configuration for both dev and production
+            this.socket = io(baseUrl);
             
             this.socket.on('connect', () => {
                 console.log('Connected to WebSocket server');

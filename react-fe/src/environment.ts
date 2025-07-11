@@ -8,7 +8,7 @@ interface Environment {
 
 const development: Environment = {
   api: {
-    url: "http://localhost",
+    url: "http://10.210.155.132", // Use computer's IP for phone testing
     port: 4171,
   },
 };

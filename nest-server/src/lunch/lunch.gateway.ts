@@ -32,6 +32,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private rooms: Map<string, Room> = new Map();
+  private clientToUser: Map<string, { roomId: string; userName: string }> = new Map();
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
@@ -41,15 +42,30 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
-    // Remove user from their room
-    this.rooms.forEach((room, roomId) => {
-      room.users = room.users.filter(user => user !== client.id);
-      if (room.users.length === 0) {
-        this.rooms.delete(roomId);
-      } else {
-        this.server.to(roomId).emit('userList', room.users);
+    
+    // Get user info for this client
+    const userInfo = this.clientToUser.get(client.id);
+    if (userInfo) {
+      const { roomId, userName } = userInfo;
+      const room = this.rooms.get(roomId);
+      
+      if (room) {
+        // Remove user from room
+        room.users = room.users.filter(user => user !== userName);
+        
+        if (room.users.length === 0) {
+          // Delete empty room
+          this.rooms.delete(roomId);
+        } else {
+          // Update room for remaining users
+          this.server.to(roomId).emit('roomState', room);
+        }
       }
-    });
+      
+      // Remove client mapping
+      this.clientToUser.delete(client.id);
+    }
+    
     // Update active rooms for all clients
     this.sendActiveRooms();
   }
@@ -72,6 +88,9 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Join the Socket.IO room
     client.join(roomId);
 
+    // Store client to user mapping
+    this.clientToUser.set(client.id, { roomId, userName });
+
     // Create or update room
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, {
@@ -83,7 +102,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     } else {
       const room = this.rooms.get(roomId);
-      if (room) {
+      if (room && !room.users.includes(userName)) {
         room.users.push(userName);
       }
     }
