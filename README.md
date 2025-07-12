@@ -94,9 +94,12 @@ b-mono/
 ### Hosting Setup
 
 **Platform**: DigitalOcean Droplet
+- **Droplet Name**: `b-mono-new`
+- **Droplet ID**: `507491966`
+- **IP Address**: `137.184.190.9`
+- **Region**: San Francisco (sfo3)
 - **Specs**: 512MB RAM, 1 vCPU, 10GB disk
 - **OS**: Ubuntu 24.10 x64
-- **Region**: San Francisco (sfo3)
 
 **Domain**: `bverse.world`
 - **DNS**: Managed by DigitalOcean
@@ -110,7 +113,7 @@ b-mono/
 
 #### Connect to Droplet
 ```bash
-ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP]
+ssh -i ~/.ssh/github_actions_key root@137.184.190.9
 ```
 
 #### Check Running Containers
@@ -185,3 +188,4 @@ ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP] "echo 'test'"
 - Wait for DNS propagation (up to 24 hours)
 # Test build
 # Force new build Sat Jul 12 08:33:15 MDT 2025
+# Fix IP address
