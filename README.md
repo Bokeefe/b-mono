@@ -191,3 +191,4 @@ ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP] "echo 'test'"
 # Fix IP address
 # Force new build - cancel stuck workflow
 # Test CD pipeline with SSH key secret
+# Test automated deployment - Docker now installed
