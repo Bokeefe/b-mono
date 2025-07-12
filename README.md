@@ -189,3 +189,5 @@ ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP] "echo 'test'"
 # Test build
 # Force new build Sat Jul 12 08:33:15 MDT 2025
 # Fix IP address
+# Force new build - cancel stuck workflow
+# Test CD pipeline with SSH key secret
