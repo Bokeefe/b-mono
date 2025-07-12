@@ -183,3 +183,4 @@ ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP] "echo 'test'"
 **If domain doesn't work**:
 - Check DigitalOcean DNS settings
 - Wait for DNS propagation (up to 24 hours)
+# Test build
