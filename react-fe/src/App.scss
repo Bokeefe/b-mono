@@ -2,7 +2,7 @@
 
 body {
   background: linear-gradient(to bottom, var(--lavender), var(--brown)),
-    url("./assets/grex.jpg");
+    url("/grex.jpg");
   background-blend-mode: multiply;
   animation: gradient 500s ease infinite;
   background-size: 200px;
