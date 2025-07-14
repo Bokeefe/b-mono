@@ -63,6 +63,33 @@ RUN echo 'server { \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
         proxy_set_header X-Forwarded-Proto $scheme; \
     } \
+} \
+server { \
+    listen 443 ssl; \
+    server_name bverse.world www.bverse.world; \
+    ssl_certificate /etc/letsencrypt/live/bverse.world/fullchain.pem; \
+    ssl_certificate_key /etc/letsencrypt/live/bverse.world/privkey.pem; \
+    location / { \
+        root /usr/src/app/react-fe/dist; \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:4171; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+    location /socket.io/ { \
+        proxy_pass http://localhost:4171; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
 }' > /etc/nginx/http.d/default.conf
 
 # Copy startup script
