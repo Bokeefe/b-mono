@@ -25,7 +25,13 @@ interface Suggestion {
 @WebSocketGateway({
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
 })
 export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
