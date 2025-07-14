@@ -19,10 +19,9 @@ interface RoomState {
 
 const Room: React.FC = () => {
     const { roomId } = useParams<{ roomId: string }>();
-    const [timeLeft, setTimeLeft] = useState<number>(1200); // 1 minute in seconds for testing
+    const [timeLeft, setTimeLeft] = useState<number>(1200); // 20 minutes in seconds
     const [roomState, setRoomState] = useState<RoomState>({ users: [], suggestions: [], isActive: true });
     const [newSuggestion, setNewSuggestion] = useState('');
-    const [hasVoted, setHasVoted] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [winner, setWinner] = useState<string>('');
     const userName = localStorage.getItem('name') || '';
@@ -37,11 +36,6 @@ const Room: React.FC = () => {
         // Listen for room state updates
         socket.on('roomState', (state: RoomState) => {
             setRoomState(state);
-            // Check if user has already voted
-            const hasUserVoted = state.suggestions.some(
-                suggestion => suggestion.votes.includes(userName)
-            );
-            setHasVoted(hasUserVoted);
         });
 
         // Listen for room completion
@@ -83,7 +77,7 @@ const Room: React.FC = () => {
     };
 
     const handleVote = (suggestionId: string) => {
-        if (!hasVoted && roomId) {
+        if (roomId) {
             socket.emit('vote', {
                 roomId,
                 suggestionId,
@@ -131,8 +125,7 @@ const Room: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => handleVote(suggestion.id)}
-                                    disabled={hasVoted}
-                                    className={`vote-button ${hasVoted ? 'voted' : ''}`}
+                                    className={`vote-button ${suggestion.votes.includes(userName) ? 'voted' : ''}`}
                                 >
                                     {suggestion.votes.includes(userName) ? '✓ Voted' : 'Vote'}
                                 </button>

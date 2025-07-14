@@ -32,7 +32,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   // Room timeout duration in seconds (20 minutes)
-  private readonly ROOM_TIMEOUT_SECONDS = 120;
+  private readonly ROOM_TIMEOUT_SECONDS = 1200;
 
   private rooms: Map<string, Room> = new Map();
   private clientToUser: Map<string, { roomId: string; userName: string }> = new Map();
@@ -146,11 +146,18 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.rooms.get(roomId);
     
     if (room && room.isActive) {
-      const suggestion = room.suggestions.find(s => s.id === suggestionId);
-      if (suggestion && !suggestion.votes.includes(userName)) {
-        suggestion.votes.push(userName);
-        this.server.to(roomId).emit('roomState', room);
+      // Remove user's vote from all suggestions first
+      room.suggestions.forEach(suggestion => {
+        suggestion.votes = suggestion.votes.filter(vote => vote !== userName);
+      });
+      
+      // Add user's vote to the selected suggestion
+      const targetSuggestion = room.suggestions.find(s => s.id === suggestionId);
+      if (targetSuggestion) {
+        targetSuggestion.votes.push(userName);
       }
+      
+      this.server.to(roomId).emit('roomState', room);
     }
   }
 
