@@ -25,6 +25,9 @@ RUN npm run build
 # Stage 2: Production
 FROM node:20-alpine
 
+# Install nginx and certbot
+RUN apk add --no-cache nginx certbot
+
 WORKDIR /usr/src/app
 
 # Copy backend build and dependencies
@@ -35,15 +38,39 @@ RUN cd nest-server && npm install --production
 # Copy frontend build
 COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 
-# Install serve
-RUN npm install -g serve
+# Create nginx config
+RUN echo 'server { \
+    listen 80; \
+    server_name bverse.world www.bverse.world; \
+    location / { \
+        root /usr/src/app/react-fe/dist; \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:4171; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+    location /socket.io/ { \
+        proxy_pass http://localhost:4171; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+}' > /etc/nginx/http.d/default.conf
 
 # Copy startup script
 COPY startup.sh .
 RUN chmod +x startup.sh
 
 # Expose ports
-EXPOSE 80 4171
+EXPOSE 80 443 4171
 
 # Use the startup script
 CMD ["./startup.sh"]

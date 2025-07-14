@@ -36,8 +36,8 @@ body {
   src: url('./style/fonts/Caesar_Dressing/CaesarDressing-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
-
 
 .caesar-font {
   font-family: 'Caesar', sans-serif;
@@ -48,6 +48,7 @@ body {
   src: url('./style/fonts/Oxygen_Mono/OxygenMono-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 .oxygen-font {
@@ -59,8 +60,9 @@ body {
   src: url('./style/fonts/Quicksand/Quicksand-VariableFont_wght.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
-.oxygen-font {
+.quicksand-font {
   font-family: 'Quicksand', sans-serif;
 }
