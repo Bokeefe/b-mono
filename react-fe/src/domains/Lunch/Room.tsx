@@ -120,8 +120,9 @@ const Room: React.FC = () => {
                             <div key={suggestion.id} className="suggestion-item">
                                 <div className="suggestion-details">
                                     <span className="place">{suggestion.place}</span>
-                                    <span className="suggested-by">by {suggestion.suggestedBy}</span>
-                                    <span className="votes">Votes: {suggestion.votes.length}</span>
+                                    
+                                    <span className="suggested-by"><span>by</span><br/>{suggestion.suggestedBy}</span>
+                                    <span className="votes"><span>Votes:</span><br/>{suggestion.votes.length}</span>
                                 </div>
                                 <button
                                     onClick={() => handleVote(suggestion.id)}
