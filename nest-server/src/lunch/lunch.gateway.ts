@@ -31,6 +31,9 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
+  // Room timeout duration in seconds (20 minutes)
+  private readonly ROOM_TIMEOUT_SECONDS = 120;
+
   private rooms: Map<string, Room> = new Map();
   private clientToUser: Map<string, { roomId: string; userName: string }> = new Map();
 
@@ -114,7 +117,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Send initial time update to the new user
     if (room && room.isActive && room.startTime) {
       const elapsed = Math.floor((Date.now() - room.startTime) / 1000);
-      const timeLeft = Math.max(0, 60 - elapsed); // 1 minute = 60 seconds for testing
+      const timeLeft = Math.max(0, this.ROOM_TIMEOUT_SECONDS - elapsed);
       client.emit('timeUpdate', timeLeft);
     }
     
@@ -173,7 +176,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.rooms.forEach((room, roomId) => {
       if (room.isActive && room.startTime) {
         const elapsed = Math.floor((now - room.startTime) / 1000);
-        const timeLeft = Math.max(0, 60 - elapsed); // 1 minute = 60 seconds for testing
+        const timeLeft = Math.max(0, this.ROOM_TIMEOUT_SECONDS - elapsed);
         
         // Check if time is up
         if (timeLeft <= 0) {
@@ -188,7 +191,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private checkRoomTimeouts() {
     const now = Date.now();
     this.rooms.forEach((room, roomId) => {
-      if (room.isActive && now - room.startTime >= 60000) { // 1 minute for testing
+      if (room.isActive && now - room.startTime >= this.ROOM_TIMEOUT_SECONDS * 1000) {
         this.completeRoom(room, roomId);
       }
     });
