@@ -14,11 +14,12 @@ interface RoomState {
     users: string[];
     suggestions: Suggestion[];
     isActive: boolean;
+    startTime?: number;
 }
 
 const Room: React.FC = () => {
     const { roomId } = useParams<{ roomId: string }>();
-    const [timeLeft, setTimeLeft] = useState<number>(1200); // 20 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState<number>(1200); // 1 minute in seconds for testing
     const [roomState, setRoomState] = useState<RoomState>({ users: [], suggestions: [], isActive: true });
     const [newSuggestion, setNewSuggestion] = useState('');
     const [hasVoted, setHasVoted] = useState(false);
@@ -49,32 +50,21 @@ const Room: React.FC = () => {
             setWinner(winner?.place || 'No winner determined');
         });
 
+        // Listen for time updates from server (every minute)
+        socket.on('timeUpdate', (timeLeft: number) => {
+            setTimeLeft(timeLeft);
+        });
+
         return () => {
             socket.off('roomState');
             socket.off('roomComplete');
+            socket.off('timeUpdate');
         };
     }, [roomId, userName]);
 
-    useEffect(() => {
-        // Start countdown
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    determineWinner();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        return `${mins <= 1 ? '<' : ''} ${mins} minute${mins >= 1 ? '' : 's'}`;
     };
 
     const handleSuggest = (e: React.FormEvent) => {
@@ -99,26 +89,6 @@ const Room: React.FC = () => {
                 suggestionId,
                 userName
             });
-        }
-    };
-
-    const determineWinner = () => {
-        setIsFinished(true);
-        if (roomState.suggestions.length === 0) {
-            setWinner("No suggestions were made!");
-            return;
-        }
-
-        // Find max votes
-        const maxVotes = Math.max(...roomState.suggestions.map(s => s.votes.length));
-        const winners = roomState.suggestions.filter(s => s.votes.length === maxVotes);
-
-        if (winners.length === 1) {
-            setWinner(winners[0].place);
-        } else {
-            // Break tie randomly
-            const randomWinner = winners[Math.floor(Math.random() * winners.length)];
-            setWinner(`${randomWinner.place} (Tie broken randomly)`);
         }
     };
 

@@ -111,6 +111,13 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.rooms.get(roomId);
     this.server.to(roomId).emit('roomState', room);
     
+    // Send initial time update to the new user
+    if (room && room.isActive && room.startTime) {
+      const elapsed = Math.floor((Date.now() - room.startTime) / 1000);
+      const timeLeft = Math.max(0, 60 - elapsed); // 1 minute = 60 seconds for testing
+      client.emit('timeUpdate', timeLeft);
+    }
+    
     // Update active rooms for all clients
     this.sendActiveRooms();
   }
@@ -153,33 +160,59 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor() {
     setInterval(() => {
       this.checkRoomTimeouts();
-    }, 60000); // Check every minute
+    }, 1000); // Check every second for more precise timing
+
+    // Send time updates every minute
+    setInterval(() => {
+      this.sendTimeUpdates();
+    }, 60000); // Send every minute
+  }
+
+  private sendTimeUpdates() {
+    const now = Date.now();
+    this.rooms.forEach((room, roomId) => {
+      if (room.isActive && room.startTime) {
+        const elapsed = Math.floor((now - room.startTime) / 1000);
+        const timeLeft = Math.max(0, 60 - elapsed); // 1 minute = 60 seconds for testing
+        
+        // Check if time is up
+        if (timeLeft <= 0) {
+          this.completeRoom(room, roomId);
+        } else {
+          this.server.to(roomId).emit('timeUpdate', timeLeft);
+        }
+      }
+    });
   }
 
   private checkRoomTimeouts() {
     const now = Date.now();
     this.rooms.forEach((room, roomId) => {
-      if (room.isActive && now - room.startTime >= 1200000) { // 20 minutes
-        room.isActive = false;
-        
-        // Determine winner
-        let winner = null;
-        let maxVotes = 0;
-        
-        room.suggestions.forEach(suggestion => {
-          if (suggestion.votes.length > maxVotes) {
-            maxVotes = suggestion.votes.length;
-            winner = suggestion;
-          } else if (suggestion.votes.length === maxVotes && maxVotes > 0) {
-            // Random tiebreaker
-            if (Math.random() > 0.5) {
-              winner = suggestion;
-            }
-          }
-        });
-
-        this.server.to(roomId).emit('roomComplete', { winner });
+      if (room.isActive && now - room.startTime >= 60000) { // 1 minute for testing
+        this.completeRoom(room, roomId);
       }
     });
+  }
+
+  private completeRoom(room: Room, roomId: string) {
+    room.isActive = false;
+    
+    // Determine winner
+    let winner = null;
+    let maxVotes = 0;
+    
+    room.suggestions.forEach(suggestion => {
+      if (suggestion.votes.length > maxVotes) {
+        maxVotes = suggestion.votes.length;
+        winner = suggestion;
+      } else if (suggestion.votes.length === maxVotes && maxVotes > 0) {
+        // Random tiebreaker
+        if (Math.random() > 0.5) {
+          winner = suggestion;
+        }
+      }
+    });
+
+    this.server.to(roomId).emit('roomComplete', { winner });
   }
 } 
