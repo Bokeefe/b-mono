@@ -64,7 +64,7 @@ const Room: React.FC = () => {
 
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
-        return `${mins <= 1 ? '<' : ''} ${mins} minute${mins < 1 ? '' : 's'}`;
+        return `${mins <= 1 ? '<' : ''} ${mins} minute${mins <= 1 ? '' : 's'}`;
     };
 
     const handleSuggest = (e: React.FormEvent) => {
