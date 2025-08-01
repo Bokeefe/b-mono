@@ -4,19 +4,10 @@ body {
   background: linear-gradient(to bottom, var(--lavender), var(--brown)),
     url("/grex.jpg");
   background-blend-mode: multiply;
-  animation: gradient 500s ease infinite;
   background-size: 200px;
-  background-attachment: fixed;
   background-repeat: repeat;
-  background-position: center center;
   min-height: 100vh;
   font-family: 'Quicksand', sans-serif; 
-  
-  /* Fallback if image doesn't load */
-  @media (max-width: 768px) {
-    background-size: 100px;
-    background-attachment: scroll;
-  }
 }
 
 @keyframes gradient {
