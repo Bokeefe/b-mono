@@ -1,0 +1,51 @@
+@use "./../../style/theme" as theme;
+
+.page-container {
+    padding: .5rem;
+    max-width: 600px;
+    margin: 0 auto;
+    font-size: .8rem;
+
+    h1 {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .room-selection,
+    .create-room {
+        margin-bottom: 2rem;
+
+        h2 {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .room-dropdown {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .room-input {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .create-button {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        background-color: var(--lavender);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--brown);
+        }
+    }
+}

@@ -13,7 +13,7 @@ function About() {
           <h1>Welcome to the BVerse</h1>
           <p>
             Work in progress. This site is to serve as my portfolio, showcase my
-            work, and keep some of my zany app ideas that I've made in the past
+            work, and keep some of my app ideas that I've made in the past
             alive.
           </p>
           <p>

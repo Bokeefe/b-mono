@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.scss";
+
 import Home from "./components/Home/Home.component";
 import MainLayout from "./components/MainLayout/MainLayout.component";
 import About from "./domains/About/About.component";
@@ -10,6 +11,8 @@ import Lunch from "./domains/Lunch/Landing";
 import Room from "./domains/Lunch/Room";
 import Resume from "./domains/Resume/Resume.component";
 import "./style/variables.css";
+import Lobby from "./domains/Lobby/Lobby";
+import TextCorpse from "./domains/TextCorpse/TextCorpse.component";
 
 function App() {
   return (
@@ -24,7 +27,9 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/sandbox" element={<Sandbox />} />
             <Route path="/lunch" element={<Lunch />} />
-            <Route path="/room/:roomId" element={<Room />} /> 
+            <Route path="/room/:roomId" element={<Room />} />
+            <Route path="/text-corpse" element={<Lobby />} />
+            <Route path="/text-corpse/:roomId" element={<TextCorpse />} />
           </Route>
         </Routes>
       </BrowserRouter>

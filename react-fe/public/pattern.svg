@@ -1,0 +1,59 @@
+<svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="cellular" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <!-- Main cellular nodes -->
+      <circle cx="25" cy="25" r="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.2"/>
+      <circle cx="85" cy="35" r="5" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+      <circle cx="40" cy="75" r="7" fill="none" stroke="rgba(0,0,0,0.16)" stroke-width="1.1"/>
+      <circle cx="80" cy="80" r="4" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <circle cx="55" cy="45" r="3" fill="none" stroke="rgba(0,0,0,0.14)" stroke-width="0.9"/>
+      <circle cx="15" cy="60" r="4" fill="none" stroke="rgba(0,0,0,0.13)" stroke-width="0.7"/>
+      <circle cx="95" cy="65" r="3" fill="none" stroke="rgba(0,0,0,0.11)" stroke-width="0.6"/>
+      
+      <!-- Organic blob shapes -->
+      <path d="M8 35 Q20 30 35 35 Q30 50 15 55 Q0 50 8 35" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+      <path d="M65 8 Q80 12 85 28 Q80 44 65 40 Q60 24 65 8" fill="none" stroke="rgba(0,0,0,0.10)" stroke-width="0.7"/>
+      <path d="M88 55 Q98 65 93 80 Q78 85 73 75 Q78 60 88 55" fill="none" stroke="rgba(0,0,0,0.13)" stroke-width="0.9"/>
+      <path d="M45 85 Q60 90 65 105 Q50 110 45 100 Q50 85 45 85" fill="none" stroke="rgba(0,0,0,0.09)" stroke-width="0.6"/>
+      <path d="M5 85 Q15 90 20 105 Q10 110 5 100 Q10 85 5 85" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
+      
+      <!-- Complex interconnections -->
+      <path d="M25 25 Q40 30 40 75" stroke="rgba(0,0,0,0.06)" stroke-width="0.4" fill="none"/>
+      <path d="M85 35 Q75 50 80 80" stroke="rgba(0,0,0,0.05)" stroke-width="0.3" fill="none"/>
+      <path d="M25 25 Q45 35 55 45" stroke="rgba(0,0,0,0.07)" stroke-width="0.4" fill="none"/>
+      <path d="M55 45 Q70 50 85 35" stroke="rgba(0,0,0,0.06)" stroke-width="0.3" fill="none"/>
+      <path d="M40 75 Q60 70 80 80" stroke="rgba(0,0,0,0.05)" stroke-width="0.4" fill="none"/>
+      <path d="M15 60 Q30 65 40 75" stroke="rgba(0,0,0,0.06)" stroke-width="0.3" fill="none"/>
+      <path d="M25 25 Q20 40 15 60" stroke="rgba(0,0,0,0.05)" stroke-width="0.3" fill="none"/>
+      <path d="M85 35 Q95 50 95 65" stroke="rgba(0,0,0,0.04)" stroke-width="0.3" fill="none"/>
+      <path d="M95 65 Q90 75 80 80" stroke="rgba(0,0,0,0.05)" stroke-width="0.3" fill="none"/>
+      
+      <!-- Secondary connections -->
+      <path d="M55 45 Q65 55 80 80" stroke="rgba(0,0,0,0.04)" stroke-width="0.2" fill="none"/>
+      <path d="M25 25 Q15 45 8 35" stroke="rgba(0,0,0,0.05)" stroke-width="0.2" fill="none"/>
+      <path d="M40 75 Q50 85 65 105" stroke="rgba(0,0,0,0.03)" stroke-width="0.2" fill="none"/>
+      <path d="M15 60 Q10 75 5 85" stroke="rgba(0,0,0,0.04)" stroke-width="0.2" fill="none"/>
+      
+      <!-- Small detail nodes -->
+      <circle cx="70" cy="15" r="1.5" fill="rgba(0,0,0,0.08)"/>
+      <circle cx="10" cy="15" r="2" fill="rgba(0,0,0,0.07)"/>
+      <circle cx="110" cy="45" r="1.5" fill="rgba(0,0,0,0.06)"/>
+      <circle cx="50" cy="95" r="2" fill="rgba(0,0,0,0.05)"/>
+      <circle cx="5" cy="110" r="1.5" fill="rgba(0,0,0,0.04)"/>
+      <circle cx="105" cy="95" r="1.5" fill="rgba(0,0,0,0.05)"/>
+      
+      <!-- Micro connections -->
+      <line x1="70" y1="15" x2="85" y2="35" stroke="rgba(0,0,0,0.03)" stroke-width="0.1"/>
+      <line x1="10" y1="15" x2="25" y2="25" stroke="rgba(0,0,0,0.03)" stroke-width="0.1"/>
+      <line x1="110" y1="45" x2="95" y2="65" stroke="rgba(0,0,0,0.02)" stroke-width="0.1"/>
+      <line x1="50" y1="95" x2="40" y2="75" stroke="rgba(0,0,0,0.03)" stroke-width="0.1"/>
+      
+      <!-- Organic texture details -->
+      <path d="M30 10 Q35 8 40 10 Q35 12 30 10" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="0.2"/>
+      <path d="M90 20 Q95 18 100 20 Q95 22 90 20" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="0.2"/>
+      <path d="M20 100 Q25 98 30 100 Q25 102 20 100" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="0.2"/>
+      <path d="M100 90 Q105 88 110 90 Q105 92 100 90" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="0.2"/>
+    </pattern>
+  </defs>
+  <rect width="120" height="120" fill="url(#cellular)"/>
+</svg> 

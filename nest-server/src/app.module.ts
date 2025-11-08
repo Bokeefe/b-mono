@@ -5,11 +5,13 @@ import { FakerModule } from './faker/faker.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { LunchModule } from './lunch/lunch.module';
+import { TextCorpseModule } from './text-corpse/text-corpse.module';
 
 @Module({
   imports: [
     FakerModule,
-    LunchModule
+    LunchModule,
+    TextCorpseModule
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, HealthService],
