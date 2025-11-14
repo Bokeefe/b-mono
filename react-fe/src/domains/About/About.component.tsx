@@ -14,7 +14,7 @@ function About() {
           <p>
             This site is to serve as my portfolio, showcase my
             work, and keep some of my app ideas that I've made in the past
-            alive.
+            alive. ☮️
           </p>
           <p>
             Tech stack deployment nerdery: <br />

@@ -24,8 +24,8 @@ jobs:
           docker volume prune -f
           docker builder prune -af
           
-          # Pull latest image
-          docker pull bokeefe96/b-mono-image:latest
+          # Pull latest image (use same Docker username as CI)
+          docker pull ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
           
           # Stop and remove old container
           docker rm -f b-mono || true
@@ -37,7 +37,7 @@ jobs:
             -p 4171:4171 \
             --name b-mono \
             --restart unless-stopped \
-            bokeefe96/b-mono-image:latest
+            ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
           
           # Clean up unused images
           docker image prune -af
