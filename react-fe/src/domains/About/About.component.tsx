@@ -12,13 +12,15 @@ function About() {
         <div className="text-cont">
           <h1>Welcome to the BVerse</h1>
           <p>
-            Work in progress. This site is to serve as my portfolio, showcase my
+            This site is to serve as my portfolio, showcase my
             work, and keep some of my app ideas that I've made in the past
             alive.
           </p>
           <p>
-            It is hosted on a AWS EC2 instance, deployed using a CI/CD pipeline
-            triggered by a GitHub runner. Changes I make are automatically
+            Tech stack deployment nerdery: <br />
+            It was hosted on a AWS EC2 instance, now on a simpler digitalocean droplet,
+             deployed using a CI/CD pipeline triggered by a GitHub runner. 
+             Changes I make are automatically
             deployed about a minute later. Its a monorepo Dockerized Node.js app
             utilizing React on the frontend and Nest framework on the backend. I
             used Pantone's 2025 fashion color trend for the color palette.
