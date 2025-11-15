@@ -7,7 +7,7 @@ export const jobsCopy = {
       phone: "319-530-8544",
       linkedin: "https://linkedin.com/in/brendanokeefe96",
       gitHub: "https://github.com/Bokeefe",
-      website: "http://bverse.world/resume",
+      website: "http://antigogglin.org/resume",
     },
     technologies: [
       `Languages: Java (SpringBoot, Groovy) JavaScript (Node.js, TypeScript), HTML, CSS, SCSS

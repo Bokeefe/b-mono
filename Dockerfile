@@ -41,7 +41,7 @@ COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 # Create nginx config
 RUN echo 'server { \
     listen 80; \
-    server_name bverse.world www.bverse.world; \
+    server_name antigogglin.org www.antigogglin.org; \
     location / { \
         root /usr/src/app/react-fe/dist; \
         try_files $uri $uri/ /index.html; \
@@ -66,9 +66,9 @@ RUN echo 'server { \
 } \
 server { \
     listen 443 ssl; \
-    server_name bverse.world www.bverse.world; \
-    ssl_certificate /etc/letsencrypt/live/bverse.world/fullchain.pem; \
-    ssl_certificate_key /etc/letsencrypt/live/bverse.world/privkey.pem; \
+    server_name antigogglin.org www.antigogglin.org; \
+    ssl_certificate /etc/letsencrypt/live/antigogglin.org/fullchain.pem; \
+    ssl_certificate_key /etc/letsencrypt/live/antigogglin.org/privkey.pem; \
     location / { \
         root /usr/src/app/react-fe/dist; \
         try_files $uri $uri/ /index.html; \
