@@ -67,8 +67,8 @@ RUN echo 'server { \
 server { \
     listen 443 ssl; \
     server_name antigogglin.org www.antigogglin.org; \
-    ssl_certificate /etc/letsencrypt/live/antigogglin.org/fullchain.pem; \
-    ssl_certificate_key /etc/letsencrypt/live/antigogglin.org/privkey.pem; \
+    ssl_certificate /etc/antigogglin/public.pem; \
+    ssl_certificate_key /etc/antigogglin/private.pem; \
     location / { \
         root /usr/src/app/react-fe/dist; \
         try_files $uri $uri/ /index.html; \
