@@ -13,6 +13,7 @@ import Resume from "./domains/Resume/Resume.component";
 import "./style/variables.css";
 import Lobby from "./domains/Lobby/Lobby";
 import TextCorpse from "./domains/TextCorpse/TextCorpse.component";
+import Music from "./domains/Music/Music.component";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/room/:roomId" element={<Room />} />
             <Route path="/text-corpse" element={<Lobby />} />
             <Route path="/text-corpse/:roomId" element={<TextCorpse />} />
+            <Route path="/music" element={<Music />} />
           </Route>
         </Routes>
       </BrowserRouter>
