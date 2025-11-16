@@ -11,83 +11,33 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'develop' || startsWith(github.event.workflow_run.head_branch, 'feature/')
     steps:
-    - name: Deploy to DigitalOcean Droplet
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: 137.184.190.9
-        username: root
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          # Clean up old containers and images
-          docker container prune -f
-          docker image prune -af
-          docker volume prune -f
-          docker builder prune -af
+      - name: Deploy to DigitalOcean Droplet
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: 137.184.190.9
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Clean up old containers and images
+            docker container prune -f
+            docker image prune -af
+            docker volume prune -f
+            docker builder prune -af
 
-          # Pull latest image (use same Docker username as CI)
-          docker pull ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
+            # Pull latest image (use same Docker username as CI)
+            docker pull ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
 
-          # Stop and remove old container
-          docker rm -f b-mono || true
+            # Stop and remove old container
+            docker rm -f b-mono || true
 
-          # Ensure helper files exist on the droplet. These are created/overwritten
-          # on each deploy so the workflow is self-contained and doesn't require
-          # manual commands on the droplet.
-          cat > /root/b-mono-default.conf <<'NGINX_CONF'
-server {
-  listen 80;
-  server_name antigogglin.org;
-  return 301 https://$host$request_uri;
-}
+            # Run new container
+            docker run -d \
+              -p 80:80 \
+              -p 443:443 \
+              -p 4171:4171 \
+              --name b-mono \
+              --restart unless-stopped \
+              ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
 
-server {
-  listen 443 ssl http2;
-  server_name antigogglin.org;
-
-  ssl_certificate /etc/ssl/antigogglin/public.pem;
-  ssl_certificate_key /etc/ssl/antigogglin/private.pem;
-
-  location / {
-    proxy_pass http://127.0.0.1:4171;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-  }
-}
-NGINX_CONF
-
-          cat > /root/startup-no-certbot.sh <<'STARTUP'
-#!/bin/sh
-set -e
-
-# Start the Node app (try dist build then fallback to npm start)
-if [ -f /usr/src/app/dist/main.js ]; then
-  node /usr/src/app/dist/main.js &
-else
-  # run via npm in case the container expects that
-  npm run start:prod &
-fi
-
-# Start nginx in foreground
-nginx -g 'daemon off;'
-STARTUP
-          chmod +x /root/startup-no-certbot.sh
-
-          # Run new container with mounts for certs, nginx config, and startup override
-          docker run -d \
-            -p 80:80 \
-            -p 443:443 \
-            -p 4171:4171 \
-            --name b-mono \
-            --restart unless-stopped \
-            -e DOMAIN=antigogglin.org \
-            -v /etc/ssl/antigogglin:/etc/ssl/antigogglin:ro \
-            -v /root/b-mono-default.conf:/etc/nginx/http.d/default.conf:ro \
-            -v /root/startup-no-certbot.sh:/usr/src/app/startup.sh:ro \
-            ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
-
-          # Clean up unused images
-          docker image prune -af
+            # Clean up unused images
+            docker image prune -af
