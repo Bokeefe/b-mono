@@ -1,12 +1,84 @@
 #!/bin/sh
+set -e
+
+# Configuration via environment variables
+# DOMAIN: primary domain (default: antigogglin.org)
+# CERT_DIR: directory inside container where certs live (default: /etc/ssl/antigogglin)
+# SKIP_CERTBOT: if "true" (default) the script will NOT attempt to run certbot
+
+DOMAIN=${DOMAIN:-antigogglin.org}
+CERT_DIR=${CERT_DIR:-/etc/ssl/antigogglin}
+SKIP_CERTBOT=${SKIP_CERTBOT:-true}
 
 # Start the backend
 cd /usr/src/app/nest-server && node dist/main.js &
 
-# Obtain SSL certificate if not already present
-if [ ! -f /etc/ssl/antigogglin/public.pem ]; then
-    echo "Obtaining SSL certificate..."
-    certbot certonly --standalone -d antigogglin.org -d www.antigogglin.org --non-interactive --agree-tos --email admin@antigogglin.org
+# Generate nginx config using runtime envs so container is flexible
+cat > /etc/nginx/http.d/default.conf <<NGINX_CONF
+server {
+    listen 80;
+    server_name ${DOMAIN} www.${DOMAIN};
+    location / {
+        root /usr/src/app/react-fe/dist;
+        try_files \$uri \$uri/ /index.html;
+    }
+    location /api/ {
+        proxy_pass http://localhost:4171;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    location /socket.io/ {
+        proxy_pass http://localhost:4171;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN} www.${DOMAIN};
+    ssl_certificate ${CERT_DIR}/public.pem;
+    ssl_certificate_key ${CERT_DIR}/private.pem;
+    location / {
+        root /usr/src/app/react-fe/dist;
+        try_files \$uri \$uri/ /index.html;
+    }
+    location /api/ {
+        proxy_pass http://localhost:4171;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    location /socket.io/ {
+        proxy_pass http://localhost:4171;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+NGINX_CONF
+
+# If certs are missing and SKIP_CERTBOT is false, attempt to obtain certs
+if [ ! -f "${CERT_DIR}/public.pem" ] || [ ! -f "${CERT_DIR}/private.pem" ]; then
+    if [ "${SKIP_CERTBOT}" = "false" ] || [ "${SKIP_CERTBOT}" = "0" ]; then
+        echo "Certs missing in ${CERT_DIR}; attempting certbot (SKIP_CERTBOT=${SKIP_CERTBOT})"
+        certbot certonly --standalone -d "${DOMAIN}" -d "www.${DOMAIN}" --non-interactive --agree-tos --email admin@${DOMAIN} || true
+    else
+        echo "Certs missing in ${CERT_DIR} and SKIP_CERTBOT=${SKIP_CERTBOT}; not attempting certbot"
+    fi
+else
+    echo "Using existing certs in ${CERT_DIR}"
 fi
 
 # Start nginx in foreground (Docker needs a foreground process)

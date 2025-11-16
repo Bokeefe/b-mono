@@ -38,59 +38,8 @@ RUN cd nest-server && npm install --production
 # Copy frontend build
 COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 
-# Create nginx config
-RUN echo 'server { \
-    listen 80; \
-    server_name antigogglin.org www.antigogglin.org; \
-    location / { \
-        root /usr/src/app/react-fe/dist; \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location /api/ { \
-        proxy_pass http://localhost:4171; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-    location /socket.io/ { \
-        proxy_pass http://localhost:4171; \
-        proxy_http_version 1.1; \
-        proxy_set_header Upgrade $http_upgrade; \
-        proxy_set_header Connection "upgrade"; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-} \
-server { \
-    listen 443 ssl; \
-    server_name antigogglin.org www.antigogglin.org; \
-    ssl_certificate /etc/ssl/antigogglin/public.pem; \
-    ssl_certificate_key /etc/ssl/antigogglin/private.pem; \
-    location / { \
-        root /usr/src/app/react-fe/dist; \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location /api/ { \
-        proxy_pass http://localhost:4171; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-    location /socket.io/ { \
-        proxy_pass http://localhost:4171; \
-        proxy_http_version 1.1; \
-        proxy_set_header Upgrade $http_upgrade; \
-        proxy_set_header Connection "upgrade"; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-}' > /etc/nginx/http.d/default.conf
+# Ensure nginx http.d directory exists. Nginx config will be generated at container start
+RUN mkdir -p /etc/nginx/http.d
 
 # Copy startup script
 COPY startup.sh .
