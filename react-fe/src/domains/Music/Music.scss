@@ -1,11 +1,4 @@
-.music-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-background-color: var(--bg-color);
-  height: calc(100vh - 100px);
-      padding: .5rem;
-    max-width: 600px;
-    margin: 0 auto;
-    font-size: .8rem;
+.page-container > iframe {
+  width: 100%;
+  height: 500px;
 }
