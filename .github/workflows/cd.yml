@@ -39,5 +39,6 @@ jobs:
               -v /root/startup-no-certbot.sh:/usr/src/app/startup.sh:ro \
               bokeefe96/b-mono-image:latest
 
+
             # Clean up unused images
             docker image prune -af
