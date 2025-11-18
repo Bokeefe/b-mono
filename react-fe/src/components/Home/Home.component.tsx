@@ -27,7 +27,6 @@ const Home = () => {
 
   return (
     <div className="home">
-      pipeline branch deployed
       <div>
         <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton>
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
@@ -38,6 +37,7 @@ const Home = () => {
         </MobileButton>
         <MobileButton onClick={() => handleNav("music")}>Music</MobileButton>
       </div>
+      p
     </div>
   );
 };
