@@ -29,3 +29,4 @@ dist-ssr
 .env
 DEPLOYMENT.local.md
 *.local.md
+PIPELINE_ISSUES.md
