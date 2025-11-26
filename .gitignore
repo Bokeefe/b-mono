@@ -27,3 +27,5 @@ dist-ssr
 *.log
 
 .env
+DEPLOYMENT.local.md
+*.local.md

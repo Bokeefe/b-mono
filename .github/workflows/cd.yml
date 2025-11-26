@@ -30,17 +30,14 @@ jobs:
             # Stop and remove old container
             docker rm -f b-mono || true
 
-            script: echo ">>>>>> it should have done it"
-
-            # run container with mounts and startup override (same command you used before)
+            # Run container with mounts and startup override
             docker run -d --name b-mono --restart unless-stopped \
               -e DOMAIN=antigogglin.org \
               -p 80:80 -p 443:443 -p 4171:4171 \
               -v /etc/ssl/antigogglin:/etc/ssl/antigogglin:ro \
               -v /root/b-mono-default.conf:/etc/nginx/http.d/default.conf:ro \
               -v /root/startup-no-certbot.sh:/usr/src/app/startup.sh:ro \
-              bokeefe96/b-mono-image:latest
-
+              ${{secrets.DOCKER_USERNAME}}/b-mono-image:latest
 
             # Clean up unused images
             docker image prune -af
