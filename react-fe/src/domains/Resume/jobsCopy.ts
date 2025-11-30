@@ -27,6 +27,19 @@ export const jobsCopy = {
   },
   jobs: [
     {
+      company: "Charter/Spectrum",
+      title: "Team Lead Software Engineer",
+      period: "Feb 2025 - Present",
+      description: [
+        "Lead a team of 10 software engineers in the development of a new web application for Charter/Spectrum.",
+        "Responsible for the design, development, and deployment of the application.",
+        "Responsible for the training and development of the team.",
+        "Responsible for the management of the team.",
+        "Responsible for the mentoring of the team.",
+      ],
+      technologies: ["Java", "Spring Boot",  "TypeScript", "Node.js", "GraphQL", "Docker"],
+    },
+    {
       company: "BayRock Labs/MatchPoint Solutions",
       title: "Principal Engineer",
       period: "Jan 2024 - Dec 2024",
