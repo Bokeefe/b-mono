@@ -41,7 +41,7 @@ COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 # Create nginx config with map for WebSocket connections
 RUN echo 'map $http_upgrade $connection_upgrade { \
     default upgrade; \
-    \'\' close; \
+    "" close; \
 } \
 server { \
     listen 80; \

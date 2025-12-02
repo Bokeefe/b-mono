@@ -9,7 +9,7 @@ interface MobileButtonProps {
 const MobileButton: React.FC<MobileButtonProps> = ({ onClick, children }) => {
   return (
     <button className="mobile-btn" onClick={onClick}>
-      {children}
+      <span className="mobile-btn-content">{children}</span>
     </button>
   );
 };
