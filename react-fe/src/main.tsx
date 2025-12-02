@@ -2,7 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import packageJson from '../../package.json'
+// Import package.json - use local react-fe version for Docker compatibility
+import packageJson from '../package.json'
 
 console.log('App version:', packageJson.version)
 
