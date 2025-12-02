@@ -1,19 +1,93 @@
-this is intended to be documentation and a prompt for what this lunch app does.
+# Lunch App Documentation
 
-the idea is borrowing from a shared one for this monorepo: users join a "room" together using sockets and then can interact on a common thing together. In this case its a ranked choice voting app where people can propose a lunch place to go to and vote on existing proposals. all the users can vote once but they can change their vote up until it times out.
+## What it does
+Ranked choice voting app where users join a "room" via WebSockets, propose lunch places, and vote on proposals. Users can change votes until timeout (20 minutes), then the top choice is decided.
 
-I dont remember what starts the count down, whether its on the first poroposal or at the start of creating the room but after 20 minutes the top choice is decided for the group.
+## Current Issue: WebSocket Upgrade Failing in Production
 
-At this point everyone's screen should just show the places that has been decided for lunch so they can coordinate around that.
+**Status**: ⚠️ **PROPOSED SOLUTION** - Using polling transport only (needs testing)
 
-this works fine locally but doesn't work in the deployed app at antigogglin.org anymore. why do we think that is?
+**Solution**: Configured Socket.IO to use polling transport only, avoiding WebSocket upgrade issues entirely.
 
-error on home page:
-Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015. (Reason: CORS request did not succeed). Status code: (null).
+**Why This Should Work**: 
+- Polling transport works through Cloudflare (tested via curl and confirmed)
+- Socket.IO functionality is identical with polling vs WebSocket
+- Polling uses HTTP long-polling instead of persistent WebSocket connection
+- Slightly less efficient but much more reliable through Cloudflare's HTTP/2 setup
 
-error on lunch page:
-Socket connection error: Error: websocket error
-    gL https://antigogglin.org/assets/index-aSgp_4Df.js:166
-    onError https://antigogglin.org/assets/index-aSgp_4Df.js:166
-    onerror https://antigogglin.org/assets/index-aSgp_4Df.js:166
-    addEventListeners https://antigogglin.org/assets/index-aSgp_4Df.js:166
+**Testing Required**:
+- Deploy the change
+- Test lunch app in production browser
+- Verify Socket.IO connections work
+- Confirm real-time features function correctly
+
+**Evidence**:
+- Direct backend: `curl localhost:4171/socket.io/?EIO=4&transport=polling` → ✅ Works
+- Through Cloudflare polling: `curl https://antigogglin.org/socket.io/?EIO=4&transport=polling` → ✅ Works (returns session ID)
+- Through Cloudflare WebSocket: `wss://antigogglin.org/socket.io/?EIO=4&transport=websocket` → ❌ HTTP 400
+
+## Changes Made
+1. **nest-server/src/main.ts**: Fixed Express middleware to exclude `/socket.io` and `/api` paths - calls `next()` to let NestJS handle them
+2. **Dockerfile**: Updated nginx config with `map` directive for conditional Connection header and proper WebSocket proxy settings
+3. **startup.sh**: Added wait for backend to start before nginx
+
+## Solution: Double Proxy Setup (Cloudflare → nginx → NestJS)
+
+**Setup Analysis**: Your deployment uses Cloudflare → nginx → NestJS. This double proxy setup can cause WebSocket issues, but it's fixable.
+
+**Evidence**:
+- `curl` shows: `* using HTTP/2` and `* ALPN: server accepted h2`
+- Direct WebSocket upgrade returns: `{"code":3,"message":"Bad request"}`
+- Polling transport works (uses HTTP/1.1)
+- Backend works fine when accessed directly
+
+**Why This Setup Can Be Problematic**:
+- Cloudflare proxies WebSocket connections, but HTTP/2 client connections complicate upgrades
+- nginx must correctly forward WebSocket upgrade headers
+- Double proxy means headers can get lost or modified
+- The `map $connection_upgrade` directive must be in `http` context (not `server`)
+
+**Fix Steps**:
+
+**Step 1: Check WAF Rules (Most Likely Issue)**
+1. Cloudflare Dashboard → antigogglin.org → Security → WAF
+2. Check if any rules are blocking WebSocket upgrade requests
+3. The initial HTTP 101 upgrade request is subject to WAF rules
+4. Look for rules that might block requests with `Upgrade: websocket` header
+5. Temporarily disable WAF or create an allow rule for `/socket.io/*` paths
+
+**Step 2: Check HTTP/2 to Origin Setting**
+1. Cloudflare Dashboard → Speed → Optimization
+2. Find "HTTP/2 to Origin" under Protocol Optimization
+3. Disable this if enabled (forces HTTP/1.1 between Cloudflare and your server)
+4. Note: This doesn't affect client-to-Cloudflare connections, but ensures origin uses HTTP/1.1
+
+**Step 3: Verify WebSocket Setting**
+1. Cloudflare Dashboard → Network
+2. Ensure "WebSockets" toggle is ON (already confirmed)
+
+**Step 4: Create Page Rule for Socket.IO (COMPLETED - Didn't Fix)**
+- Created Page Rule: `antigogglin.org/socket.io/*`
+- Settings applied:
+  - **Cache Level**: Bypass
+  - **Browser Integrity Check**: Off
+- Result: Still getting `NS_ERROR_WEBSOCKET_CONNECTION_REFUSED`
+
+**Step 5: Create WAF Custom Rule to Allow WebSocket Upgrades (NEXT)**
+1. Cloudflare Dashboard → Security → WAF → Custom Rules
+2. Create new rule:
+   - **Rule name**: "Allow Socket.IO WebSocket Upgrades"
+   - **Expression**: `(http.request.uri.path contains "/socket.io")`
+   - **Action**: Allow
+   - **Priority**: Set high (lower number = higher priority)
+3. This explicitly allows all requests to `/socket.io/*` paths, bypassing WAF
+
+**Alternative: Check if HTTP/2 is the root cause**
+- The connection refused error suggests HTTP/2 might be preventing the upgrade
+- Consider: Use a subdomain that bypasses Cloudflare for WebSocket connections
+- Or: Check Cloudflare Speed → Optimization → HTTP/2 to Origin (disable if enabled)
+
+**Why HTTP/2 breaks WebSocket upgrades**:
+- HTTP/2 uses multiplexing over a single connection
+- WebSocket requires a connection upgrade (HTTP 101) which HTTP/2 doesn't support
+- The upgrade handshake fails, resulting in "Bad request" error

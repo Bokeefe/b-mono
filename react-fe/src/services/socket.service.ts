@@ -22,9 +22,9 @@ class SocketService {
             
             // Socket.io connection options
             const socketOptions: any = {
-                transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-                upgrade: true, // Allow transport upgrades
-                rememberUpgrade: true, // Remember successful transport
+                // Use polling only - works reliably through Cloudflare without WebSocket upgrade issues
+                transports: ['polling'],
+                upgrade: false, // Disable WebSocket upgrade attempts
                 timeout: 20000, // 20 second timeout
                 forceNew: true, // Force new connection
                 reconnection: true, // Enable reconnection

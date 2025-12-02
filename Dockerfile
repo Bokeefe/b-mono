@@ -38,8 +38,12 @@ RUN cd nest-server && npm install --production
 # Copy frontend build
 COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 
-# Create nginx config
-RUN echo 'server { \
+# Create nginx config with map for WebSocket connections
+RUN echo 'map $http_upgrade $connection_upgrade { \
+    default upgrade; \
+    \'\' close; \
+} \
+server { \
     listen 80; \
     server_name antigogglin.org www.antigogglin.org; \
     location / { \
@@ -57,7 +61,7 @@ RUN echo 'server { \
         proxy_pass http://localhost:4171; \
         proxy_http_version 1.1; \
         proxy_set_header Upgrade $http_upgrade; \
-        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Connection $connection_upgrade; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
@@ -88,7 +92,7 @@ server { \
         proxy_pass http://localhost:4171; \
         proxy_http_version 1.1; \
         proxy_set_header Upgrade $http_upgrade; \
-        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Connection $connection_upgrade; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \

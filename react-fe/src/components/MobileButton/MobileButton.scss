@@ -1,10 +1,43 @@
 .mobile-btn {
     width: 64px;
     height: 64px;
-    background: var(--light-beige);
-    opacity: 0.95;
+    background:peachpuff;
     color: var(--dark-grey);
-    outline: var(--dark-grey);
-    border-radius: 10px;
+    border: none;
+    border-radius: 16px;
     margin: 8px;
+    cursor: pointer;
+    position: relative;
+    font-weight: 200;
+    opacity: .8;
+    
+    // Retro 3D effect with thicker bottom/right borders
+    border-bottom: 6px solid var(--dark-grey);
+    border-right: 6px solid var(--dark-grey);
+    
+    // Add subtle shadow for depth
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    
+    transition: all 0.15s ease;
+    
+    &:active {
+        // Pressed state - reverse the 3D effect
+        border-top: 4px solid var(--dark-grey);
+        border-left: 4px solid var(--dark-grey);
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        border-right: 2px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 
+            0 2px 4px rgba(0, 0, 0, 0.1),
+            inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        transform: translate(2px, 2px);
+    }
+    
+    &:hover {
+        opacity: 1;
+        box-shadow: 
+            0 6px 12px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
 }

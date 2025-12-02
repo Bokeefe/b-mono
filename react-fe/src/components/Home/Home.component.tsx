@@ -31,11 +31,11 @@ const Home = () => {
         {/* <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton>
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton> */}
         <MobileButton onClick={() => handleNav("lunch")}>
-          Lunch
+          lunch
           <br />
-          App
+          app
         </MobileButton>
-        <MobileButton onClick={() => handleNav("music")}>Music</MobileButton>
+        <MobileButton onClick={() => handleNav("music")}>music</MobileButton>
       </div>
     </div>
   );
