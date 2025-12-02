@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { readdir, readdirSync, statSync } from 'fs';
+import { readdir, readdirSync, statSync, existsSync } from 'fs';
 import { join, sep } from 'path';
 import { promisify } from 'util';
 
@@ -7,26 +7,50 @@ const readdirAsync = promisify(readdir);
 
 @Injectable()
 export class SlomoService {
-  private readonly audioBasePath = join(
-    process.cwd(),
-    '..',
-    'react-fe',
-    'public',
-    'audio',
-    'slomo',
-    'genres',
-  );
+  // In production, files are in dist folder (Vite copies public to dist)
+  // In development, files are in public folder
+  private readonly audioBasePath = (() => {
+    const publicPath = join(
+      process.cwd(),
+      '..',
+      'react-fe',
+      'public',
+      'audio',
+      'slomo',
+      'genres',
+    );
+    const distPath = join(
+      process.cwd(),
+      '..',
+      'react-fe',
+      'dist',
+      'audio',
+      'slomo',
+      'genres',
+    );
+    
+    // Check if dist path exists (production), otherwise use public (development)
+    if (existsSync(distPath)) {
+      return distPath;
+    }
+    
+    return publicPath;
+  })();
 
   async getGenres(): Promise<string[]> {
     try {
+      console.log('Looking for genres at:', this.audioBasePath);
       const entries = await readdirAsync(this.audioBasePath, {
         withFileTypes: true,
       });
-      return entries
+      const genres = entries
         .filter((entry) => entry.isDirectory())
         .map((entry) => entry.name);
+      console.log('Found genres:', genres);
+      return genres;
     } catch (error) {
-      console.error('Error reading genres:', error);
+      console.error('Error reading genres from:', this.audioBasePath);
+      console.error('Error details:', error);
       return [];
     }
   }
