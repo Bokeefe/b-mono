@@ -9,6 +9,7 @@
   box-sizing: border-box;
   color: white;
   position: relative;
+  opacity: .9;
 
   // Genre selection screen
   &.genre-selection {
@@ -86,38 +87,6 @@
   .track-info {
     text-align: center;
     width: 100%;
-
-    .cover-art {
-      width: 100%;
-      max-width: 300px;
-      aspect-ratio: 1;
-      margin: 0 auto 1.5rem;
-      border-radius: 1rem;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      background: rgba(255, 255, 255, 0.1);
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .cover-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.1);
-
-        svg {
-          width: 50%;
-          height: 50%;
-          opacity: 0.5;
-        }
-      }
-    }
 
     .track-title {
       font-size: 1.5rem;
@@ -275,6 +244,110 @@
     }
   }
 
+  .speed-section {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .speed-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .speed-bar {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+      }
+
+      &::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        border: none;
+      }
+    }
+
+    .speed-value {
+      min-width: 45px;
+      text-align: right;
+      font-size: 0.875rem;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+  }
+
+  .reverb-section {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .reverb-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .reverb-bar {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+      }
+
+      &::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        border: none;
+      }
+    }
+
+    .reverb-value {
+      min-width: 45px;
+      text-align: right;
+      font-size: 0.875rem;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+  }
+
   .playlist-toggle {
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -369,12 +442,6 @@
   .slomo-container {
     .player-main {
       max-width: 500px;
-    }
-
-    .track-info {
-      .cover-art {
-        max-width: 350px;
-      }
     }
   }
 }

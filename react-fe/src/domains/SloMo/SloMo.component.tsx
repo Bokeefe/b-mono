@@ -25,9 +25,17 @@ const SloMo: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState(0.8);
+  const [reverb, setReverb] = useState(0.5);
   const [showPlaylist, setShowPlaylist] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const convolverRef = useRef<ConvolverNode | null>(null);
+  const dryGainRef = useRef<GainNode | null>(null);
+  const wetGainRef = useRef<GainNode | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -60,6 +68,30 @@ const SloMo: React.FC = () => {
         // Shuffle tracks randomly
         const shuffled = [...trackPaths].sort(() => Math.random() - 0.5);
         
+        // Extract artist from folder structure
+        // Expected structure: genres/xmas/ArtistName/... or genres/xmas/ArtistName/Album/...
+        // Backend returns relative paths from genre folder, so first part is artist
+        const extractArtist = (path: string): string => {
+          const parts = path.split('/').filter(p => p.trim() !== '');
+          
+          // First folder in path should be artist name
+          if (parts.length > 0 && parts[0]) {
+            let artist = parts[0];
+            // Clean up common patterns but keep the artist name intact
+            artist = artist.replace(/\[.*?\]/g, ''); // Remove brackets
+            artist = artist.replace(/\(.*?\)/g, ''); // Remove parentheses (like year)
+            artist = artist.replace(/\s+/g, ' ').trim(); // Clean up whitespace
+            
+            // Only use if it looks like an artist name (not too long, not just numbers)
+            if (artist && artist.length < 100 && !/^\d+$/.test(artist)) {
+              return artist;
+            }
+          }
+          
+          // Fallback to genre name if no artist found
+          return selectedGenre.charAt(0).toUpperCase() + selectedGenre.slice(1);
+        };
+        
         // Convert track paths to Track objects
         const trackObjects: Track[] = shuffled.map((path, index) => {
           // Extract title from filename
@@ -75,7 +107,7 @@ const SloMo: React.FC = () => {
           return {
             id: `track-${index}`,
             title: title || `Track ${index + 1}`,
-            artist: selectedGenre.charAt(0).toUpperCase() + selectedGenre.slice(1),
+            artist: extractArtist(path),
             src: `/audio/slomo/genres/${selectedGenre}/${path}`,
           };
         });
@@ -132,6 +164,99 @@ const SloMo: React.FC = () => {
     }
   }, [isPlaying, currentTrackIndex, tracks]);
 
+  // Apply playback speed to audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
+
+  // Generate impulse response for reverb
+  const createReverbImpulse = (audioContext: AudioContext, duration: number, decay: number): AudioBuffer => {
+    const sampleRate = audioContext.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = audioContext.createBuffer(2, length, sampleRate);
+    const leftChannel = impulse.getChannelData(0);
+    const rightChannel = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const n = length - i;
+      leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
+      rightChannel[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
+    }
+
+    return impulse;
+  };
+
+  // Set up Web Audio API for reverb
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || tracks.length === 0) return;
+
+    // Initialize AudioContext
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch (error) {
+        console.error('Failed to create AudioContext:', error);
+        return;
+      }
+    }
+
+    const audioContext = audioContextRef.current;
+
+    // Create audio graph if not exists
+    if (!sourceNodeRef.current) {
+      // Set audio element volume to 1 since we control volume via Web Audio API
+      audio.volume = 1;
+      
+      sourceNodeRef.current = audioContext.createMediaElementSource(audio);
+      
+      // Create nodes
+      dryGainRef.current = audioContext.createGain();
+      wetGainRef.current = audioContext.createGain();
+      masterGainRef.current = audioContext.createGain();
+      convolverRef.current = audioContext.createConvolver();
+
+      // Create impulse response
+      const impulse = createReverbImpulse(audioContext, 2, 2);
+      convolverRef.current.buffer = impulse;
+
+      // Connect: source -> dry gain -> master
+      //          source -> convolver -> wet gain -> master
+      sourceNodeRef.current.connect(dryGainRef.current);
+      sourceNodeRef.current.connect(convolverRef.current);
+      convolverRef.current.connect(wetGainRef.current);
+      dryGainRef.current.connect(masterGainRef.current);
+      wetGainRef.current.connect(masterGainRef.current);
+      masterGainRef.current.connect(audioContext.destination);
+
+      // Set initial values
+      masterGainRef.current.gain.value = volume;
+      dryGainRef.current.gain.value = 1 - reverb;
+      wetGainRef.current.gain.value = reverb;
+    }
+
+    // Cleanup on unmount
+    return () => {
+      // Don't disconnect here as we want to keep the graph for the next track
+    };
+  }, [tracks, currentTrackIndex]);
+
+  // Apply reverb amount
+  useEffect(() => {
+    const dryGain = dryGainRef.current;
+    const wetGain = wetGainRef.current;
+
+    if (!dryGain || !wetGain) return;
+
+    // Dry signal: 1 - reverb (more reverb = less dry)
+    // Wet signal: reverb (more reverb = more wet)
+    dryGain.gain.value = 1 - reverb;
+    wetGain.gain.value = reverb;
+  }, [reverb]);
+
   const handleGenreSelect = (genre: string) => {
     setSelectedGenre(genre);
   };
@@ -168,12 +293,32 @@ const SloMo: React.FC = () => {
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+
+    // Use Web Audio API gain if available, otherwise fall back to audio element
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = newVolume;
+    } else {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.volume = newVolume;
+      }
+    }
+  };
+
+  const handlePlaybackSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const newVolume = parseFloat(e.target.value);
-    audio.volume = newVolume;
-    setVolume(newVolume);
+    const newSpeed = parseFloat(e.target.value);
+    audio.playbackRate = newSpeed;
+    setPlaybackSpeed(newSpeed);
+  };
+
+  const handleReverbChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newReverb = parseFloat(e.target.value);
+    setReverb(newReverb);
   };
 
   const formatTime = (seconds: number): string => {
@@ -194,7 +339,7 @@ const SloMo: React.FC = () => {
     return (
       <div className="slomo-container genre-selection">
         <div className="genre-selection-content">
-          <h1>Select a Genre</h1>
+          <h1>Playlists</h1>
           {isLoadingGenres ? (
             <p>Loading genres...</p>
           ) : genres.length === 0 ? (
@@ -239,26 +384,13 @@ const SloMo: React.FC = () => {
 
       {/* Back button */}
       <button className="back-button" onClick={handleBackToGenres}>
-        ← Back to Genres
+        ← playlists
       </button>
 
       {/* Main Player View */}
       <div className="player-main">
-        {/* Cover Art / Track Info */}
+        {/* Track Info */}
         <div className="track-info">
-          <div className="cover-art">
-            {currentTrack?.cover ? (
-              <img src={currentTrack.cover} alt={currentTrack.title} />
-            ) : (
-              <div className="cover-placeholder">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M9 18V5l12-2v13" />
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="16" r="3" />
-                </svg>
-              </div>
-            )}
-          </div>
           <h2 className="track-title">{currentTrack?.title || 'No track'}</h2>
           <p className="track-artist">{currentTrack?.artist || 'Unknown artist'}</p>
         </div>
@@ -332,6 +464,43 @@ const SloMo: React.FC = () => {
             onChange={handleVolumeChange}
             className="volume-bar"
           />
+        </div>
+
+        {/* Playback Speed Control */}
+        <div className="speed-section">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="speed-icon">
+            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
+          </svg>
+          <input
+            type="range"
+            min="0.25"
+            max="1"
+            step="0.05"
+            value={playbackSpeed}
+            onChange={handlePlaybackSpeedChange}
+            className="speed-bar"
+          />
+          <span className="speed-value">{playbackSpeed.toFixed(2)}x</span>
+        </div>
+
+        {/* Reverb Control */}
+        <div className="reverb-section">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="reverb-icon">
+            {/* Spring/Coil icon - helical spring */}
+            <path d="M12 2 Q8 3 8 6 Q8 9 12 10 Q16 9 16 6 Q16 3 12 2" />
+            <path d="M12 10 Q8 11 8 14 Q8 17 12 18 Q16 17 16 14 Q16 11 12 10" />
+            <path d="M12 18 Q8 19 8 22" />
+          </svg>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={reverb}
+            onChange={handleReverbChange}
+            className="reverb-bar"
+          />
+          <span className="reverb-value">{Math.round(reverb * 100)}%</span>
         </div>
 
         {/* Playlist Toggle */}

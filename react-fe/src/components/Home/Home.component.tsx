@@ -36,7 +36,7 @@ const Home = () => {
           app
         </MobileButton>
         <MobileButton onClick={() => handleNav("music")}>music</MobileButton>
-        {/* <MobileButton onClick={() => handleNav("slomo")}>slomo</MobileButton> */}
+        <MobileButton onClick={() => handleNav("slomo")}>slomo <br />world</MobileButton>
       </div>
     </div>
   );
