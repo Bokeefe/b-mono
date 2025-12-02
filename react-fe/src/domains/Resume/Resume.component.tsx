@@ -17,9 +17,11 @@ const handleExportText = () => {
   txtFormat += `LinkedIn: ${jobsCopy.header.contact.linkedin}\nGitHub: ${jobsCopy.header.contact.gitHub}\nWebsite: ${jobsCopy.header.contact.website}\n\n`;
 
   // Technologies
-  txtFormat += "Technologies:\n";
   txtFormat += "Description:\n" + jobsCopy.header.description + "\n\n";
-  txtFormat += jobsCopy.header.technologies.join("\n");
+  if ((jobsCopy.header as any).technologies) {
+    txtFormat += "Technologies:\n";
+    txtFormat += (jobsCopy.header as any).technologies.join("\n") + "\n\n";
+  }
 
   // Jobs
   jobsCopy.jobs.forEach((job) => {
@@ -104,13 +106,15 @@ const handleDownloadPDF = () => {
     yPos += splitJobDesc.length * (lineHeight * 0.6);
 
     // Technologies
-    doc.setFontSize(10);
-    const techText = doc.splitTextToSize(
-      `Technologies: ${job.technologies.join(", ")}`,
-      140
-    );
-    doc.text(techText, margin, yPos);
-    yPos += techText.length * (lineHeight * 1.2);
+    if (job.technologies && job.technologies.length > 0) {
+      doc.setFontSize(10);
+      const techText = doc.splitTextToSize(
+        `Technologies: ${job.technologies.join(", ")}`,
+        140
+      );
+      doc.text(techText, margin, yPos);
+      yPos += techText.length * (lineHeight * 1.2);
+    }
   });
 
   doc.save("brendan_okeefe_resume.pdf");
@@ -158,7 +162,7 @@ function Resume() {
             title: jobsCopy.header.name,
             company: jobsCopy.header.title,
             description: [jobsCopy.header.description],
-            technologies: jobsCopy.header.technologies,
+            technologies: (jobsCopy.header as any).technologies,
             period: "",
           }}
         />
