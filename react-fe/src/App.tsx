@@ -14,6 +14,7 @@ import "./style/variables.css";
 import Lobby from "./domains/Lobby/Lobby";
 import TextCorpse from "./domains/TextCorpse/TextCorpse.component";
 import Music from "./domains/Music/Music.component";
+import SloMo from "./domains/SloMo/SloMo.component";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/text-corpse" element={<Lobby />} />
             <Route path="/text-corpse/:roomId" element={<TextCorpse />} />
             <Route path="/music" element={<Music />} />
+            <Route path="/slomo" element={<SloMo />} />
           </Route>
         </Routes>
       </BrowserRouter>

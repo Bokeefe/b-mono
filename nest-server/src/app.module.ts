@@ -6,12 +6,14 @@ import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { LunchModule } from './lunch/lunch.module';
 import { TextCorpseModule } from './text-corpse/text-corpse.module';
+import { SlomoModule } from './slomo/slomo.module';
 
 @Module({
   imports: [
     FakerModule,
     LunchModule,
-    TextCorpseModule
+    TextCorpseModule,
+    SlomoModule
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, HealthService],
