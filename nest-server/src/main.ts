@@ -7,14 +7,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
-  // Serve static files but exclude /api routes
+  // Serve static files but exclude /api and /socket.io routes
   app.use(
-    /^(?!\/api)/,
+    /^(?!\/api)(?!\/socket\.io)/,
     express.static(join(__dirname, '..', '..', 'react-fe', 'dist')),
   );
 
-  // Handle React Router routes but exclude /api routes
-  app.use(/^(?!\/api).*/, (req, res) => {
+  // Handle React Router routes but exclude /api and /socket.io routes
+  app.use(/^(?!\/api)(?!\/socket\.io).*/, (req, res) => {
     res.sendFile(join(__dirname, '..', '..', 'react-fe', 'dist', 'index.html'));
   });
 
