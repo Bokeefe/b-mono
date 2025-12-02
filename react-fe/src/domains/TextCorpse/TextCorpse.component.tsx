@@ -17,7 +17,6 @@ const TextCorpse: React.FC = () => {
   const visibleText = roomText.length > MAX_VISIBLE_CHARS
     ? roomText.slice(-MAX_VISIBLE_CHARS)
     : roomText;
-  const [locked, setLocked] = useState<boolean>(true);
 
   useEffect(() => {
     if (!roomId) return;
@@ -131,7 +130,7 @@ const TextCorpse: React.FC = () => {
         <div className="text-corpse-content">
           <h1>Text Corpse</h1>
           {roomId && <h2>Room: {roomId}</h2>}
-          <div className={`text-corpse-body ${locked ? 'locked' : ''}`} ref={textBodyRef}>
+          <div className="text-corpse-body" ref={textBodyRef}>
             {isLoading ? 'Loading...' : (visibleText || 'No text in this room yet...')}
           </div>
         </div>
@@ -154,14 +153,6 @@ const TextCorpse: React.FC = () => {
             disabled={text.trim().length === 0}
           >
             Submit
-          </button>
-          <button
-            type="button"
-            className="submit-button"
-            disabled={!locked}
-            onClick={() => setLocked(false)}
-          >
-            Unlock
           </button>
         </form>
       </div>

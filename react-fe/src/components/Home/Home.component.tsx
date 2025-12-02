@@ -28,8 +28,8 @@ const Home = () => {
   return (
     <div className="home">
       <div>
-        <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton>
-        <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
+        {/* <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton>
+        <MobileButton onClick={() => handleNav("about")}>About</MobileButton> */}
         <MobileButton onClick={() => handleNav("lunch")}>
           Lunch
           <br />

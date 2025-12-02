@@ -9,21 +9,8 @@ export const jobsCopy = {
       gitHub: "https://github.com/Bokeefe",
       website: "http://antigogglin.org/resume",
     },
-    technologies: [
-      `Languages: Java (SpringBoot, Groovy) JavaScript (Node.js, TypeScript), HTML, CSS, SCSS
-`,
-      `Frameworks: React, Next.js, Spring,Angular, RxJs, Nest.js
-`,
-      `Databases: MongoDB, MySQL
-`,
-      `Cloud Platforms: AWS (EC2), DigitalOcean, Jenkins, BitBucket, Github
-`,
-      `Tools & Technologies: GraphQL, JPA, Spring Boot, Eclipse, Visual Studio Code, SQL Developer, JUnit, Vite, Storybook
-`,
-      `Methodologies: Agile, Kanban, OOP, WET
-`,
-    ],
-    description: `An accomplished and results-focused software engineer with over eight years of experience in designing, developing, and deploying high-performance web applications.  Possessing a strong track record of successfully leading and contributing to diverse projects, consistently exceeding expectations and delivering innovative solutions. Extensive expertise across the full stack, from front-end development using React, Angular, and related technologies, to back-end development with Java, Spring Boot, Node.js, and GraphQL.  My experience encompasses working with various databases (MongoDB, MySQL), cloud platforms (AWS), and development methodologies (Agile, Kanban).  Years of mentoring junior developers, streamlining development processes, and consistently improving application performance and scalability. Adept at navigating complex technical challenges, effectively collaborating with cross-functional teams, and delivering high-quality results on time and within budget.`,
+ 
+    description: `An accomplished software engineer with over eight years of experience in designing, developing, and deploying high-performance web applications. Possessing a strong track record of successfully leading and contributing to diverse projects, consistently exceeding expectations and delivering innovative solutions. Extensive expertise across the full stack, from front-end development using React, Angular, and related technologies, to back-end development with Java, Spring Boot, Node.js, and GraphQL.  My experience encompasses working with various databases (MongoDB, MySQL), cloud platforms (AWS), and development methodologies.  Years of mentoring junior developers, streamlining development processes, and consistently improving application performance and scalability. Adept at navigating complex technical challenges, effectively collaborating with cross-functional teams, and delivering high-quality results on time and within budget.`,
   },
   jobs: [
     {

@@ -16,8 +16,12 @@ class SocketService {
 
     connect() {
         if (!this.socket) {
-            // Use environment configuration for both dev and production
-            this.socket = io(baseUrl, {
+            // Determine if we're in production
+            const isProduction = typeof import.meta !== "undefined" &&
+                (import.meta as any).env?.MODE === "production";
+            
+            // Socket.io connection options
+            const socketOptions: any = {
                 transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
                 upgrade: true, // Allow transport upgrades
                 rememberUpgrade: true, // Remember successful transport
@@ -28,10 +32,24 @@ class SocketService {
                 reconnectionDelay: 1000, // Wait 1 second between attempts
                 reconnectionDelayMax: 5000, // Max 5 seconds between attempts
                 autoConnect: true, // Connect automatically
-            });
+            };
+
+            // In production, socket.io is proxied through nginx at /socket.io/
+            // Socket.io client defaults to /socket.io path, which matches nginx proxy
+            // Explicitly set path to ensure it works correctly
+            if (isProduction) {
+                socketOptions.path = '/socket.io';
+            }
+
+            // Use environment configuration for both dev and production
+            this.socket = io(baseUrl, socketOptions);
             
             this.socket.on('connect', () => {
-                console.log('Connected to WebSocket server');
+                console.log('Connected to WebSocket server', {
+                    url: baseUrl,
+                    path: socketOptions.path || '/socket.io',
+                    id: this.socket?.id
+                });
             });
 
             this.socket.on('disconnect', (reason) => {
@@ -39,7 +57,14 @@ class SocketService {
             });
 
             this.socket.on('connect_error', (error) => {
-                console.error('Socket connection error:', error);
+                console.error('Socket connection error:', {
+                    error,
+                    message: error.message,
+                    type: (error as any).type,
+                    url: baseUrl,
+                    path: socketOptions.path || '/socket.io',
+                    description: (error as any).description
+                });
             });
 
             this.socket.on('reconnect', (attemptNumber) => {
@@ -47,7 +72,12 @@ class SocketService {
             });
 
             this.socket.on('reconnect_error', (error) => {
-                console.error('Socket reconnection error:', error);
+                console.error('Socket reconnection error:', {
+                    error,
+                    message: error.message,
+                    type: (error as any).type,
+                    description: (error as any).description
+                });
             });
         }
         return this.socket;
