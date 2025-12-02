@@ -2,7 +2,6 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main", "feature/lunch-2" ]
 jobs:
   build:
     runs-on: ubuntu-latest
