@@ -1,93 +1,138 @@
 # Lunch App Documentation
 
-## What it does
-Ranked choice voting app where users join a "room" via WebSockets, propose lunch places, and vote on proposals. Users can change votes until timeout (20 minutes), then the top choice is decided.
+## Purpose
+A real-time collaborative ranked choice voting app for groups to decide where to go for lunch. Users join rooms, propose restaurants, vote on suggestions, and after a 20-minute timer, the most popular choice is selected.
 
-## Current Issue: WebSocket Upgrade Failing in Production
+## Tech Stack
 
-**Status**: ⚠️ **PROPOSED SOLUTION** - Using polling transport only (needs testing)
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for build tooling
+- **React Router** for navigation
+- **Socket.IO Client** for real-time communication (using polling transport)
+- **SCSS** for styling
 
-**Solution**: Configured Socket.IO to use polling transport only, avoiding WebSocket upgrade issues entirely.
+### Backend
+- **NestJS** (Node.js framework)
+- **Socket.IO** for WebSocket/polling server
+- **Express** for HTTP server
+- **TypeScript** throughout
 
-**Why This Should Work**: 
-- Polling transport works through Cloudflare (tested via curl and confirmed)
-- Socket.IO functionality is identical with polling vs WebSocket
-- Polling uses HTTP long-polling instead of persistent WebSocket connection
-- Slightly less efficient but much more reliable through Cloudflare's HTTP/2 setup
+### Infrastructure
+- **Cloudflare** - CDN, SSL, and DDoS protection
+- **nginx** - Reverse proxy and static file serving
+- **Docker** - Containerization
+- **DigitalOcean Droplet** - Hosting (Ubuntu 24.10)
+- **Node.js 20** - Runtime
 
-**Testing Required**:
-- Deploy the change
-- Test lunch app in production browser
-- Verify Socket.IO connections work
-- Confirm real-time features function correctly
+### Deployment Architecture
+```
+Client Browser
+    ↓ (HTTPS)
+Cloudflare (CDN/Proxy)
+    ↓ (HTTPS)
+nginx (Reverse Proxy)
+    ↓ (HTTP)
+NestJS Server (Port 4171)
+    ↓
+Socket.IO Gateway
+```
 
-**Evidence**:
-- Direct backend: `curl localhost:4171/socket.io/?EIO=4&transport=polling` → ✅ Works
-- Through Cloudflare polling: `curl https://antigogglin.org/socket.io/?EIO=4&transport=polling` → ✅ Works (returns session ID)
-- Through Cloudflare WebSocket: `wss://antigogglin.org/socket.io/?EIO=4&transport=websocket` → ❌ HTTP 400
+## How It Works
 
-## Changes Made
-1. **nest-server/src/main.ts**: Fixed Express middleware to exclude `/socket.io` and `/api` paths - calls `next()` to let NestJS handle them
-2. **Dockerfile**: Updated nginx config with `map` directive for conditional Connection header and proper WebSocket proxy settings
-3. **startup.sh**: Added wait for backend to start before nginx
+### User Flow
+1. User enters name (stored in localStorage)
+2. User creates or joins a room by name
+3. Room timer starts (20 minutes from first user or first suggestion)
+4. Users can propose lunch places
+5. Users vote on suggestions (can change votes)
+6. After 20 minutes, room completes and winner is displayed
+7. All users see the final decision
 
-## Solution: Double Proxy Setup (Cloudflare → nginx → NestJS)
+### Real-Time Features
+- **Room State Sync**: All users see the same suggestions and votes in real-time
+- **Active Rooms List**: Landing page shows all active rooms
+- **Timer**: Countdown displayed to all users
+- **Vote Changes**: Users can change votes until timeout
 
-**Setup Analysis**: Your deployment uses Cloudflare → nginx → NestJS. This double proxy setup can cause WebSocket issues, but it's fixable.
+### Data Model
+- **Room**: Contains users, suggestions, start time, and active status
+- **Suggestion**: Contains place name, suggester, and votes array
+- **Voting**: Each user can vote once, but can change their vote
+- **Winner Selection**: Most votes wins (random tiebreaker if tied)
 
-**Evidence**:
-- `curl` shows: `* using HTTP/2` and `* ALPN: server accepted h2`
-- Direct WebSocket upgrade returns: `{"code":3,"message":"Bad request"}`
-- Polling transport works (uses HTTP/1.1)
-- Backend works fine when accessed directly
+## Deployment Configuration
 
-**Why This Setup Can Be Problematic**:
-- Cloudflare proxies WebSocket connections, but HTTP/2 client connections complicate upgrades
-- nginx must correctly forward WebSocket upgrade headers
-- Double proxy means headers can get lost or modified
-- The `map $connection_upgrade` directive must be in `http` context (not `server`)
+### Socket.IO Transport
+**Current Setup**: Using polling transport only (not WebSocket)
 
-**Fix Steps**:
+**Why Polling?**
+- Cloudflare uses HTTP/2 for client connections, which doesn't support WebSocket upgrades
+- Polling transport works reliably through Cloudflare's proxy
+- Functionality is identical - just uses HTTP long-polling instead of persistent WebSocket
+- Slightly less efficient but much more reliable in this setup
 
-**Step 1: Check WAF Rules (Most Likely Issue)**
-1. Cloudflare Dashboard → antigogglin.org → Security → WAF
-2. Check if any rules are blocking WebSocket upgrade requests
-3. The initial HTTP 101 upgrade request is subject to WAF rules
-4. Look for rules that might block requests with `Upgrade: websocket` header
-5. Temporarily disable WAF or create an allow rule for `/socket.io/*` paths
+**Configuration**:
+- Frontend: `socket.service.ts` uses `transports: ['polling']` with `upgrade: false`
+- Backend: `LunchGateway` supports both transports but client only uses polling
+- No WebSocket upgrade attempts = no connection failures
 
-**Step 2: Check HTTP/2 to Origin Setting**
-1. Cloudflare Dashboard → Speed → Optimization
-2. Find "HTTP/2 to Origin" under Protocol Optimization
-3. Disable this if enabled (forces HTTP/1.1 between Cloudflare and your server)
-4. Note: This doesn't affect client-to-Cloudflare connections, but ensures origin uses HTTP/1.1
+### Key Deployment Files
+- **Dockerfile**: Multi-stage build, includes nginx config with WebSocket proxy support
+- **startup.sh**: Starts backend, waits for readiness, then starts nginx
+- **nest-server/src/main.ts**: Express middleware excludes `/socket.io` and `/api` paths
+- **nginx config**: Proxies `/socket.io` to backend with proper headers
 
-**Step 3: Verify WebSocket Setting**
-1. Cloudflare Dashboard → Network
-2. Ensure "WebSockets" toggle is ON (already confirmed)
+## Key Implementation Details
 
-**Step 4: Create Page Rule for Socket.IO (COMPLETED - Didn't Fix)**
-- Created Page Rule: `antigogglin.org/socket.io/*`
-- Settings applied:
-  - **Cache Level**: Bypass
-  - **Browser Integrity Check**: Off
-- Result: Still getting `NS_ERROR_WEBSOCKET_CONNECTION_REFUSED`
+### Backend (NestJS)
+- **LunchGateway**: Handles all Socket.IO events
+  - `joinRoom`: User joins a room, room created if doesn't exist
+  - `addSuggestion`: Adds a lunch place suggestion
+  - `vote`: User votes on a suggestion (can change vote)
+  - `getRooms`: Returns list of active rooms
+- **Room Management**: In-memory storage (Map-based, resets on server restart)
+- **Timer Logic**: 20-minute countdown from room creation, checks every second
+- **Winner Selection**: Most votes wins, random tiebreaker if tied
 
-**Step 5: Create WAF Custom Rule to Allow WebSocket Upgrades (NEXT)**
-1. Cloudflare Dashboard → Security → WAF → Custom Rules
-2. Create new rule:
-   - **Rule name**: "Allow Socket.IO WebSocket Upgrades"
-   - **Expression**: `(http.request.uri.path contains "/socket.io")`
-   - **Action**: Allow
-   - **Priority**: Set high (lower number = higher priority)
-3. This explicitly allows all requests to `/socket.io/*` paths, bypassing WAF
+### Frontend (React)
+- **Landing.tsx**: Room selection/creation page
+- **Room.tsx**: Main voting interface with suggestions and timer
+- **Socket Service**: Singleton service managing Socket.IO connection
+- **State Management**: React hooks for room state, suggestions, votes
 
-**Alternative: Check if HTTP/2 is the root cause**
-- The connection refused error suggests HTTP/2 might be preventing the upgrade
-- Consider: Use a subdomain that bypasses Cloudflare for WebSocket connections
-- Or: Check Cloudflare Speed → Optimization → HTTP/2 to Origin (disable if enabled)
+### Socket.IO Events
+**Client → Server**:
+- `joinRoom`: `{ roomId: string, userName: string }`
+- `addSuggestion`: `{ roomId: string, suggestion: { id, place, suggestedBy } }`
+- `vote`: `{ roomId: string, suggestionId: string, userName: string }`
+- `getRooms`: Request active rooms list
 
-**Why HTTP/2 breaks WebSocket upgrades**:
-- HTTP/2 uses multiplexing over a single connection
-- WebSocket requires a connection upgrade (HTTP 101) which HTTP/2 doesn't support
-- The upgrade handshake fails, resulting in "Bad request" error
+**Server → Client**:
+- `roomState`: Full room state (users, suggestions, votes)
+- `activeRooms`: List of all active rooms
+- `timeUpdate`: Remaining seconds in countdown
+- `roomComplete`: Final winner when timer expires
+
+## Deployment Notes
+
+### Infrastructure Setup
+- **Cloudflare**: SSL/TLS Full (Strict), WebSockets enabled, Page Rule for `/socket.io/*` (Cache: Bypass, Browser Integrity: Off)
+- **nginx**: Reverse proxy with WebSocket support, serves static files, proxies `/api/` and `/socket.io` to NestJS
+- **NestJS**: Runs on port 4171, serves static React app, handles API and Socket.IO
+
+### Important Configuration Details
+- **Express Middleware**: Excludes `/socket.io` and `/api` paths to let NestJS handle them
+- **nginx map directive**: Conditionally sets Connection header for WebSocket upgrades (in `http` context)
+- **Socket.IO path**: `/socket.io` (matches nginx proxy location)
+- **Polling transport**: Used exclusively to avoid Cloudflare HTTP/2 WebSocket upgrade issues
+
+### Development vs Production
+- **Development**: Backend on `http://10.210.155.132:4171`, frontend on Vite dev server
+- **Production**: Single Docker container with nginx + NestJS, served through Cloudflare
+- **Environment detection**: Uses `import.meta.env.MODE` to determine production vs development
+
+### Known Limitations
+- **In-memory storage**: Rooms reset on server restart (no persistence)
+- **No authentication**: Users identified by name only (stored in localStorage)
+- **Polling overhead**: Slightly more HTTP requests than WebSocket, but functionally identical
