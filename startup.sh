@@ -2,6 +2,19 @@
 
 # Start the backend
 cd /usr/src/app/nest-server && node dist/main.js &
+BACKEND_PID=$!
+
+# Wait a moment for backend to start
+echo "Waiting for backend to start..."
+sleep 3
+
+# Check if backend process is still running
+if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "ERROR: Backend process died!"
+    exit 1
+fi
+
+echo "Backend started (PID: $BACKEND_PID)"
 
 # Obtain SSL certificate if not already present
 if [ ! -f /etc/ssl/antigogglin/public.pem ]; then

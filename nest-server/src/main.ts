@@ -8,13 +8,22 @@ async function bootstrap() {
   app.enableCors();
 
   // Serve static files but exclude /api and /socket.io routes
-  app.use(
-    /^(?!\/api)(?!\/socket\.io)/,
-    express.static(join(__dirname, '..', '..', 'react-fe', 'dist')),
-  );
+  app.use((req, res, next) => {
+    const path = req.path;
+    // Skip middleware for /api and /socket.io routes
+    if (path.startsWith('/api') || path.startsWith('/socket.io')) {
+      return next();
+    }
+    express.static(join(__dirname, '..', '..', 'react-fe', 'dist'))(req, res, next);
+  });
 
   // Handle React Router routes but exclude /api and /socket.io routes
-  app.use(/^(?!\/api)(?!\/socket\.io).*/, (req, res) => {
+  app.use((req, res) => {
+    const path = req.path;
+    // Skip for /api and /socket.io routes
+    if (path.startsWith('/api') || path.startsWith('/socket.io')) {
+      return;
+    }
     res.sendFile(join(__dirname, '..', '..', 'react-fe', 'dist', 'index.html'));
   });
 
