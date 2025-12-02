@@ -10,7 +10,7 @@ async function bootstrap() {
   // Serve static files but exclude /api and /socket.io routes
   app.use((req, res, next) => {
     const path = req.path;
-    // Skip middleware for /api and /socket.io routes
+    // Skip middleware for /api and /socket.io routes - let NestJS handle them
     if (path.startsWith('/api') || path.startsWith('/socket.io')) {
       return next();
     }
@@ -18,11 +18,11 @@ async function bootstrap() {
   });
 
   // Handle React Router routes but exclude /api and /socket.io routes
-  app.use((req, res) => {
+  app.use((req, res, next) => {
     const path = req.path;
-    // Skip for /api and /socket.io routes
+    // Skip for /api and /socket.io routes - let NestJS handle them
     if (path.startsWith('/api') || path.startsWith('/socket.io')) {
-      return;
+      return next();
     }
     res.sendFile(join(__dirname, '..', '..', 'react-fe', 'dist', 'index.html'));
   });
