@@ -2,6 +2,7 @@ name: CI Pipeline
 
 on:
   push:
+    branches: [ "main", "feature/new", "feature/fix" ]
 jobs:
   build:
     runs-on: ubuntu-latest
