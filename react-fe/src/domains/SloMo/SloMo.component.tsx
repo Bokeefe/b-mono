@@ -130,8 +130,15 @@ const SloMo: React.FC = () => {
     const audio = audioRef.current;
     if (!audio || tracks.length === 0) return;
 
+    // Set playback speed when track changes
+    audio.playbackRate = playbackSpeed;
+
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateDuration = () => {
+      setDuration(audio.duration);
+      // Ensure playback speed is set after metadata loads
+      audio.playbackRate = playbackSpeed;
+    };
     const handleEnded = () => {
       if (tracks.length > 0) {
         setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
@@ -148,11 +155,14 @@ const SloMo: React.FC = () => {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [currentTrackIndex, tracks]);
+  }, [currentTrackIndex, tracks, playbackSpeed]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Always set playback speed when track changes or when speed changes
+    audio.playbackRate = playbackSpeed;
 
     if (isPlaying && tracks.length > 0) {
       audio.play().catch((error) => {
@@ -162,15 +172,7 @@ const SloMo: React.FC = () => {
     } else {
       audio.pause();
     }
-  }, [isPlaying, currentTrackIndex, tracks]);
-
-  // Apply playback speed to audio element
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.playbackRate = playbackSpeed;
-  }, [playbackSpeed]);
+  }, [isPlaying, currentTrackIndex, tracks, playbackSpeed]);
 
   // Generate impulse response for reverb
   const createReverbImpulse = (audioContext: AudioContext, duration: number, decay: number): AudioBuffer => {
@@ -473,7 +475,7 @@ const SloMo: React.FC = () => {
           </svg>
           <input
             type="range"
-            min="0.25"
+            min="0.5"
             max="1"
             step="0.05"
             value={playbackSpeed}
