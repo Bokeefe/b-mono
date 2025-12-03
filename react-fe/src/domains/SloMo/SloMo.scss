@@ -11,6 +11,48 @@
   position: relative;
   opacity: .9;
 
+  &.xmas-playlist {
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .fireplace-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    pointer-events: none;
+
+    // Desktop: fullscreen
+    @media (min-width: 768px) {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-size: cover;
+      background-position: center;
+    }
+
+    // Mobile: cropped to fit
+    @media (max-width: 767px) {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-size: cover;
+      background-position: center;
+      // Ensure it covers the full viewport on mobile
+      min-height: 100vh;
+    }
+  }
+
   // Genre selection screen
   &.genre-selection {
     justify-content: center;
@@ -82,6 +124,8 @@
     align-items: center;
     gap: 2rem;
     padding: 2rem 1rem;
+    position: relative;
+    z-index: 1;
   }
 
   .track-info {
@@ -377,75 +421,79 @@
     padding: 1.5rem;
     margin-top: 1rem;
     backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+  }
 
-    h3 {
-      margin: 0 0 1rem;
-      font-size: 1.25rem;
-    }
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+  }
 
-    .track-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+  .track-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .track-item {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
 
-      .track-item {
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+      }
+
+      .track-item-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+
+        .track-item-title {
+          font-size: 0.9375rem;
+        }
+
+        .track-item-artist {
+          font-size: 0.8125rem;
+          opacity: 0.7;
+        }
+      }
+
+      .playing-indicator {
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
+        justify-content: center;
 
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
-        &.active {
-          background: rgba(255, 255, 255, 0.3);
-          font-weight: 600;
-        }
-
-        .track-item-info {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-          flex: 1;
-
-          .track-item-title {
-            font-size: 0.9375rem;
-          }
-
-          .track-item-artist {
-            font-size: 0.8125rem;
-            opacity: 0.7;
-          }
-        }
-
-        .playing-indicator {
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          svg {
-            width: 20px;
-            height: 20px;
-          }
+        svg {
+          width: 20px;
+          height: 20px;
         }
       }
     }
   }
 }
 
+
 // Mobile-specific enhancements
 @media (max-width: 767px) {
   .slomo-container {
+
     .volume-section,
     .speed-section,
     .reverb-section {
@@ -492,4 +540,3 @@
     }
   }
 }
-

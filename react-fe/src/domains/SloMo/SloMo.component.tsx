@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../../services/api.service';
 import MobileButton from '../../components/MobileButton/MobileButton';
 import Pizzicato from 'pizzicato';
+import fireplaceGif from '../../assets/fireplace.webp';
 import './SloMo.scss';
 
 interface Track {
@@ -1016,7 +1017,10 @@ const SloMo: React.FC = () => {
 
   // Show player
   return (
-    <div className="slomo-container">
+    <div className={`slomo-container ${selectedGenre === 'xmas' ? 'xmas-playlist' : ''}`}>
+      {selectedGenre === 'xmas' && (
+        <div className="fireplace-background" style={{ backgroundImage: `url(${fireplaceGif})` }}></div>
+      )}
 
       {/* Back button */}
       <button className="back-button" onClick={handleBackToGenres}>
