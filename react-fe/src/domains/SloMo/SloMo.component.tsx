@@ -62,7 +62,8 @@ const SloMo: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(() => loadFromStorage(STORAGE_KEYS.VOLUME, 1));
+  // Volume is always 1.0 (full volume) - no user control needed
+  const volume = 1.0;
   const [playbackSpeed, setPlaybackSpeed] = useState(() => loadFromStorage(STORAGE_KEYS.SPEED, 0.8));
   const [reverb, setReverb] = useState(() => loadFromStorage(STORAGE_KEYS.REVERB, 0.5));
   const [showPlaylist, setShowPlaylist] = useState(false);
@@ -73,6 +74,7 @@ const SloMo: React.FC = () => {
   // Audio refs - use HTML5 audio on mobile for background playback, Pizzicato on desktop
   const soundRef = useRef<Pizzicato.Sound | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null); // For mobile HTML5 audio
+  const nextAudioRef = useRef<HTMLAudioElement | null>(null); // Preload next track for seamless transitions
   const reverbEffectRef = useRef<Pizzicato.Effects.Reverb | null>(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
   const wasPlayingBeforeHiddenRef = useRef(false);
@@ -189,10 +191,7 @@ const SloMo: React.FC = () => {
     };
   }, [currentTrack, tracks.length]);
 
-  // Persist volume to localStorage
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.VOLUME, volume);
-  }, [volume]);
+  // Volume is fixed at 1.0, no persistence needed
 
   // Persist playback speed to localStorage
   useEffect(() => {
@@ -377,22 +376,210 @@ const SloMo: React.FC = () => {
       audio.volume = volume;
       audio.playbackRate = playbackSpeed;
       
+      // Preload the next track for seamless transitions
+      const nextIndex = (currentTrackIndex + 1) % tracks.length;
+      const nextTrack = tracks[nextIndex];
+      if (nextTrack && tracks.length > 1) {
+        // Clean up previous preloaded track
+        if (nextAudioRef.current) {
+          try {
+            nextAudioRef.current.pause();
+            nextAudioRef.current.src = '';
+            nextAudioRef.current = null;
+          } catch (e) {
+            // Ignore
+          }
+        }
+        
+        // Preload next track
+        const nextAudio = new Audio(nextTrack.src);
+        nextAudio.preload = 'auto';
+        nextAudio.volume = volume;
+        nextAudio.playbackRate = playbackSpeed;
+        nextAudioRef.current = nextAudio;
+      }
+      
       audio.addEventListener('loadeddata', () => {
         setSoundLoaded(true);
+        // Try to play if we should be playing
+        // Use a small delay to ensure audio is fully ready
         if (isPlaying) {
-          audio.play().catch((error) => {
-            console.warn('Autoplay blocked:', error);
-            setIsPlaying(false);
+          // Try multiple times with increasing delays to handle autoplay restrictions
+          const tryPlay = (attempt: number = 0) => {
+            const currentAudio = audioRef.current;
+            if (currentAudio && currentAudio === audio) {
+              // Check if we should still be playing (state might have changed)
+              if (isPlaying) {
+                currentAudio.play().then(() => {
+                  // Success - playback started
+                }).catch(() => {
+                  if (attempt < 3) {
+                    // Retry with increasing delay
+                    setTimeout(() => tryPlay(attempt + 1), 100 * (attempt + 1));
+                  } else {
+                    console.warn('Autoplay blocked after retries');
+                    // Keep isPlaying true - user can manually play
+                  }
+                });
+              }
+            }
+          };
+          
+          // Start trying to play
+          setTimeout(() => tryPlay(), 50);
+        }
+      });
+      
+      // Also try to play when canplay event fires (audio is ready to play)
+      audio.addEventListener('canplay', () => {
+        if (isPlaying && audio.paused) {
+          // Audio is ready and we should be playing, but it's paused
+          audio.play().catch(() => {
+            // Autoplay might be blocked, but that's okay
+            // The play/pause effect will handle it
           });
         }
       });
 
-      audio.addEventListener('ended', () => {
-        if (tracks.length > 0) {
-          setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
-          setIsPlaying(true);
+      // Handle track end - use preloaded next track for seamless transition
+      const handleTrackEnd = () => {
+        if (tracks.length === 0) return;
+        
+        const nextIndex = (currentTrackIndex + 1) % tracks.length;
+        const nextTrack = tracks[nextIndex];
+        if (!nextTrack) return;
+        
+        // Use preloaded audio if available, otherwise create new
+        let nextAudio = nextAudioRef.current;
+        
+        if (!nextAudio || nextAudio.src !== nextTrack.src) {
+          // Create new audio if preload didn't work
+          nextAudio = new Audio(nextTrack.src);
+          nextAudio.preload = 'auto';
+          nextAudio.volume = volume;
+          nextAudio.playbackRate = playbackSpeed;
         }
-      });
+        
+        // Update state
+        setCurrentTrackIndex(nextIndex);
+        setIsPlaying(true);
+        
+        // Set up event handlers for the next track
+        const handleNextLoaded = () => {
+          setSoundLoaded(true);
+        };
+        nextAudio.addEventListener('loadeddata', handleNextLoaded);
+        
+        // Handle next track ending
+        const handleNextTrackEnd = () => {
+          if (tracks.length > 0) {
+            const nextNextIndex = (nextIndex + 1) % tracks.length;
+            setCurrentTrackIndex(nextNextIndex);
+            setIsPlaying(true);
+          }
+        };
+        nextAudio.addEventListener('ended', handleNextTrackEnd);
+        
+        // Set up progress checking for next track
+        const checkNextProgress = () => {
+          if (nextAudio && nextAudio.duration && !isNaN(nextAudio.duration) && 
+              nextAudio.currentTime >= nextAudio.duration - 0.1) {
+            handleNextTrackEnd();
+          }
+        };
+        nextAudio.addEventListener('timeupdate', checkNextProgress);
+        
+        // Replace current audio immediately
+        const oldAudio = audioRef.current;
+        audioRef.current = nextAudio;
+        nextAudioRef.current = null; // Clear preload ref
+        setSoundLoaded(nextAudio.readyState >= 2); // Set loaded if already ready
+        
+        // Clean up old audio
+        if (oldAudio && oldAudio !== nextAudio) {
+          try {
+            oldAudio.pause();
+            oldAudio.currentTime = 0;
+            oldAudio.src = '';
+            oldAudio.load();
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }
+        
+        // Try to start playing immediately - this is critical for background playback
+        // The preloaded track should be ready, so we can start immediately
+        const tryStartNext = () => {
+          if (nextAudio && nextAudio.readyState >= 2) {
+            // Audio is ready - try to play
+            nextAudio.play().then(() => {
+              // Success! Track is playing
+            }).catch(() => {
+              // Autoplay blocked - try again when canplay fires
+              const tryAgain = () => {
+                if (nextAudio && nextAudio.paused && isPlaying) {
+                  nextAudio.play().catch(() => {
+                    // Still blocked - play/pause effect will handle it
+                  });
+                }
+              };
+              nextAudio.addEventListener('canplay', tryAgain, { once: true });
+            });
+          } else {
+            // Wait for audio to be ready
+            nextAudio.addEventListener('canplaythrough', () => {
+              if (nextAudio && isPlaying && nextAudio.paused) {
+                nextAudio.play().catch(() => {
+                  // Autoplay blocked
+                });
+              }
+            }, { once: true });
+          }
+        };
+        
+        // Start immediately if ready, otherwise wait
+        if (nextAudio.readyState >= 2) {
+          tryStartNext();
+        } else {
+          nextAudio.addEventListener('canplaythrough', tryStartNext, { once: true });
+        }
+        
+        // Preload the track after next for continuous playback
+        const nextNextIndex = (nextIndex + 1) % tracks.length;
+        const nextNextTrack = tracks[nextNextIndex];
+        if (nextNextTrack && tracks.length > 1) {
+          const nextNextAudio = new Audio(nextNextTrack.src);
+          nextNextAudio.preload = 'auto';
+          nextNextAudio.volume = volume;
+          nextNextAudio.playbackRate = playbackSpeed;
+          nextAudioRef.current = nextNextAudio;
+        }
+      };
+
+      audio.addEventListener('ended', handleTrackEnd);
+      
+      // Fallback: Check progress periodically, especially when page is hidden
+      // This ensures track advances even when screen is inactive
+      const checkProgress = () => {
+        if (audio && audio.duration && !isNaN(audio.duration) && 
+            audio.currentTime >= audio.duration - 0.1) {
+          // Track has finished (within 0.1 seconds of end)
+          handleTrackEnd();
+        }
+      };
+      
+      // Check progress on timeupdate for immediate response
+      // This works even when page is hidden
+      audio.addEventListener('timeupdate', checkProgress);
+      
+      // Also set up a periodic check as a fallback (every 1 second)
+      // This is especially important when page is hidden
+      const progressCheckInterval = setInterval(() => {
+        const currentAudio = audioRef.current;
+        if (currentAudio && currentAudio === audio) {
+          checkProgress();
+        }
+      }, 1000);
 
       audioRef.current = audio;
       setSoundLoaded(false);
@@ -400,6 +587,12 @@ const SloMo: React.FC = () => {
       return () => {
         if (audio) {
           try {
+            // Clear interval
+            clearInterval(progressCheckInterval);
+            // Remove event listeners
+            audio.removeEventListener('ended', handleTrackEnd);
+            audio.removeEventListener('timeupdate', checkProgress);
+            // Clean up audio
             audio.pause();
             audio.currentTime = 0;
             audio.src = '';
@@ -501,7 +694,7 @@ const SloMo: React.FC = () => {
         setSoundLoaded(false);
       }
     }
-  }, [currentTrackIndex, tracks, playbackSpeed, volume, isPlaying]);
+  }, [currentTrackIndex, tracks, playbackSpeed, isPlaying]);
 
   // Update playback speed - apply immediately when changed
   useEffect(() => {
@@ -552,20 +745,39 @@ const SloMo: React.FC = () => {
     if (isMobile.current) {
       // Mobile: Use HTML5 audio
       const audio = audioRef.current;
-      if (!audio) return;
+      if (!audio || !soundLoaded) return; // Wait for audio to be loaded
 
       try {
         if (isPlaying) {
-          audio.play().catch((error) => {
-            console.warn('Playback blocked:', error);
-            setIsPlaying(false);
-          });
+          // Try to play - use a small delay to ensure audio is ready
+          // Also retry if first attempt fails (common when screen is inactive)
+          const tryPlay = (attempt: number = 0) => {
+            const currentAudio = audioRef.current;
+            if (currentAudio && currentAudio === audio) {
+              // Check current playing state
+              if (isPlaying && currentAudio.paused) {
+                currentAudio.play().then(() => {
+                  // Success - playback started
+                }).catch(() => {
+                  if (attempt < 2) {
+                    // Retry with increasing delay
+                    setTimeout(() => tryPlay(attempt + 1), 200 * (attempt + 1));
+                  } else {
+                    console.warn('Playback blocked after retries');
+                    // Keep isPlaying true - user can manually play
+                  }
+                });
+              }
+            }
+          };
+          
+          setTimeout(() => tryPlay(), 50);
         } else {
           audio.pause();
         }
       } catch (error) {
         console.error('Error controlling playback:', error);
-        setIsPlaying(false);
+        // Don't automatically set isPlaying to false - let user control it
       }
     } else {
       // Desktop: Use Pizzicato
@@ -694,24 +906,7 @@ const SloMo: React.FC = () => {
     setIsPlaying(true);
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-
-    if (isMobile.current) {
-      // Mobile: Update HTML5 audio volume
-      const audio = audioRef.current;
-      if (audio) {
-        audio.volume = newVolume;
-      }
-    } else {
-      // Desktop: Update Pizzicato volume
-      const sound = soundRef.current;
-      if (sound) {
-        sound.volume = newVolume;
-      }
-    }
-  };
+  // Volume control removed - always at 1.0
 
   const handlePlaybackSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSpeed = parseFloat(e.target.value);
@@ -883,22 +1078,6 @@ const SloMo: React.FC = () => {
               <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
             </svg>
           </button>
-        </div>
-
-        {/* Volume Control */}
-        <div className="volume-section">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="volume-icon">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-          </svg>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={volume}
-            onChange={handleVolumeChange}
-            className="volume-bar"
-          />
         </div>
 
         {/* Playback Speed Control */}
