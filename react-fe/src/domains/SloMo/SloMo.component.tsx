@@ -19,6 +19,38 @@ const isMobileDevice = (): boolean => {
   );
 };
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  VOLUME: 'slomo_volume',
+  SPEED: 'slomo_speed',
+  REVERB: 'slomo_reverb',
+};
+
+// Load value from localStorage with fallback
+const loadFromStorage = (key: string, defaultValue: number): number => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored !== null) {
+      const parsed = parseFloat(stored);
+      if (!isNaN(parsed) && parsed >= 0) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.warn(`Error loading ${key} from localStorage:`, error);
+  }
+  return defaultValue;
+};
+
+// Save value to localStorage
+const saveToStorage = (key: string, value: number): void => {
+  try {
+    localStorage.setItem(key, value.toString());
+  } catch (error) {
+    console.warn(`Error saving ${key} to localStorage:`, error);
+  }
+};
+
 const SloMo: React.FC = () => {
   // Genre selection state
   const [genres, setGenres] = useState<string[]>([]);
@@ -30,11 +62,9 @@ const SloMo: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [playbackSpeed, setPlaybackSpeed] = useState(0.8);
-  const [reverb, setReverb] = useState(0.5);
+  const [volume, setVolume] = useState(() => loadFromStorage(STORAGE_KEYS.VOLUME, 1));
+  const [playbackSpeed, setPlaybackSpeed] = useState(() => loadFromStorage(STORAGE_KEYS.SPEED, 0.8));
+  const [reverb, setReverb] = useState(() => loadFromStorage(STORAGE_KEYS.REVERB, 0.5));
   const [showPlaylist, setShowPlaylist] = useState(false);
 
   // Detect if we're on mobile
@@ -43,10 +73,158 @@ const SloMo: React.FC = () => {
   // Pizzicato sound and effects
   const soundRef = useRef<Pizzicato.Sound | null>(null);
   const reverbEffectRef = useRef<Pizzicato.Effects.Reverb | null>(null);
-  const timeUpdateThrottleRef = useRef<number | null>(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
+  const wasPlayingBeforeHiddenRef = useRef(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const currentTrack = tracks[currentTrackIndex];
+
+  // Handle page visibility changes to keep audio playing in background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const sound = soundRef.current;
+      if (!sound) return;
+
+      if (document.hidden) {
+        // Page became hidden - remember if we were playing
+        wasPlayingBeforeHiddenRef.current = sound.playing;
+        // Try to keep playing (iOS may still pause, but we try)
+      } else {
+        // Page became visible again - resume if we were playing
+        if (wasPlayingBeforeHiddenRef.current && !sound.playing) {
+          try {
+            sound.play();
+          } catch (error) {
+            console.warn('Could not resume playback:', error);
+          }
+        }
+      }
+    };
+
+    // Request wake lock to keep screen/CPU active (if supported)
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator) {
+        try {
+          const wakeLock = await (navigator as any).wakeLock.request('screen');
+          wakeLockRef.current = wakeLock;
+          wakeLock.addEventListener('release', () => {
+            wakeLockRef.current = null;
+          });
+        } catch (error) {
+          // Wake lock not supported or denied
+          console.warn('Wake lock not available:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    requestWakeLock();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      const wakeLock = wakeLockRef.current;
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, []);
+
+  // Set up Media Session API for better background playback support
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentTrack) return;
+
+    const mediaSession = (navigator as any).mediaSession;
+    
+    // Set metadata
+    mediaSession.metadata = new (window as any).MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.artist,
+    });
+
+    // Handle media session actions
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handlePrevious = () => {
+      setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+      setIsPlaying(true);
+    };
+    const handleNext = () => {
+      setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+      setIsPlaying(true);
+    };
+
+    mediaSession.setActionHandler('play', handlePlay);
+    mediaSession.setActionHandler('pause', handlePause);
+    mediaSession.setActionHandler('previoustrack', handlePrevious);
+    mediaSession.setActionHandler('nexttrack', handleNext);
+
+    return () => {
+      // Clean up media session
+      if (mediaSession) {
+        mediaSession.metadata = null;
+        mediaSession.setActionHandler('play', null);
+        mediaSession.setActionHandler('pause', null);
+        mediaSession.setActionHandler('previoustrack', null);
+        mediaSession.setActionHandler('nexttrack', null);
+      }
+    };
+  }, [currentTrack, tracks.length]);
+
+  // Persist volume to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.VOLUME, volume);
+  }, [volume]);
+
+  // Persist playback speed to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SPEED, playbackSpeed);
+  }, [playbackSpeed]);
+
+  // Persist reverb to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.REVERB, reverb);
+  }, [reverb]);
+
+  // Set up Media Session API for better background playback support
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentTrack) return;
+
+    const mediaSession = (navigator as any).mediaSession;
+    
+    // Set metadata
+    mediaSession.metadata = new (window as any).MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.artist,
+    });
+
+    // Handle media session actions
+    mediaSession.setActionHandler('play', () => {
+      setIsPlaying(true);
+    });
+
+    mediaSession.setActionHandler('pause', () => {
+      setIsPlaying(false);
+    });
+
+    mediaSession.setActionHandler('previoustrack', () => {
+      handlePrevious();
+    });
+
+    mediaSession.setActionHandler('nexttrack', () => {
+      handleNext();
+    });
+
+    return () => {
+      // Clean up media session
+      if (mediaSession) {
+        mediaSession.metadata = null;
+        mediaSession.setActionHandler('play', null);
+        mediaSession.setActionHandler('pause', null);
+        mediaSession.setActionHandler('previoustrack', null);
+        mediaSession.setActionHandler('nexttrack', null);
+      }
+    };
+  }, [currentTrack, isPlaying]);
 
   // Fetch genres on mount
   useEffect(() => {
@@ -123,7 +301,11 @@ const SloMo: React.FC = () => {
 
         setTracks(trackObjects);
         setCurrentTrackIndex(0);
-        setIsPlaying(true);
+        // Don't auto-play on mobile - requires user interaction
+        // Desktop can auto-play
+        if (!isMobile.current) {
+          setIsPlaying(true);
+        }
       } catch (error) {
         console.error('Failed to load tracks:', error);
       } finally {
@@ -176,27 +358,29 @@ const SloMo: React.FC = () => {
             // Set volume (this should be safe)
             sound.volume = volume;
             
-            // Try to get duration from the source node if available
+            // Set playback rate on the source node if available
             const soundAny = sound as any;
-            if (soundAny.sourceNode && soundAny.sourceNode.buffer) {
-              setDuration(soundAny.sourceNode.buffer.duration || 0);
-              
-              // Set playback rate on the source node if available
-              if (soundAny.sourceNode.playbackRate !== undefined) {
-                soundAny.sourceNode.playbackRate.value = playbackSpeed;
-              }
+            if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+              soundAny.sourceNode.playbackRate.value = playbackSpeed;
             }
             
             // Mark sound as loaded
             setSoundLoaded(true);
             
             // If we should be playing, start playback now that it's loaded
-            if (isPlaying) {
-              try {
-                sound.play();
-              } catch (e) {
-                console.error('Error playing sound after load:', e);
-              }
+            // Use a small delay to ensure everything is ready, especially on mobile
+            if (isPlaying && sound) {
+              setTimeout(() => {
+                if (!sound) return;
+                try {
+                  sound.play();
+                } catch (e) {
+                  // Autoplay might be blocked - this is expected on mobile
+                  // User will need to manually press play
+                  console.warn('Autoplay blocked, user interaction required:', e);
+                  setIsPlaying(false);
+                }
+              }, 100);
             }
           }
         }
@@ -222,36 +406,7 @@ const SloMo: React.FC = () => {
       return;
     }
 
-    // Set up time tracking - Pizzicato doesn't expose currentTime directly
-    // We'll track time manually using a timer
-    let startTime = 0;
-    let pausedTime = 0;
-    let isPaused = false;
-
-    const updateTime = () => {
-      if (!sound || !sound.playing || isPaused) return;
-      
-      if (timeUpdateThrottleRef.current) {
-        cancelAnimationFrame(timeUpdateThrottleRef.current);
-      }
-      timeUpdateThrottleRef.current = requestAnimationFrame(() => {
-        if (sound && sound.playing && !isPaused) {
-          const soundAny = sound as any;
-          // Try to get current time from source node
-          if (soundAny.sourceNode && soundAny.sourceNode.buffer) {
-            const bufferDuration = soundAny.sourceNode.buffer.duration;
-            if (bufferDuration) {
-              // Approximate current time based on when playback started
-              const elapsed = (Date.now() - startTime) / 1000;
-              const current = (pausedTime + elapsed) % bufferDuration;
-              setCurrentTime(current);
-            }
-          }
-        }
-      });
-    };
-
-    const timeInterval = setInterval(updateTime, 100); // Update every 100ms
+    // No time tracking needed - just showing playing indicator
 
     // Handle track end - use Pizzicato's 'end' event
     const handleEnded = () => {
@@ -266,10 +421,6 @@ const SloMo: React.FC = () => {
     }
 
     return () => {
-      clearInterval(timeInterval);
-      if (timeUpdateThrottleRef.current) {
-        cancelAnimationFrame(timeUpdateThrottleRef.current);
-      }
       if (sound) {
         try {
           sound.off('end', handleEnded);
@@ -319,7 +470,13 @@ const SloMo: React.FC = () => {
     try {
       if (isPlaying && !sound.playing) {
         // Only play if not already playing
-        sound.play();
+        try {
+          sound.play();
+        } catch (error) {
+          // Playback might be blocked - reset playing state
+          console.warn('Playback blocked:', error);
+          setIsPlaying(false);
+        }
         // Set playback rate after a short delay to ensure source node is created
         setTimeout(() => {
           const soundAny = sound as any;
@@ -333,8 +490,9 @@ const SloMo: React.FC = () => {
       }
     } catch (error) {
       console.error('Error controlling playback:', error);
+      setIsPlaying(false);
     }
-  }, [isPlaying, tracks.length, soundLoaded]);
+  }, [isPlaying, tracks.length, soundLoaded, playbackSpeed]);
 
   // Apply reverb amount using Pizzicato
   useEffect(() => {
@@ -369,20 +527,6 @@ const SloMo: React.FC = () => {
   const handlePrevious = () => {
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
     setIsPlaying(true);
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const sound = soundRef.current;
-    if (!sound || !soundLoaded) return;
-
-    const newTime = parseFloat(e.target.value);
-    // Pizzicato doesn't support seeking directly, so we need to stop and restart
-    // For now, just update the display time
-    // Note: Full seeking would require stopping, setting offsetTime, and restarting
-    setCurrentTime(newTime);
-    
-    // TODO: Implement proper seeking with Pizzicato if needed
-    // This would require stopping the sound, setting offsetTime, and playing again
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,12 +565,6 @@ const SloMo: React.FC = () => {
     setReverb(newReverb);
   };
 
-  const formatTime = (seconds: number): string => {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const selectTrack = (index: number) => {
     setCurrentTrackIndex(index);
@@ -491,21 +629,15 @@ const SloMo: React.FC = () => {
           <p className="track-artist">{currentTrack?.artist || 'Unknown artist'}</p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="progress-section">
-          <div className="time-display">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+        {/* Playing Indicator */}
+        {/* {isPlaying && (
+          <div className="playing-indicator-section">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="playing-icon">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <span className="playing-text">Playing</span>
           </div>
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeek}
-            className="progress-bar"
-          />
-        </div>
+        )} */}
 
         {/* Controls */}
         <div className="player-controls">
