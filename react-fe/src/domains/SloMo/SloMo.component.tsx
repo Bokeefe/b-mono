@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../../services/api.service';
 import MobileButton from '../../components/MobileButton/MobileButton';
+import Pizzicato from 'pizzicato';
 import './SloMo.scss';
 
 interface Track {
@@ -10,6 +11,13 @@ interface Track {
   src: string;
   cover?: string;
 }
+
+// Detect mobile devices
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
 
 const SloMo: React.FC = () => {
   // Genre selection state
@@ -29,13 +37,14 @@ const SloMo: React.FC = () => {
   const [reverb, setReverb] = useState(0.5);
   const [showPlaylist, setShowPlaylist] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const convolverRef = useRef<ConvolverNode | null>(null);
-  const dryGainRef = useRef<GainNode | null>(null);
-  const wetGainRef = useRef<GainNode | null>(null);
-  const masterGainRef = useRef<GainNode | null>(null);
+  // Detect if we're on mobile
+  const isMobile = useRef(isMobileDevice());
+
+  // Pizzicato sound and effects
+  const soundRef = useRef<Pizzicato.Sound | null>(null);
+  const reverbEffectRef = useRef<Pizzicato.Effects.Reverb | null>(null);
+  const timeUpdateThrottleRef = useRef<number | null>(null);
+  const [soundLoaded, setSoundLoaded] = useState(false);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -125,20 +134,126 @@ const SloMo: React.FC = () => {
     fetchTracks();
   }, [selectedGenre]);
 
-  // Audio event handlers
+  // Initialize Pizzicato sound when track changes
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || tracks.length === 0) return;
+    if (tracks.length === 0 || !currentTrack) return;
 
-    // Set playback speed when track changes
-    audio.playbackRate = playbackSpeed;
+    // Clean up previous sound
+    if (soundRef.current) {
+      try {
+        const prevSound = soundRef.current;
+        if (prevSound.playing) {
+          prevSound.stop();
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      soundRef.current = null;
+    }
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => {
-      setDuration(audio.duration);
-      // Ensure playback speed is set after metadata loads
-      audio.playbackRate = playbackSpeed;
+    let sound: Pizzicato.Sound | null = null;
+    let reverbEffect: Pizzicato.Effects.Reverb | null = null;
+
+    try {
+      // Create new Pizzicato sound
+      sound = new Pizzicato.Sound(
+        {
+          source: 'file',
+          options: {
+            path: currentTrack.src,
+            loop: false,
+          }
+        },
+        (error?: Error) => {
+          // Sound loaded callback
+          if (error) {
+            console.error('Error loading sound:', error);
+            setSoundLoaded(false);
+            return;
+          }
+
+          if (sound) {
+            // Set volume (this should be safe)
+            sound.volume = volume;
+            
+            // Try to get duration from the source node if available
+            const soundAny = sound as any;
+            if (soundAny.sourceNode && soundAny.sourceNode.buffer) {
+              setDuration(soundAny.sourceNode.buffer.duration || 0);
+              
+              // Set playback rate on the source node if available
+              if (soundAny.sourceNode.playbackRate !== undefined) {
+                soundAny.sourceNode.playbackRate.value = playbackSpeed;
+              }
+            }
+            
+            // Mark sound as loaded
+            setSoundLoaded(true);
+            
+            // If we should be playing, start playback now that it's loaded
+            if (isPlaying) {
+              try {
+                sound.play();
+              } catch (e) {
+                console.error('Error playing sound after load:', e);
+              }
+            }
+          }
+        }
+      );
+
+      // Create reverb effect with mobile-optimized settings
+      reverbEffect = new Pizzicato.Effects.Reverb({
+        time: isMobile.current ? 0.5 : 1.5, // Shorter reverb time on mobile
+        decay: isMobile.current ? 0.3 : 0.8, // Lower decay on mobile
+        reverse: false,
+        mix: reverb, // Use current reverb state value
+      });
+
+      sound.addEffect(reverbEffect);
+      reverbEffectRef.current = reverbEffect;
+      soundRef.current = sound;
+      
+      // Reset loaded state while new sound is loading
+      setSoundLoaded(false);
+    } catch (error) {
+      console.error('Error creating Pizzicato sound:', error);
+      setSoundLoaded(false);
+      return;
+    }
+
+    // Set up time tracking - Pizzicato doesn't expose currentTime directly
+    // We'll track time manually using a timer
+    let startTime = 0;
+    let pausedTime = 0;
+    let isPaused = false;
+
+    const updateTime = () => {
+      if (!sound || !sound.playing || isPaused) return;
+      
+      if (timeUpdateThrottleRef.current) {
+        cancelAnimationFrame(timeUpdateThrottleRef.current);
+      }
+      timeUpdateThrottleRef.current = requestAnimationFrame(() => {
+        if (sound && sound.playing && !isPaused) {
+          const soundAny = sound as any;
+          // Try to get current time from source node
+          if (soundAny.sourceNode && soundAny.sourceNode.buffer) {
+            const bufferDuration = soundAny.sourceNode.buffer.duration;
+            if (bufferDuration) {
+              // Approximate current time based on when playback started
+              const elapsed = (Date.now() - startTime) / 1000;
+              const current = (pausedTime + elapsed) % bufferDuration;
+              setCurrentTime(current);
+            }
+          }
+        }
+      });
     };
+
+    const timeInterval = setInterval(updateTime, 100); // Update every 100ms
+
+    // Handle track end - use Pizzicato's 'end' event
     const handleEnded = () => {
       if (tracks.length > 0) {
         setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
@@ -146,117 +261,88 @@ const SloMo: React.FC = () => {
       }
     };
 
-    audio.addEventListener('timeupdate', updateTime);
-    audio.addEventListener('loadedmetadata', updateDuration);
-    audio.addEventListener('ended', handleEnded);
+    if (sound) {
+      sound.on('end', handleEnded);
+    }
 
     return () => {
-      audio.removeEventListener('timeupdate', updateTime);
-      audio.removeEventListener('loadedmetadata', updateDuration);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [currentTrackIndex, tracks, playbackSpeed]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    // Always set playback speed when track changes or when speed changes
-    audio.playbackRate = playbackSpeed;
-
-    if (isPlaying && tracks.length > 0) {
-      audio.play().catch((error) => {
-        console.error('Error playing audio:', error);
-        setIsPlaying(false);
-      });
-    } else {
-      audio.pause();
-    }
-  }, [isPlaying, currentTrackIndex, tracks, playbackSpeed]);
-
-  // Generate impulse response for reverb
-  const createReverbImpulse = (audioContext: AudioContext, duration: number, decay: number): AudioBuffer => {
-    const sampleRate = audioContext.sampleRate;
-    const length = sampleRate * duration;
-    const impulse = audioContext.createBuffer(2, length, sampleRate);
-    const leftChannel = impulse.getChannelData(0);
-    const rightChannel = impulse.getChannelData(1);
-
-    for (let i = 0; i < length; i++) {
-      const n = length - i;
-      leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
-      rightChannel[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
-    }
-
-    return impulse;
-  };
-
-  // Set up Web Audio API for reverb
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || tracks.length === 0) return;
-
-    // Initialize AudioContext
-    if (!audioContextRef.current) {
-      try {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      } catch (error) {
-        console.error('Failed to create AudioContext:', error);
-        return;
+      clearInterval(timeInterval);
+      if (timeUpdateThrottleRef.current) {
+        cancelAnimationFrame(timeUpdateThrottleRef.current);
       }
-    }
-
-    const audioContext = audioContextRef.current;
-
-    // Create audio graph if not exists
-    if (!sourceNodeRef.current) {
-      // Set audio element volume to 1 since we control volume via Web Audio API
-      audio.volume = 1;
-      
-      sourceNodeRef.current = audioContext.createMediaElementSource(audio);
-      
-      // Create nodes
-      dryGainRef.current = audioContext.createGain();
-      wetGainRef.current = audioContext.createGain();
-      masterGainRef.current = audioContext.createGain();
-      convolverRef.current = audioContext.createConvolver();
-
-      // Create impulse response
-      const impulse = createReverbImpulse(audioContext, 2, 2);
-      convolverRef.current.buffer = impulse;
-
-      // Connect: source -> dry gain -> master
-      //          source -> convolver -> wet gain -> master
-      sourceNodeRef.current.connect(dryGainRef.current);
-      sourceNodeRef.current.connect(convolverRef.current);
-      convolverRef.current.connect(wetGainRef.current);
-      dryGainRef.current.connect(masterGainRef.current);
-      wetGainRef.current.connect(masterGainRef.current);
-      masterGainRef.current.connect(audioContext.destination);
-
-      // Set initial values
-      masterGainRef.current.gain.value = volume;
-      dryGainRef.current.gain.value = 1 - reverb;
-      wetGainRef.current.gain.value = reverb;
-    }
-
-    // Cleanup on unmount
-    return () => {
-      // Don't disconnect here as we want to keep the graph for the next track
+      if (sound) {
+        try {
+          sound.off('end', handleEnded);
+        } catch (e) {
+          // Ignore errors when removing listeners
+        }
+        try {
+          if (sound.playing) {
+            sound.stop();
+          }
+        } catch (e) {
+          // Ignore errors when stopping - sound might already be cleaned up
+        }
+      }
     };
-  }, [tracks, currentTrackIndex]);
+  }, [currentTrackIndex, tracks, playbackSpeed, volume]);
 
-  // Apply reverb amount
+  // Update playback speed - only when sound is playing
   useEffect(() => {
-    const dryGain = dryGainRef.current;
-    const wetGain = wetGainRef.current;
+    const sound = soundRef.current;
+    if (!sound || !soundLoaded || !isPlaying) return;
 
-    if (!dryGain || !wetGain) return;
+    try {
+      // Pizzicato doesn't have a direct playbackRate property
+      // We need to access the source node and set playbackRate on it
+      const soundAny = sound as any;
+      
+      // Only try to set playbackRate if the sound is currently playing
+      // and has a source node
+      if (sound.playing && soundAny.sourceNode) {
+        // Check if it's an AudioBufferSourceNode (which has playbackRate)
+        if (soundAny.sourceNode.playbackRate !== undefined) {
+          soundAny.sourceNode.playbackRate.value = playbackSpeed;
+        }
+      }
+    } catch (error) {
+      // Silently fail - playback rate might not be settable at this moment
+      console.warn('Could not set playback speed:', error);
+    }
+  }, [playbackSpeed, soundLoaded, isPlaying]);
 
-    // Dry signal: 1 - reverb (more reverb = less dry)
-    // Wet signal: reverb (more reverb = more wet)
-    dryGain.gain.value = 1 - reverb;
-    wetGain.gain.value = reverb;
+  // Handle play/pause - only after sound is loaded
+  useEffect(() => {
+    const sound = soundRef.current;
+    if (!sound || tracks.length === 0 || !soundLoaded) return;
+
+    try {
+      if (isPlaying && !sound.playing) {
+        // Only play if not already playing
+        sound.play();
+        // Set playback rate after a short delay to ensure source node is created
+        setTimeout(() => {
+          const soundAny = sound as any;
+          if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+            soundAny.sourceNode.playbackRate.value = playbackSpeed;
+          }
+        }, 10);
+      } else if (!isPlaying && sound.playing) {
+        // Only pause if currently playing
+        sound.pause();
+      }
+    } catch (error) {
+      console.error('Error controlling playback:', error);
+    }
+  }, [isPlaying, tracks.length, soundLoaded]);
+
+  // Apply reverb amount using Pizzicato
+  useEffect(() => {
+    const reverbEffect = reverbEffectRef.current;
+    if (!reverbEffect) return;
+
+    // Update reverb mix (0 = dry, 1 = fully wet)
+    reverbEffect.mix = reverb;
   }, [reverb]);
 
   const handleGenreSelect = (genre: string) => {
@@ -286,36 +372,48 @@ const SloMo: React.FC = () => {
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const sound = soundRef.current;
+    if (!sound || !soundLoaded) return;
 
     const newTime = parseFloat(e.target.value);
-    audio.currentTime = newTime;
+    // Pizzicato doesn't support seeking directly, so we need to stop and restart
+    // For now, just update the display time
+    // Note: Full seeking would require stopping, setting offsetTime, and restarting
     setCurrentTime(newTime);
+    
+    // TODO: Implement proper seeking with Pizzicato if needed
+    // This would require stopping the sound, setting offsetTime, and playing again
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
 
-    // Use Web Audio API gain if available, otherwise fall back to audio element
-    if (masterGainRef.current) {
-      masterGainRef.current.gain.value = newVolume;
-    } else {
-      const audio = audioRef.current;
-      if (audio) {
-        audio.volume = newVolume;
-      }
+    const sound = soundRef.current;
+    if (sound) {
+      sound.volume = newVolume;
     }
   };
 
   const handlePlaybackSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const sound = soundRef.current;
+    if (!sound || !soundLoaded) return;
 
     const newSpeed = parseFloat(e.target.value);
-    audio.playbackRate = newSpeed;
     setPlaybackSpeed(newSpeed);
+    
+    // Try to set playback speed immediately if sound is playing
+    // The useEffect will also handle this, but this gives immediate feedback
+    if (sound.playing) {
+      try {
+        const soundAny = sound as any;
+        if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+          soundAny.sourceNode.playbackRate.value = newSpeed;
+        }
+      } catch (error) {
+        // Silently fail - the useEffect will handle it
+      }
+    }
   };
 
   const handleReverbChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -341,7 +439,8 @@ const SloMo: React.FC = () => {
     return (
       <div className="slomo-container genre-selection">
         <div className="genre-selection-content">
-          <h1>Playlists</h1>
+          <h1>playlists</h1>
+          <p>randomized slo mo playlists insired by the likes of DJ screw and the 🐐'ed <a href="https://youtu.be/adaTEdqR4xI?si=kLuG-OzSM3qHGGvN" target="_blank">Caretaker</a></p>   
           {isLoadingGenres ? (
             <p>Loading genres...</p>
           ) : genres.length === 0 ? (
@@ -378,11 +477,6 @@ const SloMo: React.FC = () => {
   // Show player
   return (
     <div className="slomo-container">
-      <audio
-        ref={audioRef}
-        src={currentTrack?.src}
-        preload="metadata"
-      />
 
       {/* Back button */}
       <button className="back-button" onClick={handleBackToGenres}>
