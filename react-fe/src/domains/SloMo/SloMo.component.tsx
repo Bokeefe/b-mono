@@ -60,11 +60,55 @@ const SloMo: React.FC = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
 
   // Audio refs - use HTML5 audio for all platforms
+  // Use a persistent audio element that we reuse across tracks (critical for background playback)
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const nextAudioRef = useRef<HTMLAudioElement | null>(null); // Preload next track for seamless transitions
+  const handleTrackEndRef = useRef<(() => void) | null>(null);
+  const checkProgressRef = useRef<(() => void) | null>(null);
+  const progressCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
   const wasPlayingBeforeHiddenRef = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  
+  // Initialize persistent audio element once with event listeners
+  useEffect(() => {
+    if (!audioRef.current) {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.volume = volume;
+      audioRef.current = audio;
+      
+      // Set up persistent event handlers that will work across track changes
+      const handleEnded = () => {
+        if (handleTrackEndRef.current) {
+          handleTrackEndRef.current();
+        }
+      };
+      
+      const checkProgress = () => {
+        if (checkProgressRef.current) {
+          checkProgressRef.current();
+        }
+      };
+      
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('timeupdate', checkProgress);
+    }
+    
+    return () => {
+      // Only clean up when component unmounts
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+      if (progressCheckIntervalRef.current) {
+        clearInterval(progressCheckIntervalRef.current);
+      }
+    };
+  }, []); // Only run once on mount
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -249,256 +293,138 @@ const SloMo: React.FC = () => {
     fetchTracks();
   }, [selectedGenre]);
 
-  // Initialize audio when track changes - use HTML5 audio for all platforms
+  // Initialize audio when track changes - use persistent HTML5 audio element
   useEffect(() => {
     if (tracks.length === 0 || !currentTrack) return;
-
-    if (audioRef.current) {
-      try {
-        // Stop and clean up HTML5 audio completely
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current.src = '';
-        audioRef.current.load(); // Reset the audio element
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-      audioRef.current = null;
-    }
-
-    // Use HTML5 audio for all platforms
-    const audio = new Audio(currentTrack.src);
-    audio.preload = 'auto';
-    audio.volume = volume;
-    audio.playbackRate = playbackSpeed;
     
-    // Preload the next track for seamless transitions
-    const nextIndex = (currentTrackIndex + 1) % tracks.length;
-    const nextTrack = tracks[nextIndex];
-    if (nextTrack && tracks.length > 1) {
-      // Clean up previous preloaded track
-      if (nextAudioRef.current) {
-        try {
-          nextAudioRef.current.pause();
-          nextAudioRef.current.src = '';
-          nextAudioRef.current = null;
-        } catch (e) {
-          // Ignore
-        }
-      }
+    const audio = audioRef.current;
+    if (!audio) return; // Wait for persistent element to be created
+    
+    // Check if we need to change the source
+    const needsSrcChange = !audio.src || audio.src !== currentTrack.src;
+    
+    if (needsSrcChange) {
+      // Stop current playback
+      audio.pause();
+      audio.currentTime = 0;
       
-      // Preload next track
-      const nextAudio = new Audio(nextTrack.src);
-      nextAudio.preload = 'auto';
-      nextAudio.volume = volume;
-      nextAudio.playbackRate = playbackSpeed;
-      nextAudioRef.current = nextAudio;
+      // Change source on the persistent element (this maintains audio context for background playback)
+      audio.src = currentTrack.src;
+      audio.playbackRate = playbackSpeed;
+      audio.load();
+      
+      setSoundLoaded(false);
+    } else {
+      // Source already matches, just update playback rate if needed
+      audio.playbackRate = playbackSpeed;
     }
     
-    audio.addEventListener('loadeddata', () => {
-      setSoundLoaded(true);
-      // Try to play if we should be playing
-      // Use a small delay to ensure audio is fully ready
-      if (isPlaying) {
-        // Try multiple times with increasing delays to handle autoplay restrictions
-        const tryPlay = (attempt: number = 0) => {
-          const currentAudio = audioRef.current;
-          if (currentAudio && currentAudio === audio) {
-            // Check if we should still be playing (state might have changed)
-            if (isPlaying) {
-              currentAudio.play().then(() => {
-                // Success - playback started
-              }).catch(() => {
-                if (attempt < 3) {
-                  // Retry with increasing delay
-                  setTimeout(() => tryPlay(attempt + 1), 100 * (attempt + 1));
-                } else {
-                  console.warn('Autoplay blocked after retries');
-                  // Keep isPlaying true - user can manually play
-                }
-              });
-            }
-          }
-        };
-        
-        // Start trying to play
-        setTimeout(() => tryPlay(), 50);
+    // Handle track loaded - only set up if source changed
+    if (needsSrcChange) {
+      const handleLoadedData = () => {
+        setSoundLoaded(true);
+        // Try to play if we should be playing
+        if (isPlaying && audio.paused) {
+          audio.play().catch(() => {
+            // Autoplay might be blocked, that's okay
+          });
+        }
+      };
+      
+      audio.addEventListener('loadeddata', handleLoadedData, { once: true });
+      
+      // Also try when canplay fires
+      audio.addEventListener('canplay', () => {
+        if (isPlaying && audio.paused) {
+          audio.play().catch(() => {
+            // Autoplay blocked
+          });
+        }
+      }, { once: true });
+      
+      // Check if already loaded
+      if (audio.readyState >= 2) {
+        setSoundLoaded(true);
       }
-    });
-    
-    // Also try to play when canplay event fires (audio is ready to play)
-    audio.addEventListener('canplay', () => {
-      if (isPlaying && audio.paused) {
-        // Audio is ready and we should be playing, but it's paused
-        audio.play().catch(() => {
-          // Autoplay might be blocked, but that's okay
-          // The play/pause effect will handle it
-        });
-      }
-    });
+    }
 
-    // Handle track end - use preloaded next track for seamless transition
-    const handleTrackEnd = () => {
+    // Define track end handler - store in ref so persistent listeners can call it
+    handleTrackEndRef.current = () => {
       if (tracks.length === 0) return;
       
       const nextIndex = (currentTrackIndex + 1) % tracks.length;
       const nextTrack = tracks[nextIndex];
       if (!nextTrack) return;
       
-      // Use preloaded audio if available, otherwise create new
-      let nextAudio = nextAudioRef.current;
+      const currentAudio = audioRef.current;
+      if (!currentAudio) return;
       
-      if (!nextAudio || nextAudio.src !== nextTrack.src) {
-        // Create new audio if preload didn't work
-        nextAudio = new Audio(nextTrack.src);
-        nextAudio.preload = 'auto';
-        nextAudio.volume = volume;
-        nextAudio.playbackRate = playbackSpeed;
-      }
+      // Immediately change src on persistent element - this works even in background
+      const wasPlaying = !currentAudio.paused;
       
-      // Update state
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio.src = nextTrack.src;
+      currentAudio.playbackRate = playbackSpeed;
+      currentAudio.load();
+      
+      // Update state - this will trigger useEffect to set up event listeners
       setCurrentTrackIndex(nextIndex);
-      setIsPlaying(true);
+      setSoundLoaded(false);
       
-      // Set up event handlers for the next track
+      // Wait for track to load, then play if we were playing
       const handleNextLoaded = () => {
         setSoundLoaded(true);
-      };
-      nextAudio.addEventListener('loadeddata', handleNextLoaded);
-      
-      // Handle next track ending
-      const handleNextTrackEnd = () => {
-        if (tracks.length > 0) {
-          const nextNextIndex = (nextIndex + 1) % tracks.length;
-          setCurrentTrackIndex(nextNextIndex);
-          setIsPlaying(true);
-        }
-      };
-      nextAudio.addEventListener('ended', handleNextTrackEnd);
-      
-      // Set up progress checking for next track
-      const checkNextProgress = () => {
-        if (nextAudio && nextAudio.duration && !isNaN(nextAudio.duration) && 
-            nextAudio.currentTime >= nextAudio.duration - 0.1) {
-          handleNextTrackEnd();
-        }
-      };
-      nextAudio.addEventListener('timeupdate', checkNextProgress);
-      
-      // Replace current audio immediately
-      const oldAudio = audioRef.current;
-      audioRef.current = nextAudio;
-      nextAudioRef.current = null; // Clear preload ref
-      setSoundLoaded(nextAudio.readyState >= 2); // Set loaded if already ready
-      
-      // Clean up old audio
-      if (oldAudio && oldAudio !== nextAudio) {
-        try {
-          oldAudio.pause();
-          oldAudio.currentTime = 0;
-          oldAudio.src = '';
-          oldAudio.load();
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      }
-      
-      // Try to start playing immediately - this is critical for background playback
-      // The preloaded track should be ready, so we can start immediately
-      const tryStartNext = () => {
-        if (nextAudio && nextAudio.readyState >= 2) {
-          // Audio is ready - try to play
-          nextAudio.play().then(() => {
-            // Success! Track is playing
-          }).catch(() => {
-            // Autoplay blocked - try again when canplay fires
-            const tryAgain = () => {
-              if (nextAudio && nextAudio.paused && isPlaying) {
-                nextAudio.play().catch(() => {
-                  // Still blocked - play/pause effect will handle it
-                });
-              }
-            };
-            nextAudio.addEventListener('canplay', tryAgain, { once: true });
+        if (wasPlaying) {
+          currentAudio.play().catch(() => {
+            // Autoplay might be blocked in background, that's okay
           });
-        } else {
-          // Wait for audio to be ready
-          nextAudio.addEventListener('canplaythrough', () => {
-            if (nextAudio && isPlaying && nextAudio.paused) {
-              nextAudio.play().catch(() => {
-                // Autoplay blocked
-              });
-            }
-          }, { once: true });
         }
       };
       
-      // Start immediately if ready, otherwise wait
-      if (nextAudio.readyState >= 2) {
-        tryStartNext();
-      } else {
-        nextAudio.addEventListener('canplaythrough', tryStartNext, { once: true });
-      }
+      currentAudio.addEventListener('loadeddata', handleNextLoaded, { once: true });
       
-      // Preload the track after next for continuous playback
-      const nextNextIndex = (nextIndex + 1) % tracks.length;
-      const nextNextTrack = tracks[nextNextIndex];
-      if (nextNextTrack && tracks.length > 1) {
-        const nextNextAudio = new Audio(nextNextTrack.src);
-        nextNextAudio.preload = 'auto';
-        nextNextAudio.volume = volume;
-        nextNextAudio.playbackRate = playbackSpeed;
-        nextAudioRef.current = nextNextAudio;
-      }
-    };
-
-    audio.addEventListener('ended', handleTrackEnd);
-    
-    // Fallback: Check progress periodically, especially when page is hidden
-    // This ensures track advances even when screen is inactive
-    const checkProgress = () => {
-      if (audio && audio.duration && !isNaN(audio.duration) && 
-          audio.currentTime >= audio.duration - 0.1) {
-        // Track has finished (within 0.1 seconds of end)
-        handleTrackEnd();
-      }
+      // Also try when canplay fires
+      currentAudio.addEventListener('canplay', () => {
+        if (wasPlaying && currentAudio.paused) {
+          currentAudio.play().catch(() => {
+            // Autoplay blocked
+          });
+        }
+      }, { once: true });
     };
     
-    // Check progress on timeupdate for immediate response
-    // This works even when page is hidden
-    audio.addEventListener('timeupdate', checkProgress);
-    
-    // Also set up a periodic check as a fallback (every 1 second)
-    // This is especially important when page is hidden
-    const progressCheckInterval = setInterval(() => {
+    // Define progress check handler - store in ref
+    checkProgressRef.current = () => {
       const currentAudio = audioRef.current;
-      if (currentAudio && currentAudio === audio) {
-        checkProgress();
+      if (currentAudio && currentAudio.src === currentTrack.src) {
+        if (currentAudio.duration && !isNaN(currentAudio.duration) && 
+            currentAudio.currentTime >= currentAudio.duration - 0.1) {
+          if (handleTrackEndRef.current) {
+            handleTrackEndRef.current();
+          }
+        }
       }
-    }, 1000);
-
-    audioRef.current = audio;
-    setSoundLoaded(false);
+    };
+    
+    // Set up periodic check as fallback (important for background playback)
+    if (progressCheckIntervalRef.current) {
+      clearInterval(progressCheckIntervalRef.current);
+    }
+    
+    progressCheckIntervalRef.current = setInterval(() => {
+      if (checkProgressRef.current) {
+        checkProgressRef.current();
+      }
+    }, 500);
     
     return () => {
-      if (audio) {
-        try {
-          // Clear interval
-          clearInterval(progressCheckInterval);
-          // Remove event listeners
-          audio.removeEventListener('ended', handleTrackEnd);
-          audio.removeEventListener('timeupdate', checkProgress);
-          // Clean up audio
-          audio.pause();
-          audio.currentTime = 0;
-          audio.src = '';
-          audio.load();
-        } catch (e) {
-          // Ignore cleanup errors
-        }
+      if (progressCheckIntervalRef.current) {
+        clearInterval(progressCheckIntervalRef.current);
+        progressCheckIntervalRef.current = null;
       }
     };
-  }, [currentTrackIndex, tracks, playbackSpeed, isPlaying]);
+  }, [currentTrackIndex, tracks, playbackSpeed, isPlaying, currentTrack]);
 
   // Update playback speed - apply immediately when changed
   useEffect(() => {
