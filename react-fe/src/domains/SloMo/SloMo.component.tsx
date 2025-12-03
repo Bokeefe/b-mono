@@ -339,12 +339,17 @@ const SloMo: React.FC = () => {
   useEffect(() => {
     if (tracks.length === 0 || !currentTrack) return;
 
-    // Clean up previous sound/audio
+    // Clean up previous sound/audio - be aggressive about stopping
     if (soundRef.current) {
       try {
         const prevSound = soundRef.current;
-        if (prevSound.playing) {
-          prevSound.stop();
+        // Check if sound is valid before stopping
+        if (prevSound && typeof prevSound.stop === 'function') {
+          try {
+            prevSound.stop();
+          } catch (stopError) {
+            // Ignore stop errors - sound might already be stopped
+          }
         }
       } catch (e) {
         // Ignore cleanup errors
@@ -353,8 +358,15 @@ const SloMo: React.FC = () => {
     }
 
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
+      try {
+        // Stop and clean up HTML5 audio completely
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
+        audioRef.current.load(); // Reset the audio element
+      } catch (e) {
+        // Ignore cleanup errors
+      }
       audioRef.current = null;
     }
 
@@ -387,10 +399,14 @@ const SloMo: React.FC = () => {
       
       return () => {
         if (audio) {
-          audio.pause();
-          audio.src = '';
-          audio.removeEventListener('loadeddata', () => {});
-          audio.removeEventListener('ended', () => {});
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = '';
+            audio.load();
+          } catch (e) {
+            // Ignore cleanup errors
+          }
         }
       };
     }
@@ -422,27 +438,11 @@ const SloMo: React.FC = () => {
               // Set volume (this should be safe)
               sound.volume = volume;
               
-              // Set playback rate on the source node if available
-              const soundAny = sound as any;
-              if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
-                soundAny.sourceNode.playbackRate.value = playbackSpeed;
-              }
-              
-              // Mark sound as loaded
+              // Mark sound as loaded - the play/pause effect will handle playback
               setSoundLoaded(true);
               
-              // If we should be playing, start playback now that it's loaded
-              if (isPlaying && sound) {
-                setTimeout(() => {
-                  if (!sound) return;
-                  try {
-                    sound.play();
-                  } catch (e) {
-                    console.warn('Autoplay blocked:', e);
-                    setIsPlaying(false);
-                  }
-                }, 100);
-              }
+              // Don't autoplay here - let the play/pause effect handle it
+              // This avoids race conditions and ensures proper initialization
             }
           }
         );
@@ -473,18 +473,26 @@ const SloMo: React.FC = () => {
         sound.on('end', handleEnded);
 
         return () => {
-          if (sound) {
+          // Use a fresh reference to avoid stale closures
+          const soundToCleanup = soundRef.current;
+          if (soundToCleanup) {
             try {
-              sound.off('end', handleEnded);
+              if (typeof soundToCleanup.off === 'function') {
+                soundToCleanup.off('end', handleEnded);
+              }
             } catch (e) {
               // Ignore errors
             }
             try {
-              if (sound.playing) {
-                sound.stop();
+              // Check if sound is valid before stopping
+              if (soundToCleanup && typeof soundToCleanup.stop === 'function') {
+                // Check if sound is still playing before stopping
+                if (soundToCleanup.playing) {
+                  soundToCleanup.stop();
+                }
               }
             } catch (e) {
-              // Ignore errors
+              // Ignore errors - sound might already be cleaned up
             }
           }
         };
@@ -495,9 +503,9 @@ const SloMo: React.FC = () => {
     }
   }, [currentTrackIndex, tracks, playbackSpeed, volume, isPlaying]);
 
-  // Update playback speed
+  // Update playback speed - apply immediately when changed
   useEffect(() => {
-    if (!soundLoaded || !isPlaying) return;
+    if (!soundLoaded) return;
 
     if (isMobile.current) {
       // Mobile: Update HTML5 audio playback rate
@@ -512,14 +520,30 @@ const SloMo: React.FC = () => {
 
       try {
         const soundAny = sound as any;
-        if (sound.playing && soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+        // Try to set on current source node if it exists (whether playing or paused)
+        if (soundAny && soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
           soundAny.sourceNode.playbackRate.value = playbackSpeed;
+        } else if (sound.playing) {
+          // If playing but source node not ready, try again after a delay
+          const speedTimeout = setTimeout(() => {
+            const currentSound = soundRef.current; // Get fresh reference
+            if (currentSound) {
+              const soundAny2 = currentSound as any;
+              if (soundAny2 && soundAny2.sourceNode && soundAny2.sourceNode.playbackRate !== undefined) {
+                soundAny2.sourceNode.playbackRate.value = playbackSpeed;
+              }
+            }
+          }, 100); // Increased delay to ensure source node exists
+          
+          return () => {
+            clearTimeout(speedTimeout);
+          };
         }
       } catch (error) {
         console.warn('Could not set playback speed:', error);
       }
     }
-  }, [playbackSpeed, soundLoaded, isPlaying]);
+  }, [playbackSpeed, soundLoaded]);
 
   // Handle play/pause - different logic for mobile (HTML5) vs desktop (Pizzicato)
   useEffect(() => {
@@ -546,42 +570,68 @@ const SloMo: React.FC = () => {
     } else {
       // Desktop: Use Pizzicato
       const sound = soundRef.current;
-      if (!sound) return;
+      if (!sound || !soundLoaded) return; // Don't try to play if not loaded
 
       try {
         if (isPlaying && !sound.playing) {
-          try {
-            sound.play();
-          } catch (error) {
-            console.warn('Playback blocked:', error);
-            setIsPlaying(false);
-          }
-          // Set playback rate after a short delay
-          setTimeout(() => {
-            const soundAny = sound as any;
-            if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
-              soundAny.sourceNode.playbackRate.value = playbackSpeed;
+          // Only play if sound is ready and has valid methods
+          // Add a small delay to ensure Pizzicato is fully initialized
+          const playTimeout = setTimeout(() => {
+            const currentSound = soundRef.current; // Get fresh reference
+            if (!currentSound || currentSound.playing) return; // Check again in case state changed
+            
+            if (typeof currentSound.play === 'function') {
+              try {
+                currentSound.play();
+                // Set playback rate after a longer delay to ensure source node is created
+                setTimeout(() => {
+                  const currentSound2 = soundRef.current; // Get fresh reference again
+                  if (currentSound2) {
+                    const soundAny = currentSound2 as any;
+                    if (soundAny && soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+                      soundAny.sourceNode.playbackRate.value = playbackSpeed;
+                    }
+                  }
+                }, 150); // Increased delay to ensure source node is created
+              } catch (error) {
+                console.warn('Playback blocked:', error);
+                setIsPlaying(false);
+              }
             }
-          }, 10);
+          }, 50); // Small delay to ensure Pizzicato is ready
+          
+          return () => {
+            clearTimeout(playTimeout);
+          };
         } else if (!isPlaying && sound.playing) {
-          sound.pause();
+          if (typeof sound.pause === 'function') {
+            sound.pause();
+          }
         }
       } catch (error) {
         console.error('Error controlling playback:', error);
         setIsPlaying(false);
       }
     }
-  }, [isPlaying, tracks.length, soundLoaded, playbackSpeed]);
+  }, [isPlaying, tracks.length, soundLoaded]); // Removed playbackSpeed from dependencies
 
   // Apply reverb amount using Pizzicato (desktop only - mobile uses HTML5 audio without reverb)
   useEffect(() => {
     if (isMobile.current) return; // No reverb on mobile for background playback
     
     const reverbEffect = reverbEffectRef.current;
-    if (!reverbEffect) return;
+    if (!reverbEffect) {
+      console.log('Reverb effect not available yet');
+      return;
+    }
 
     // Update reverb mix (0 = dry, 1 = fully wet)
-    reverbEffect.mix = reverb;
+    try {
+      reverbEffect.mix = reverb;
+      console.log('Reverb mix updated to:', reverb);
+    } catch (error) {
+      console.warn('Could not update reverb mix:', error);
+    }
   }, [reverb]);
 
   const handleGenreSelect = (genre: string) => {
@@ -601,11 +651,45 @@ const SloMo: React.FC = () => {
   };
 
   const handleNext = () => {
+    // Stop current audio immediately before changing tracks
+    if (isMobile.current) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    } else {
+      const sound = soundRef.current;
+      if (sound && typeof sound.stop === 'function') {
+        try {
+          sound.stop();
+        } catch (e) {
+          // Ignore errors - sound might already be stopped
+        }
+      }
+    }
     setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
     setIsPlaying(true);
   };
 
   const handlePrevious = () => {
+    // Stop current audio immediately before changing tracks
+    if (isMobile.current) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    } else {
+      const sound = soundRef.current;
+      if (sound && typeof sound.stop === 'function') {
+        try {
+          sound.stop();
+        } catch (e) {
+          // Ignore errors - sound might already be stopped
+        }
+      }
+    }
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
     setIsPlaying(true);
   };
@@ -630,8 +714,6 @@ const SloMo: React.FC = () => {
   };
 
   const handlePlaybackSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!soundLoaded) return;
-
     const newSpeed = parseFloat(e.target.value);
     setPlaybackSpeed(newSpeed);
     
@@ -643,11 +725,23 @@ const SloMo: React.FC = () => {
       }
     } else {
       const sound = soundRef.current;
-      if (sound && sound.playing) {
+      if (sound) {
         try {
           const soundAny = sound as any;
-          if (soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
+          // Try to update on current source node
+          if (soundAny && soundAny.sourceNode && soundAny.sourceNode.playbackRate !== undefined) {
             soundAny.sourceNode.playbackRate.value = newSpeed;
+          } else if (sound.playing) {
+            // If playing but source node not ready, try again after a delay
+            setTimeout(() => {
+              const currentSound = soundRef.current; // Get fresh reference
+              if (currentSound) {
+                const soundAny2 = currentSound as any;
+                if (soundAny2 && soundAny2.sourceNode && soundAny2.sourceNode.playbackRate !== undefined) {
+                  soundAny2.sourceNode.playbackRate.value = newSpeed;
+                }
+              }
+            }, 100); // Increased delay to ensure source node exists
           }
         } catch (error) {
           console.warn('Could not set playback speed immediately:', error);
@@ -663,6 +757,23 @@ const SloMo: React.FC = () => {
 
 
   const selectTrack = (index: number) => {
+    // Stop current audio immediately before changing tracks
+    if (isMobile.current) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    } else {
+      const sound = soundRef.current;
+      if (sound && typeof sound.stop === 'function') {
+        try {
+          sound.stop();
+        } catch (e) {
+          // Ignore errors - sound might already be stopped
+        }
+      }
+    }
     setCurrentTrackIndex(index);
     setIsPlaying(true);
     setShowPlaylist(false);
