@@ -1,97 +1,83 @@
 # SloMo Music Player
 
 ## Overview
-SloMo is a mobile-first music player application that allows users to select a genre and play a randomly shuffled playlist of MP3 files from that genre's directory.
+Mobile-first music player that plays randomly shuffled playlists from genre directories.
 
 ## Architecture
-
-### Backend (NestJS)
-- **Module**: `nest-server/src/slomo/`
-  - `slomo.module.ts`: NestJS module configuration
-  - `slomo.controller.ts`: REST API endpoints
-    - `GET /api/slomo/genres`: Returns list of available genre folders
-    - `GET /api/slomo/genres/:genre/tracks`: Returns all MP3 file paths for a given genre
-  - `slomo.service.ts`: File system operations
-    - Recursively scans genre directories for MP3 files
-    - Returns relative paths normalized for web use
-
-### Frontend (React)
-- **Component**: `react-fe/src/domains/SloMo/SloMo.component.tsx`
-  - Genre selection screen: Displays buttons for each available genre
-  - Music player: Full-featured player with playlist support
-- **Styling**: `react-fe/src/domains/SloMo/SloMo.scss`
-  - Mobile-first responsive design
-  - Gradient background with glassmorphism effects
-- **API Service**: `react-fe/src/services/api.service.ts`
-  - `getSlomoGenres()`: Fetches available genres
-  - `getSlomoTracks(genre)`: Fetches tracks for a specific genre
-
-## File Structure
-```
-react-fe/public/audio/slomo/
-  └── genres/
-      └── {genre-name}/
-          └── {nested folders and MP3 files}
-```
-
-MP3 files can be organized in any nested folder structure within each genre directory. The service recursively finds all `.mp3` files.
-
-## User Flow
-1. User navigates to `/slomo` route
-2. Genre selection screen displays with buttons for each genre folder
-3. User selects a genre (e.g., "xmas")
-4. System fetches all MP3 files from that genre's directory
-5. Tracks are randomly shuffled and converted to a playlist
-6. Player automatically starts playing the first track
-7. User can navigate back to genre selection via "Back to Genres" button
+- **Backend**: `nest-server/src/slomo/` - Scans genre directories for MP3 files
+- **Frontend**: `react-fe/src/domains/SloMo/` - React component with HTML5 audio + Web Audio API
 
 ## Features
-- **Genre Selection**: Dynamic genre buttons based on folders in `genres/` directory
-- **Random Playlist**: Tracks are shuffled when a genre is selected
-- **Track Title Extraction**: Automatically cleans filenames to extract readable track titles
-  - Removes leading track numbers (e.g., "01 - ")
-  - Removes bracket content (e.g., "[WwW.LoKoTorrents.CoM]")
-  - Trims whitespace
-- **Full Player Controls**:
-  - Play/Pause
-  - Next/Previous track
-  - Progress bar with seek functionality
-  - Volume control
-  - Playlist view with track selection
-- **Mobile-First Design**: Uses `MobileButton` component for genre selection, optimized for touch interfaces
+- Genre selection with dynamic buttons
+- Random shuffled playlists
+- Play/Pause, Next/Previous, Seek, Speed control (0.5x-1.0x)
+- Background playback (tracks advance when browser inactive)
+- Reverb effect (delay-based, Web Audio API)
 
-## Technical Details
+## Known Issues
+1. **Mobile audio issues** - Howler.js attempt failed completely, reverted to HTML5 Audio
+2. **Desktop audio not working** - Audio context becomes null after initialization (when Web Audio routing active)
+3. **Reverb effect** - Implemented but may need tuning for audibility
+4. **Invalid URI errors** - Some track paths may be malformed
 
-### Track Object Structure
-```typescript
-interface Track {
-  id: string;
-  title: string;      // Extracted from filename
-  artist: string;      // Genre name (capitalized)
-  src: string;         // Full path: /audio/slomo/genres/{genre}/{relativePath}
-  cover?: string;      // Optional cover art
-}
-```
+## Technical Stack
+- HTML5 Audio (persistent element for background playback)
+- Web Audio API (MediaElementSourceNode for reverb routing)
+- Platform detection (mobile vs desktop) for context handling
 
-### Path Resolution
-- Backend: Uses Node.js `fs` module to read filesystem
-- Paths are normalized to use forward slashes for web compatibility
-- Relative paths are preserved to maintain folder structure in URLs
+## Core Constraint: Reverb vs Mobile Playback
 
-### State Management
-- Genre selection state
-- Track list state (randomized)
-- Player state (current track, playing status, time, volume)
-- UI state (playlist visibility)
+**The Fundamental Trade-off:**
+- **Decent reverb requires Web Audio API** (delay nodes, impulse response, etc.)
+- **Mobile background playback works best with pure HTML5 Audio** (persistent element, Media Session API)
+- **Web Audio API has issues on mobile** when tab is inactive (context suspension, throttling)
 
-## Future Enhancement Ideas
-- Add cover art support (images in genre folders)
-- Add shuffle/repeat modes
-- Add favorites/bookmarks
-- Add search/filter within playlists
-- Add metadata extraction from MP3 files (ID3 tags)
-- Add playlist persistence (localStorage)
-- Add genre-specific themes/colors
-- Add playback speed control
-- Add equalizer/audio effects
+**Previous Attempts:**
 
+1. **Pizzicato.js:**
+   - Preferred for reverb quality
+   - Uses Web Audio API internally (creates its own AudioContext)
+   - **Issues encountered:**
+     - Background playback stopped when tab inactive
+     - Track advancement didn't work reliably
+     - Audio context suspension on mobile
+
+2. **Howler.js:**
+   - Attempted to use for better mobile support with reverb capability
+   - **Failed completely on mobile:**
+     - Did not work for mobile playback at all
+     - Audio playback issues
+     - Background playback problems
+     - Complete failure - had to revert to HTML5 Audio
+
+**Current Approach:**
+- HTML5 Audio element (persistent, good for background playback)
+- Always routes through Web Audio via `MediaElementSourceNode` (for reverb)
+- **Problems:**
+  - Desktop audio breaks (context becomes null)
+  - Mobile background playback less reliable than pure HTML5 Audio
+  - Reverb quality needs improvement
+
+**Potential Solutions:**
+
+1. **Lazy Web Audio Routing (Recommended)**
+   - Start with pure HTML5 Audio (best mobile background playback)
+   - Only create `MediaElementSourceNode` when reverb is enabled
+   - Once created, it stays active (can't undo, but reverb requires it anyway)
+   - **Benefit:** Reverb off = perfect mobile playback, Reverb on = reverb works
+
+2. **Platform-Specific Routing**
+   - Mobile: Pure HTML5 Audio (best background playback)
+   - Desktop: HTML5 + Web Audio routing (better reverb support)
+   - **Trade-off:** Reverb only works on desktop
+
+3. **Fix Pizzicato Background Playback**
+   - Use Pizzicato for reverb (better quality)
+   - Keep HTML5 Audio for playback control
+   - Bridge them together, handle context suspension better
+   - **Challenge:** More complex, but might give best reverb
+
+**Next Steps:**
+- Decide which approach fits priorities
+- If reverb quality is critical → Fix Pizzicato or improve current reverb
+- If mobile playback reliability is critical → Lazy Web Audio routing
