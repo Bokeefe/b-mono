@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../../services/api.service';
 import MobileButton from '../../components/MobileButton/MobileButton';
 import fireplaceGif from '../../assets/fireplace.webp';
+import bartenderImage from '../../assets/bartender.png';
+import * as Pizzicato from 'pizzicato';
+import { Sound, Effects } from 'pizzicato';
 import './SloMo.scss';
 
 interface Track {
@@ -16,6 +19,7 @@ interface Track {
 const STORAGE_KEYS = {
   VOLUME: 'slomo_volume',
   SPEED: 'slomo_speed',
+  REVERB: 'slomo_reverb',
 };
 
 // Load value from localStorage with fallback
@@ -43,6 +47,128 @@ const saveToStorage = (key: string, value: number): void => {
   }
 };
 
+// Detect if we're on mobile
+const isMobile = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768);
+};
+
+// Resume AudioContext for Pizzicato (required after user gesture)
+const resumePizzicatoContext = (sound: Sound | null): Promise<void> => {
+  return new Promise((resolve) => {
+    try {
+      // Access Pizzicato's AudioContext
+      // Try multiple methods to find the context
+      let context: AudioContext | undefined;
+      
+      // Method 1: Through the imported Pizzicato module
+      if (Pizzicato && (Pizzicato as any).context) {
+        context = (Pizzicato as any).context;
+        console.log('Found Pizzicato.context from module, state:', context?.state);
+      }
+      // Method 2: Through window object (if Pizzicato exposes itself globally)
+      else if ((window as any).Pizzicato?.context) {
+        context = (window as any).Pizzicato.context;
+        console.log('Found Pizzicato.context from window, state:', context?.state);
+      }
+      // Method 3: Through sound object's internal structure
+      else if (sound) {
+        const soundAny = sound as any;
+        
+        // Try various ways to access the context from the sound
+        if (soundAny.masterGainNode?.context) {
+          context = soundAny.masterGainNode.context;
+          console.log('Found context through masterGainNode, state:', context?.state);
+        } else if (soundAny.source?.context) {
+          context = soundAny.source.context;
+          console.log('Found context through source, state:', context?.state);
+        } else if (soundAny._context) {
+          context = soundAny._context;
+          console.log('Found context through _context, state:', context?.state);
+        } else if (soundAny.context) {
+          context = soundAny.context;
+          console.log('Found context directly on sound, state:', context?.state);
+        }
+      }
+      
+      if (!context) {
+        console.warn('Could not find AudioContext. Trying to access through Sound object:', sound ? Object.keys(sound as any) : 'no sound');
+        // Last resort: try to create a temporary sound to get the context
+        try {
+          const tempSound = new Sound({ source: 'wave', options: { frequency: 0 } }, () => {});
+          const tempAny = tempSound as any;
+          if (tempAny.masterGainNode?.context) {
+            context = tempAny.masterGainNode.context;
+            console.log('Found context through temporary sound, state:', context?.state);
+            tempSound.stop();
+          }
+        } catch (e) {
+          console.warn('Could not create temporary sound:', e);
+        }
+        
+        if (!context) {
+          console.warn('AudioContext is undefined - cannot resume');
+          resolve();
+          return;
+        }
+      }
+      
+      // Now we know context is defined
+      // Firefox sometimes needs special handling
+      const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+      
+      if (context.state === 'suspended') {
+        console.log('Resuming suspended AudioContext...');
+        const resumePromise = context.resume();
+        
+        // Firefox sometimes needs a small delay
+        if (isFirefox) {
+          setTimeout(() => {
+            resumePromise.then(() => {
+              console.log('AudioContext resumed successfully (Firefox), new state:', context.state);
+              resolve();
+            }).catch((error) => {
+              console.warn('Failed to resume AudioContext (Firefox):', error);
+              // Try again after a short delay for Firefox
+              setTimeout(() => {
+                context.resume().then(() => {
+                  console.log('AudioContext resumed on retry (Firefox)');
+                  resolve();
+                }).catch(() => resolve());
+              }, 100);
+            });
+          }, 50);
+        } else {
+          resumePromise.then(() => {
+            console.log('AudioContext resumed successfully, new state:', context.state);
+            resolve();
+          }).catch((error) => {
+            console.warn('Failed to resume AudioContext:', error);
+            resolve();
+          });
+        }
+      } else if (context.state === 'running') {
+        // Already running
+        console.log('AudioContext already running');
+        resolve();
+      } else {
+        // Unknown state, try to resume anyway
+        console.log('AudioContext in unknown state:', context.state, ', attempting resume...');
+        context.resume().then(() => {
+          console.log('AudioContext resumed (unknown state), new state:', context.state);
+          resolve();
+        }).catch((error) => {
+          console.warn('Failed to resume AudioContext (unknown state):', error);
+          resolve();
+        });
+      }
+    } catch (error) {
+      console.warn('Error accessing AudioContext:', error);
+      resolve();
+    }
+  });
+};
+
 const SloMo: React.FC = () => {
   // Genre selection state
   const [genres, setGenres] = useState<string[]>([]);
@@ -57,10 +183,11 @@ const SloMo: React.FC = () => {
   // Volume is always 1.0 (full volume) - no user control needed
   const volume = 1.0;
   const [playbackSpeed, setPlaybackSpeed] = useState(() => loadFromStorage(STORAGE_KEYS.SPEED, 0.8));
+  const [reverb, setReverb] = useState(() => loadFromStorage(STORAGE_KEYS.REVERB, 0));
   const [showPlaylist, setShowPlaylist] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Audio refs - use HTML5 audio for all platforms
-  // Use a persistent audio element that we reuse across tracks (critical for background playback)
+  // HTML5 Audio refs - use persistent audio element for mobile background playback
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const handleTrackEndRef = useRef<(() => void) | null>(null);
   const checkProgressRef = useRef<(() => void) | null>(null);
@@ -69,15 +196,25 @@ const SloMo: React.FC = () => {
   const wasPlayingBeforeHiddenRef = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   
-  // Initialize persistent audio element once with event listeners
+  // Pizzicato.js refs for desktop
+  const pizzicatoSoundRef = useRef<Sound | null>(null);
+  const reverbEffectRef = useRef<Effects.Reverb | null>(null);
+  
+  // Detect platform on mount
   useEffect(() => {
-    if (!audioRef.current) {
+    setIsDesktop(!isMobile());
+  }, []);
+
+  // Initialize persistent HTML5 audio element for mobile
+  useEffect(() => {
+    // Only initialize HTML5 Audio for mobile
+    if (isMobile() && !audioRef.current) {
       const audio = new Audio();
       audio.preload = 'auto';
       audio.volume = volume;
       audioRef.current = audio;
       
-      // Set up persistent event handlers that will work across track changes
+      // Set up persistent event handlers
       const handleEnded = () => {
         if (handleTrackEndRef.current) {
           handleTrackEndRef.current();
@@ -92,10 +229,12 @@ const SloMo: React.FC = () => {
       
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('timeupdate', checkProgress);
+      
+      console.log('HTML5 Audio element initialized for mobile');
     }
     
     return () => {
-      // Only clean up when component unmounts
+      // Clean up on unmount
       if (audioRef.current) {
         try {
           audioRef.current.pause();
@@ -108,7 +247,49 @@ const SloMo: React.FC = () => {
         clearInterval(progressCheckIntervalRef.current);
       }
     };
-  }, []); // Only run once on mount
+  }, []);
+  
+  // Persist reverb to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.REVERB, reverb);
+    
+    // Update reverb effect on desktop when reverb value changes
+    // Update in place to avoid interrupting playback
+    if (!isMobile() && pizzicatoSoundRef.current && soundLoaded) {
+      const sound = pizzicatoSoundRef.current;
+      
+      if (reverb > 0) {
+        // If effect exists, just update the mix value (no interruption)
+        if (reverbEffectRef.current) {
+          reverbEffectRef.current.mix = Math.min(reverb * 0.4, 0.4);
+        } else {
+          // Only create and add if it doesn't exist
+          reverbEffectRef.current = new Effects.Reverb({
+            time: 2.5,        // Longer reverb tail
+            decay: 2.0,       // Longer decay
+            reverse: false,
+            mix: reverb, // Scale down mix (max 40% wet)
+          });
+          
+          try {
+            sound.addEffect(reverbEffectRef.current);
+          } catch (e) {
+            console.warn('Failed to add reverb effect:', e);
+          }
+        }
+      } else {
+        // Only remove if it exists and reverb is set to 0
+        if (reverbEffectRef.current) {
+          try {
+            sound.removeEffect(reverbEffectRef.current);
+          } catch (e) {
+            // Ignore if not added
+          }
+          reverbEffectRef.current = null;
+        }
+      }
+    }
+  }, [reverb, soundLoaded]);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -293,146 +474,230 @@ const SloMo: React.FC = () => {
     fetchTracks();
   }, [selectedGenre]);
 
-  // Initialize audio when track changes - use persistent HTML5 audio element
+  // Initialize audio when track changes - different approach for mobile vs desktop
   useEffect(() => {
     if (tracks.length === 0 || !currentTrack) return;
-    
-    const audio = audioRef.current;
-    if (!audio) return; // Wait for persistent element to be created
-    
-    // Check if we need to change the source
-    const needsSrcChange = !audio.src || audio.src !== currentTrack.src;
-    
-    if (needsSrcChange) {
-      // Stop current playback
-      audio.pause();
-      audio.currentTime = 0;
+
+    // Mobile: Use HTML5 Audio
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      setSoundLoaded(false);
       
-      // Change source on the persistent element (this maintains audio context for background playback)
+      // Clean up previous track
+      audio.pause();
+      audio.src = '';
+      
+      // Set up track end handler
+      handleTrackEndRef.current = () => {
+        const nextIndex = (currentTrackIndex + 1) % tracks.length;
+        setCurrentTrackIndex(nextIndex);
+        setIsPlaying(true); // Auto-play next track
+      };
+      
+      // Load new track
       audio.src = currentTrack.src;
       audio.playbackRate = playbackSpeed;
+      
+      const handleCanPlay = () => {
+        setSoundLoaded(true);
+        console.log('Track loaded (mobile):', currentTrack.title);
+        if (isPlaying) {
+          audio.play().catch((error) => {
+            console.warn('Could not play track:', error);
+          });
+        }
+      };
+      
+      const handleError = () => {
+        console.error('Failed to load track:', currentTrack.src);
+        setSoundLoaded(false);
+      };
+      
+      audio.addEventListener('canplay', handleCanPlay, { once: true });
+      audio.addEventListener('error', handleError, { once: true });
+      
+      // Load the track
       audio.load();
       
-      setSoundLoaded(false);
-    } else {
-      // Source already matches, just update playback rate if needed
-      audio.playbackRate = playbackSpeed;
-    }
-    
-    // Handle track loaded - only set up if source changed
-    if (needsSrcChange) {
-      const handleLoadedData = () => {
-        setSoundLoaded(true);
-        // Try to play if we should be playing
-        if (isPlaying && audio.paused) {
-          audio.play().catch(() => {
-            // Autoplay might be blocked, that's okay
-          });
-        }
+      return () => {
+        audio.removeEventListener('canplay', handleCanPlay);
+        audio.removeEventListener('error', handleError);
       };
+    } 
+    // Desktop: Use Pizzicato.js
+    else {
+      setSoundLoaded(false);
       
-      audio.addEventListener('loadeddata', handleLoadedData, { once: true });
-      
-      // Also try when canplay fires
-      audio.addEventListener('canplay', () => {
-        if (isPlaying && audio.paused) {
-          audio.play().catch(() => {
-            // Autoplay blocked
-          });
-        }
-      }, { once: true });
-      
-      // Check if already loaded
-      if (audio.readyState >= 2) {
-        setSoundLoaded(true);
+      // Clean up previous sound
+      if (pizzicatoSoundRef.current) {
+        pizzicatoSoundRef.current.stop();
+        pizzicatoSoundRef.current = null;
       }
-    }
-
-    // Define track end handler - store in ref so persistent listeners can call it
-    handleTrackEndRef.current = () => {
-      if (tracks.length === 0) return;
       
-      const nextIndex = (currentTrackIndex + 1) % tracks.length;
-      const nextTrack = tracks[nextIndex];
-      if (!nextTrack) return;
-      
-      const currentAudio = audioRef.current;
-      if (!currentAudio) return;
-      
-      // Immediately change src on persistent element - this works even in background
-      const wasPlaying = !currentAudio.paused;
-      
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      currentAudio.src = nextTrack.src;
-      currentAudio.playbackRate = playbackSpeed;
-      currentAudio.load();
-      
-      // Update state - this will trigger useEffect to set up event listeners
-      setCurrentTrackIndex(nextIndex);
-      setSoundLoaded(false);
-      
-      // Wait for track to load, then play if we were playing
-      const handleNextLoaded = () => {
-        setSoundLoaded(true);
-        if (wasPlaying) {
-          currentAudio.play().catch(() => {
-            // Autoplay might be blocked in background, that's okay
-          });
-        }
-      };
-      
-      currentAudio.addEventListener('loadeddata', handleNextLoaded, { once: true });
-      
-      // Also try when canplay fires
-      currentAudio.addEventListener('canplay', () => {
-        if (wasPlaying && currentAudio.paused) {
-          currentAudio.play().catch(() => {
-            // Autoplay blocked
-          });
-        }
-      }, { once: true });
-    };
-    
-    // Define progress check handler - store in ref
-    checkProgressRef.current = () => {
-      const currentAudio = audioRef.current;
-      if (currentAudio && currentAudio.src === currentTrack.src) {
-        if (currentAudio.duration && !isNaN(currentAudio.duration) && 
-            currentAudio.currentTime >= currentAudio.duration - 0.1) {
-          if (handleTrackEndRef.current) {
-            handleTrackEndRef.current();
+      // Create new Pizzicato sound
+      const sound = new Sound(
+        {
+          source: 'file',
+          options: {
+            path: currentTrack.src,
+            loop: false,
+          },
+        },
+        (error?: Error) => {
+          if (error) {
+            console.error('Failed to load track:', error);
+            setSoundLoaded(false);
+          } else {
+            setSoundLoaded(true);
+            console.log('Track loaded (desktop):', currentTrack.title);
+            
+            // Set initial playback speed
+            // Pizzicato doesn't support playbackRate directly, need to set on source node
+            // We'll set it when the sound plays or update it dynamically
+            
+            // Set up reverb if enabled
+            // Always remove existing effect first to prevent duplicates
+            if (reverbEffectRef.current) {
+              try {
+                sound.removeEffect(reverbEffectRef.current);
+              } catch (e) {
+                // Ignore if not added
+              }
+            }
+            
+            if (reverb > 0) {
+              // Create new reverb effect with longer delays to prevent feedback
+              // Longer time/decay helps prevent feedback buildup
+              reverbEffectRef.current = new Effects.Reverb({
+                time: 2.5,        // Longer reverb tail
+                decay: 2.0,       // Longer decay
+                reverse: false,
+                mix: Math.min(reverb * 0.4, 0.4), // Scale down mix (max 40% wet)
+              });
+              
+              // Add the effect
+              try {
+                sound.addEffect(reverbEffectRef.current);
+              } catch (e) {
+                console.warn('Failed to add reverb effect:', e);
+              }
+            } else {
+              reverbEffectRef.current = null;
+            }
+            
+            // Set up event handlers
+            // Note: We manage isPlaying state ourselves, so we don't set it from these events
+            // to avoid conflicts. These are just for logging/debugging.
+            sound.on('play', () => {
+              console.log('Pizzicato play event fired');
+              // Set playback rate when sound starts playing
+              // The source node is created when play() is called
+              setTimeout(() => {
+                const soundAny = sound as any;
+                // Try multiple ways to access the source node
+                if (soundAny.source && soundAny.source.bufferSource) {
+                  soundAny.source.bufferSource.playbackRate.value = playbackSpeed;
+                  console.log('Set playbackRate on bufferSource:', playbackSpeed);
+                } else if (soundAny.source && soundAny.source.sourceNode) {
+                  soundAny.source.sourceNode.playbackRate.value = playbackSpeed;
+                  console.log('Set playbackRate on sourceNode:', playbackSpeed);
+                } else if (soundAny.sourceNode) {
+                  soundAny.sourceNode.playbackRate.value = playbackSpeed;
+                  console.log('Set playbackRate on sourceNode (direct):', playbackSpeed);
+                } else if (soundAny.audioBufferSourceNode) {
+                  soundAny.audioBufferSourceNode.playbackRate.value = playbackSpeed;
+                  console.log('Set playbackRate on audioBufferSourceNode:', playbackSpeed);
+                } else {
+                  console.log('Could not find source node to set playbackRate');
+                }
+              }, 50);
+            });
+            sound.on('pause', () => {
+              console.log('Pizzicato pause event fired');
+            });
+            sound.on('stop', () => {
+              console.log('Pizzicato stop event fired');
+            });
+            sound.on('end', async () => {
+              console.log('Pizzicato end event fired');
+              // Track ended - move to next
+              const nextIndex = (currentTrackIndex + 1) % tracks.length;
+              setCurrentTrackIndex(nextIndex);
+              // Resume AudioContext before auto-playing next track
+              // Wait a bit for the new sound to load, then resume
+              setTimeout(async () => {
+                if (pizzicatoSoundRef.current) {
+                  await resumePizzicatoContext(pizzicatoSoundRef.current);
+                }
+              }, 100);
+              setIsPlaying(true); // Auto-play next track
+            });
+            
+            pizzicatoSoundRef.current = sound;
+            
+            // Log sound object structure for debugging
+            console.log('Sound object structure:', {
+              hasMasterGainNode: !!(sound as any).masterGainNode,
+              hasSource: !!(sound as any).source,
+              masterGainNodeContext: (sound as any).masterGainNode?.context?.state,
+              sourceContext: (sound as any).source?.context?.state,
+              keys: Object.keys(sound as any),
+            });
+            
+            // Try to resume context immediately after sound is loaded
+            // This might help if the context was created during sound creation
+            setTimeout(async () => {
+              await resumePizzicatoContext(sound);
+            }, 50);
+            
+            // Auto-play if should be playing (but only after user interaction)
+            // Don't auto-play here - wait for user to click play button
+            // This ensures AudioContext is resumed after user gesture
           }
         }
-      }
-    };
-    
-    // Set up periodic check as fallback (important for background playback)
-    if (progressCheckIntervalRef.current) {
-      clearInterval(progressCheckIntervalRef.current);
+      );
+      
+      return () => {
+        if (pizzicatoSoundRef.current) {
+          pizzicatoSoundRef.current.stop();
+          pizzicatoSoundRef.current = null;
+        }
+      };
     }
-    
-    progressCheckIntervalRef.current = setInterval(() => {
-      if (checkProgressRef.current) {
-        checkProgressRef.current();
-      }
-    }, 500);
-    
-    return () => {
-      if (progressCheckIntervalRef.current) {
-        clearInterval(progressCheckIntervalRef.current);
-        progressCheckIntervalRef.current = null;
-      }
-    };
-  }, [currentTrackIndex, tracks, playbackSpeed, isPlaying, currentTrack]);
+  }, [currentTrackIndex, tracks, currentTrack, isDesktop, playbackSpeed]);
 
   // Update playback speed - apply immediately when changed
   useEffect(() => {
     if (!soundLoaded) return;
 
-    const audio = audioRef.current;
-    if (audio) {
-      audio.playbackRate = playbackSpeed;
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.playbackRate = playbackSpeed;
+      }
+    } else {
+      const sound = pizzicatoSoundRef.current;
+      if (sound) {
+        // Pizzicato doesn't support playbackRate directly
+        // Need to access the underlying AudioBufferSourceNode
+        const soundAny = sound as any;
+        
+        // Try to access the source node (created when sound plays)
+        if (soundAny.source && soundAny.source.bufferSource) {
+          // AudioBufferSourceNode has playbackRate.value
+          soundAny.source.bufferSource.playbackRate.value = playbackSpeed;
+        } else if (soundAny.sourceNode) {
+          soundAny.sourceNode.playbackRate.value = playbackSpeed;
+        } else if (soundAny.audioBufferSourceNode) {
+          soundAny.audioBufferSourceNode.playbackRate.value = playbackSpeed;
+        } else {
+          // If source node doesn't exist yet, store the speed to apply when it plays
+          // We'll need to intercept the play method or set it in the play handler
+          console.log('Source node not available yet, will apply on play');
+        }
+      }
     }
   }, [playbackSpeed, soundLoaded]);
 
@@ -440,41 +705,64 @@ const SloMo: React.FC = () => {
   useEffect(() => {
     if (tracks.length === 0 || !soundLoaded) return;
 
-    const audio = audioRef.current;
-    if (!audio || !soundLoaded) return; // Wait for audio to be loaded
-
-    try {
-      if (isPlaying) {
-        // Try to play - use a small delay to ensure audio is ready
-        // Also retry if first attempt fails (common when screen is inactive)
-        const tryPlay = (attempt: number = 0) => {
-          const currentAudio = audioRef.current;
-          if (currentAudio && currentAudio === audio) {
-            // Check current playing state
-            if (isPlaying && currentAudio.paused) {
-              currentAudio.play().then(() => {
-                // Success - playback started
-              }).catch(() => {
-                if (attempt < 2) {
-                  // Retry with increasing delay
-                  setTimeout(() => tryPlay(attempt + 1), 200 * (attempt + 1));
-                } else {
-                  console.warn('Playback blocked after retries');
-                  // Keep isPlaying true - user can manually play
-                }
+    const handlePlay = async () => {
+      try {
+        if (isMobile()) {
+          const audio = audioRef.current;
+          if (!audio) return;
+          
+          if (isPlaying) {
+            if (audio.paused) {
+              audio.play().catch((error) => {
+                console.warn('Could not play audio:', error);
               });
             }
+          } else {
+            if (!audio.paused) {
+              audio.pause();
+            }
           }
-        };
-        
-        setTimeout(() => tryPlay(), 50);
-      } else {
-        audio.pause();
+        } else {
+          const sound = pizzicatoSoundRef.current;
+          if (!sound) return;
+          
+          if (isPlaying) {
+            if (!sound.playing) {
+              // Resume AudioContext if suspended
+              console.log('Attempting to resume AudioContext and play...');
+              await resumePizzicatoContext(sound);
+              try {
+                sound.play();
+                console.log('Play called on sound');
+                // Set playback rate immediately after play
+                setTimeout(() => {
+                  const soundAny = sound as any;
+                  if (soundAny.source && soundAny.source.bufferSource) {
+                    soundAny.source.bufferSource.playbackRate.value = playbackSpeed;
+                  } else if (soundAny.source && soundAny.source.sourceNode) {
+                    soundAny.source.sourceNode.playbackRate.value = playbackSpeed;
+                  } else if (soundAny.sourceNode) {
+                    soundAny.sourceNode.playbackRate.value = playbackSpeed;
+                  } else if (soundAny.audioBufferSourceNode) {
+                    soundAny.audioBufferSourceNode.playbackRate.value = playbackSpeed;
+                  }
+                }, 50);
+              } catch (error) {
+                console.error('Error calling play on sound:', error);
+              }
+            }
+          } else {
+            if (sound.playing) {
+              sound.pause();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error controlling playback:', error);
       }
-    } catch (error) {
-      console.error('Error controlling playback:', error);
-      // Don't automatically set isPlaying to false - let user control it
-    }
+    };
+
+    handlePlay();
   }, [isPlaying, tracks.length, soundLoaded]);
 
 
@@ -490,28 +778,49 @@ const SloMo: React.FC = () => {
     setShowPlaylist(false);
   };
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
+    // Resume AudioContext on desktop before playing (required after user gesture)
+    if (!isMobile() && pizzicatoSoundRef.current) {
+      console.log('togglePlayPause: Resuming AudioContext...');
+      await resumePizzicatoContext(pizzicatoSoundRef.current);
+    }
     setIsPlaying(!isPlaying);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // Stop current audio immediately before changing tracks
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0; // Reset to beginning
+      }
+    } else {
+      const sound = pizzicatoSoundRef.current;
+      if (sound) {
+        sound.stop(); // Stop immediately
+      }
     }
+    // Change track index (this will trigger track reload)
     setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
     setIsPlaying(true);
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     // Stop current audio immediately before changing tracks
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0; // Reset to beginning
+      }
+    } else {
+      const sound = pizzicatoSoundRef.current;
+      if (sound) {
+        sound.stop(); // Stop immediately
+      }
     }
+    // Change track index (this will trigger track reload)
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
     setIsPlaying(true);
   };
@@ -523,19 +832,53 @@ const SloMo: React.FC = () => {
     setPlaybackSpeed(newSpeed);
     
     // Update immediately for better UX
-    const audio = audioRef.current;
-    if (audio) {
-      audio.playbackRate = newSpeed;
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.playbackRate = newSpeed;
+      }
+    } else {
+      const sound = pizzicatoSoundRef.current;
+      if (sound) {
+        // Pizzicato doesn't support playbackRate directly
+        // Need to access the underlying AudioBufferSourceNode
+        const soundAny = sound as any;
+        
+        // Try multiple ways to access the source node
+        if (soundAny.source && soundAny.source.bufferSource) {
+          soundAny.source.bufferSource.playbackRate.value = newSpeed;
+        } else if (soundAny.sourceNode) {
+          soundAny.sourceNode.playbackRate.value = newSpeed;
+        } else if (soundAny.audioBufferSourceNode) {
+          soundAny.audioBufferSourceNode.playbackRate.value = newSpeed;
+        } else {
+          // If not playing yet, the source node will be created on play
+          // The play handler will set it
+          console.log('Source node not available, will apply on play');
+        }
+      }
     }
   };
 
+  const handleReverbChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newReverb = parseFloat(e.target.value);
+    setReverb(newReverb);
+  };
 
-  const selectTrack = (index: number) => {
+
+  const selectTrack = async (index: number) => {
     // Stop current audio immediately before changing tracks
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (isMobile()) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0; // Reset to beginning
+      }
+    } else {
+      const sound = pizzicatoSoundRef.current;
+      if (sound) {
+        sound.stop(); // Stop immediately
+      }
     }
     setCurrentTrackIndex(index);
     setIsPlaying(true);
@@ -546,9 +889,10 @@ const SloMo: React.FC = () => {
   if (!selectedGenre) {
     return (
       <div className="slomo-container genre-selection">
+        <div className="bartender-background" style={{ backgroundImage: `url(${bartenderImage})` }}></div>
         <div className="genre-selection-content">
           <h1>playlists</h1>
-          <p>randomized slo mo playlists insired by the likes of DJ screw and the 🐐'ed <a href="https://youtu.be/adaTEdqR4xI?si=kLuG-OzSM3qHGGvN" target="_blank">Caretaker</a></p>   
+          <p>randomized slo mo playlists insired by the chopped, the screwed and the g🐐ated <a href="https://youtu.be/adaTEdqR4xI?si=kLuG-OzSM3qHGGvN" target="_blank">Caretaker</a></p>   
           {isLoadingGenres ? (
             <p>Loading genres...</p>
           ) : genres.length === 0 ? (
@@ -667,6 +1011,32 @@ const SloMo: React.FC = () => {
           />
           <span className="speed-value">{playbackSpeed.toFixed(2)}x</span>
         </div>
+
+        {/* Reverb Control - Desktop only */}
+        {isDesktop && (
+          <div className="speed-section">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="speed-icon">
+              {/* Spring icon - vertical coiled spring */}
+              <path d="M12 2c-2 0-4 1.5-4 3.5s2 3.5 4 3.5 4-1.5 4-3.5-2-3.5-4-3.5z" />
+              <path d="M12 9c-2 0-4 1.5-4 3.5s2 3.5 4 3.5 4-1.5 4-3.5-2-3.5-4-3.5z" />
+              <path d="M12 16c-2 0-4 1.5-4 3.5s2 3.5 4 3.5 4-1.5 4-3.5-2-3.5-4-3.5z" />
+              <line x1="8" y1="5.5" x2="8" y2="8.5" />
+              <line x1="16" y1="5.5" x2="16" y2="8.5" />
+              <line x1="8" y1="12.5" x2="8" y2="15.5" />
+              <line x1="16" y1="12.5" x2="16" y2="15.5" />
+            </svg>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={reverb}
+              onChange={handleReverbChange}
+              className="speed-bar"
+            />
+            <span className="speed-value">{Math.round(reverb * 100)}%</span>
+          </div>
+        )}
 
 
         {/* Playlist Toggle */}
