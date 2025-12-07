@@ -183,7 +183,7 @@ const SloMo: React.FC = () => {
   // Volume is always 1.0 (full volume) - no user control needed
   const volume = 1.0;
   const [playbackSpeed, setPlaybackSpeed] = useState(() => loadFromStorage(STORAGE_KEYS.SPEED, 0.8));
-  const [reverb, setReverb] = useState(() => loadFromStorage(STORAGE_KEYS.REVERB, 0));
+  const [reverb, setReverb] = useState(() => loadFromStorage(STORAGE_KEYS.REVERB, .8 ));
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
