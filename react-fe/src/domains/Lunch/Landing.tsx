@@ -51,7 +51,7 @@ const Landing: React.FC = () => {
     return (
         <div className="page-container">
             <h1>Welcome, {name}!</h1>
-            
+            <p>You cats must be herded! 20 minute time-boxed ranked choice voting on where we are going to lunch 2day</p>
             <div className="room-selection">
                 <h2>Join a Lunch Room</h2>
                 <select 
