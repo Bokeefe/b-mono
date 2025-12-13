@@ -293,6 +293,37 @@ const SloMo: React.FC = () => {
 
   const currentTrack = tracks[currentTrackIndex];
 
+  // Helper function to find next track with different artist
+  const findNextTrackWithDifferentArtist = (
+    startIndex: number,
+    currentArtist: string,
+    direction: 'next' | 'prev' = 'next'
+  ): number => {
+    if (tracks.length === 0) return startIndex;
+    
+    let checked = 0;
+    let index = startIndex;
+    
+    // Try to find a track with a different artist
+    while (checked < tracks.length) {
+      const track = tracks[index];
+      if (track && track.artist !== currentArtist) {
+        return index;
+      }
+      
+      // Move to next/previous track
+      if (direction === 'next') {
+        index = (index + 1) % tracks.length;
+      } else {
+        index = (index - 1 + tracks.length) % tracks.length;
+      }
+      checked++;
+    }
+    
+    // If all tracks have same artist, just return the next index
+    return startIndex;
+  };
+
   // Handle page visibility changes to keep audio playing in background
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -356,11 +387,19 @@ const SloMo: React.FC = () => {
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handlePrevious = () => {
-      setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+      if (!currentTrack) return;
+      setCurrentTrackIndex((prev) => {
+        const sequentialPrev = (prev - 1 + tracks.length) % tracks.length;
+        return findNextTrackWithDifferentArtist(sequentialPrev, currentTrack.artist, 'prev');
+      });
       setIsPlaying(true);
     };
     const handleNext = () => {
-      setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+      if (!currentTrack) return;
+      setCurrentTrackIndex((prev) => {
+        const sequentialNext = (prev + 1) % tracks.length;
+        return findNextTrackWithDifferentArtist(sequentialNext, currentTrack.artist, 'next');
+      });
       setIsPlaying(true);
     };
 
@@ -414,9 +453,6 @@ const SloMo: React.FC = () => {
         setIsLoadingTracks(true);
         const trackPaths = await apiService.getSlomoTracks(selectedGenre);
         
-        // Shuffle tracks randomly
-        const shuffled = [...trackPaths].sort(() => Math.random() - 0.5);
-        
         // Extract artist from folder structure
         // Expected structure: genres/xmas/ArtistName/... or genres/xmas/ArtistName/Album/...
         // Backend returns relative paths from genre folder, so first part is artist
@@ -440,6 +476,74 @@ const SloMo: React.FC = () => {
           // Fallback to genre name if no artist found
           return selectedGenre.charAt(0).toUpperCase() + selectedGenre.slice(1);
         };
+        
+        // Shuffle tracks randomly, but ensure no consecutive tracks from the same artist
+        const shuffleWithArtistSeparation = (paths: string[]): string[] => {
+          // First, extract artists for all paths
+          const pathWithArtist = paths.map(path => ({
+            path,
+            artist: extractArtist(path)
+          }));
+          
+          // Group by artist
+          const artistGroups: { [artist: string]: string[] } = {};
+          pathWithArtist.forEach(({ path, artist }) => {
+            if (!artistGroups[artist]) {
+              artistGroups[artist] = [];
+            }
+            artistGroups[artist].push(path);
+          });
+          
+          // Shuffle each artist's tracks
+          Object.keys(artistGroups).forEach(artist => {
+            artistGroups[artist] = artistGroups[artist].sort(() => Math.random() - 0.5);
+          });
+          
+          // Get all artists and shuffle them
+          const artists = Object.keys(artistGroups).sort(() => Math.random() - 0.5);
+          
+          // Build shuffled list ensuring no consecutive same artist
+          const shuffled: string[] = [];
+          const artistIndices: { [artist: string]: number } = {};
+          artists.forEach(artist => {
+            artistIndices[artist] = 0;
+          });
+          
+          // Keep track of last artist played
+          let lastArtist: string | null = null;
+          
+          // Fill shuffled array
+          while (shuffled.length < paths.length) {
+            // Find available artists (not the last one played, and with remaining tracks)
+            const availableArtists = artists.filter(artist => {
+              if (artist === lastArtist) return false; // Can't use same artist twice in a row
+              return artistIndices[artist] < artistGroups[artist].length;
+            });
+            
+            // If no available artists (shouldn't happen, but handle edge case)
+            if (availableArtists.length === 0) {
+              // Reset and pick from any artist with remaining tracks
+              const anyAvailable = artists.filter(artist => 
+                artistIndices[artist] < artistGroups[artist].length
+              );
+              if (anyAvailable.length > 0) {
+                const artist = anyAvailable[Math.floor(Math.random() * anyAvailable.length)];
+                shuffled.push(artistGroups[artist][artistIndices[artist]++]);
+                lastArtist = artist;
+              }
+              break;
+            }
+            
+            // Pick a random artist from available ones
+            const selectedArtist = availableArtists[Math.floor(Math.random() * availableArtists.length)];
+            shuffled.push(artistGroups[selectedArtist][artistIndices[selectedArtist]++]);
+            lastArtist = selectedArtist;
+          }
+          
+          return shuffled;
+        };
+        
+        const shuffled = shuffleWithArtistSeparation(trackPaths);
         
         // Convert track paths to Track objects
         const trackObjects: Track[] = shuffled.map((path, index) => {
@@ -489,10 +593,24 @@ const SloMo: React.FC = () => {
       audio.pause();
       audio.src = '';
       
+      // Capture the current track index and artist at the time this handler is set up
+      const trackIndexForHandler = currentTrackIndex;
+      const trackArtistForHandler = currentTrack.artist;
+      
       // Set up track end handler
       handleTrackEndRef.current = () => {
-        const nextIndex = (currentTrackIndex + 1) % tracks.length;
-        setCurrentTrackIndex(nextIndex);
+        // Only proceed if this handler is still for the current track
+        // This prevents stale handlers from firing after a track change
+        setCurrentTrackIndex((currentIndex) => {
+          // If the current index has changed since this handler was set up, ignore it
+          if (currentIndex !== trackIndexForHandler) {
+            return currentIndex;
+          }
+          // Use the captured values to find the next track
+          const sequentialNext = (trackIndexForHandler + 1) % tracks.length;
+          const nextIndex = findNextTrackWithDifferentArtist(sequentialNext, trackArtistForHandler, 'next');
+          return nextIndex;
+        });
         setIsPlaying(true); // Auto-play next track
       };
       
@@ -535,6 +653,10 @@ const SloMo: React.FC = () => {
         pizzicatoSoundRef.current.stop();
         pizzicatoSoundRef.current = null;
       }
+      
+      // Capture the current track index and artist at the time this handler is set up
+      const trackIndexForHandler = currentTrackIndex;
+      const trackArtistForHandler = currentTrack.artist;
       
       // Create new Pizzicato sound
       const sound = new Sound(
@@ -623,8 +745,18 @@ const SloMo: React.FC = () => {
             sound.on('end', async () => {
               console.log('Pizzicato end event fired');
               // Track ended - move to next
-              const nextIndex = (currentTrackIndex + 1) % tracks.length;
-              setCurrentTrackIndex(nextIndex);
+              // Only proceed if this handler is still for the current track
+              // This prevents stale handlers from firing after a track change
+              setCurrentTrackIndex((currentIndex) => {
+                // If the current index has changed since this handler was set up, ignore it
+                if (currentIndex !== trackIndexForHandler) {
+                  return currentIndex;
+                }
+                // Use the captured values to find the next track
+                const sequentialNext = (trackIndexForHandler + 1) % tracks.length;
+                const nextIndex = findNextTrackWithDifferentArtist(sequentialNext, trackArtistForHandler, 'next');
+                return nextIndex;
+              });
               // Resume AudioContext before auto-playing next track
               // Wait a bit for the new sound to load, then resume
               setTimeout(async () => {
@@ -802,7 +934,11 @@ const SloMo: React.FC = () => {
       }
     }
     // Change track index (this will trigger track reload)
-    setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+    if (!currentTrack) return;
+    setCurrentTrackIndex((prev) => {
+      const sequentialNext = (prev + 1) % tracks.length;
+      return findNextTrackWithDifferentArtist(sequentialNext, currentTrack.artist, 'next');
+    });
     setIsPlaying(true);
   };
 
@@ -821,7 +957,11 @@ const SloMo: React.FC = () => {
       }
     }
     // Change track index (this will trigger track reload)
-    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+    if (!currentTrack) return;
+    setCurrentTrackIndex((prev) => {
+      const sequentialPrev = (prev - 1 + tracks.length) % tracks.length;
+      return findNextTrackWithDifferentArtist(sequentialPrev, currentTrack.artist, 'prev');
+    });
     setIsPlaying(true);
   };
 
@@ -874,6 +1014,8 @@ const SloMo: React.FC = () => {
         audio.pause();
         audio.currentTime = 0; // Reset to beginning
       }
+      // Clear the end handler to prevent it from firing with stale values
+      handleTrackEndRef.current = null;
     } else {
       const sound = pizzicatoSoundRef.current;
       if (sound) {
