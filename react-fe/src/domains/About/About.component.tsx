@@ -10,13 +10,12 @@ function About() {
           {/* <img src={miniB} alt="logo" className="mini-b" /> */}
         </div>
         <div className="text-cont">
-          <h1>Welcome to the BVerse</h1>
-          <p>
-            This site is to serve as my portfolio, showcase my
-            work, and keep some of my app ideas that I've made in the past
-            alive. ☮️
+          <h1>Welcome to the Antigogglin.org</h1>
+          <p>Hi, I am Brendan O'Keefe I do software development for work but this site is for all my side projects, ideas, portfolio.I wish I bought a better domain name but after setting it all up i am probably sticking with it.
+            ☮️
           </p>
-          <p>
+
+          {/* <p>
             Tech stack deployment nerdery: <br />
             It was hosted on a AWS EC2 instance, now on a simpler digitalocean droplet,
              deployed using a CI/CD pipeline triggered by a GitHub runner. 
@@ -24,16 +23,11 @@ function About() {
             deployed about a minute later. Its a monorepo Dockerized Node.js app
             utilizing React on the frontend and Nest framework on the backend. I
             used Pantone's 2025 fashion color trend for the color palette.
-          </p>
-          <p>
-            I've let my personal site go down a few times in the past for
-            hosting or domain reasons but this one should be here for good. I
-            realize if I am going to call myself a web developer I need to
-            always have a site to prove it!
-          </p>
+          </p> */}
 
           <h1>Me</h1>
-          <p>
+          <p>this would be the toot-my-own-🎺horn🎺 section when I am looking for a job. luckily i am not doing that right now. anyone visiting prolly knows me.</p>
+          {/* <p>
             I am a very enthused software developer who loves complex problem
             solving and working on innovative teams. I really love the work of
             development and hope to stay coding forever!
@@ -48,7 +42,7 @@ function About() {
             guitar, hiking, fermenting foods, growing plants in my garden and
             hydroponically, or reading first-contact explorer accounts or
             seafaring journals.
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
