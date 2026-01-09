@@ -29,12 +29,15 @@ const Home = () => {
     <div className="home">
       <div>
         {/* <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton> */}
-        <MobileButton onClick={() => handleNav("music")}>music projects</MobileButton>
-        <MobileButton onClick={() => handleNav("slomo")}>slomo <br />world</MobileButton>
+        <MobileButton onClick={() => handleNav("music")}>
+          music projects
+        </MobileButton>
+        {/* <MobileButton onClick={() => handleNav("slomo")}>slomo <br />world</MobileButton> */}
         <MobileButton onClick={() => handleNav("lunch")}>
           lunch
           <br />
-          app </MobileButton>
+          app{" "}
+        </MobileButton>
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
       </div>
     </div>
