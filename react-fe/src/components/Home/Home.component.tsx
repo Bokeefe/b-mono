@@ -35,6 +35,11 @@ const Home = () => {
           lunch
           <br />
           app </MobileButton>
+        <MobileButton onClick={() => handleNav("hexadic-system")}>
+          the hexadic
+          <br />
+          system
+        </MobileButton>
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
       </div>
     </div>
