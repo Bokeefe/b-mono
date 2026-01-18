@@ -1,22 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { io, Socket } from 'socket.io-client';
-import { baseUrl } from '../../environment';
-import './TextCorpse.scss';
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { io, Socket } from "socket.io-client";
+import { baseUrl } from "../../environment";
+import "./TextCorpse.scss";
 
 const TextCorpse: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const [text, setText] = useState('');
-  const [roomText, setRoomText] = useState('');
+  const [text, setText] = useState("");
+  const [roomText, setRoomText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const MAX_CHARS = 170;
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const textBodyRef = React.useRef<HTMLDivElement>(null);
   const MAX_VISIBLE_CHARS = 1000; // tweak based on your layout
-  const visibleText = roomText.length > MAX_VISIBLE_CHARS
-    ? roomText.slice(-MAX_VISIBLE_CHARS)
-    : roomText;
+  const visibleText =
+    roomText.length > MAX_VISIBLE_CHARS
+      ? roomText.slice(-MAX_VISIBLE_CHARS)
+      : roomText;
 
   useEffect(() => {
     if (!roomId) return;
@@ -25,7 +26,7 @@ const TextCorpse: React.FC = () => {
 
     // Connect to the text-corpse namespace
     const textCorpseSocket = io(`${baseUrl}/text-corpse`, {
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       upgrade: true,
       rememberUpgrade: true,
       timeout: 20000,
@@ -43,50 +44,56 @@ const TextCorpse: React.FC = () => {
 
     const handleConnect = () => {
       if (roomId) {
-        textCorpseSocket.emit('joinRoom', { roomId });
+        textCorpseSocket.emit("joinRoom", { roomId });
       }
     };
 
-    textCorpseSocket.on('connect', handleConnect);
+    textCorpseSocket.on("connect", handleConnect);
 
     // If already connected, join immediately
     if (textCorpseSocket.connected) {
-      textCorpseSocket.emit('joinRoom', { roomId });
+      textCorpseSocket.emit("joinRoom", { roomId });
     }
 
-    textCorpseSocket.on('connect_error', (error) => {
-      console.error('TextCorpse socket connection error:', error);
+    textCorpseSocket.on("connect_error", (error) => {
+      console.error("TextCorpse socket connection error:", error);
     });
 
     // Listen for room data from the server (loaded from JSON file)
-    textCorpseSocket.on('roomData', (data: { roomId: string; text: string | null }) => {
-      if (data && data.roomId === roomId) {
-        setRoomText(data.text ?? '');
-        setIsLoading(false);
+    textCorpseSocket.on(
+      "roomData",
+      (data: { roomId: string; text: string | null }) => {
+        if (data && data.roomId === roomId) {
+          setRoomText(data.text ?? "");
+          setIsLoading(false);
+        }
       }
-    });
+    );
 
     // Request room data explicitly as a fallback after a short delay
     // This ensures we get the data even if joinRoom doesn't trigger it
     requestTimeout = setTimeout(() => {
       if (textCorpseSocket.connected && roomId) {
-        textCorpseSocket.emit('getRoomData', { roomId });
+        textCorpseSocket.emit("getRoomData", { roomId });
       }
     }, 1000);
 
     // Listen for text updates from other clients
-    textCorpseSocket.on('textUpdated', ({ roomId: updatedRoomId, text: updatedText }) => {
-      if (updatedRoomId === roomId) {
-        setRoomText(updatedText || '');
-        setIsLoading(false);
+    textCorpseSocket.on(
+      "textUpdated",
+      ({ roomId: updatedRoomId, text: updatedText }) => {
+        if (updatedRoomId === roomId) {
+          setRoomText(updatedText || "");
+          setIsLoading(false);
+        }
       }
-    });
+    );
 
     return () => {
       clearTimeout(requestTimeout);
-      textCorpseSocket.off('connect', handleConnect);
-      textCorpseSocket.off('roomData');
-      textCorpseSocket.off('textUpdated');
+      textCorpseSocket.off("connect", handleConnect);
+      textCorpseSocket.off("roomData");
+      textCorpseSocket.off("textUpdated");
       textCorpseSocket.disconnect();
       setSocket(null);
     };
@@ -105,6 +112,11 @@ const TextCorpse: React.FC = () => {
     if (value.length <= MAX_CHARS) {
       setText(value);
     }
+
+    if (value.endsWith("\n")) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -116,10 +128,10 @@ const TextCorpse: React.FC = () => {
     }
 
     // Emit appendText event to server
-    socket.emit('appendText', { roomId, text: trimmedText });
+    socket.emit("appendText", { roomId, text: trimmedText });
 
     // Clear the textarea
-    setText('');
+    setText("");
   };
 
   const remainingChars = MAX_CHARS - text.length;
@@ -131,7 +143,9 @@ const TextCorpse: React.FC = () => {
           <h1>Text Corpse</h1>
           {roomId && <h2>Room: {roomId}</h2>}
           <div className="text-corpse-body" ref={textBodyRef}>
-            {isLoading ? 'Loading...' : (visibleText || 'No text in this room yet...')}
+            {isLoading
+              ? "Loading..."
+              : visibleText || "No text in this room yet..."}
           </div>
         </div>
         <form onSubmit={handleSubmit} className="text-corpse-form">

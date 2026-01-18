@@ -65,19 +65,24 @@
   min-height: 100px;
   font-size: 16px;
   line-height: 1.6;
-
-
-  // Style for body text when added
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Keeps content at the bottom */
+  height: 100px; /* Or whatever height you need */
+  width: auto;
+  overflow-y: auto; /* Allows scrolling up to see old messages */
+  mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
   p {
     margin-bottom: 16px;
     line-height: 1.6;
   }
 
-  @media (min-width: 768px) {
-    padding: 24px;
-    font-size: 18px;
-    min-height: 150px;
-  }
+  // @media (min-width: 768px) {
+  padding: 24px;
+  font-size: 18px;
+  min-height: 150px;
+  // }
 }
 
 .text-corpse-body.locked {
@@ -86,7 +91,12 @@
   white-space: pre-wrap;
   /* Fade out the top (modern browsers) */
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 100%
+  );
 }
 
 .text-corpse-form {
@@ -96,6 +106,8 @@
   padding: 16px;
   background: var(--light-beige);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  bottom: 0;
 
   @media (min-width: 768px) {
     padding: 24px;
