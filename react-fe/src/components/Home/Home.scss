@@ -1,11 +1,16 @@
 .home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-items: center;
+  height: 93vh;
+  margin: auto;
+  > div {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    align-items: center;
-    height: 93vh;
-    margin: auto;
+    flex-direction: column;
+    gap: 20px;
+  }
 }
 .home > * {
-    display: flex;
+  display: flex;
 }

@@ -41,11 +41,11 @@ const Home = () => {
           <br />
           app{" "}
         </MobileButton>
-        <MobileButton onClick={() => handleNav("text-corpse")}>
+        {/* <MobileButton onClick={() => handleNav("text-corpse")}>
           text
           <br />
           corpse
-        </MobileButton>
+        </MobileButton> */}
         <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
       </div>
     </div>
