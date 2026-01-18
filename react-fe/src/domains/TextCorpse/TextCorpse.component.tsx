@@ -24,11 +24,17 @@ const TextCorpse: React.FC = () => {
 
     setIsLoading(true); // Reset loading state when roomId changes
 
-    // Connect to the text-corpse namespace
-    const textCorpseSocket = io(`${baseUrl}/text-corpse`, {
-      transports: ["websocket", "polling"],
-      upgrade: true,
-      rememberUpgrade: true,
+    // Determine if we're in production
+    const isProduction = typeof import.meta !== "undefined" &&
+      (import.meta as any).env?.MODE === "production";
+
+    // Socket.io connection options
+    const socketOptions: any = {
+      // Use polling only in production - works reliably through Cloudflare without WebSocket upgrade issues
+      // Allow websocket in dev for better performance
+      transports: isProduction ? ["polling"] : ["websocket", "polling"],
+      upgrade: !isProduction, // Disable WebSocket upgrade in production
+      rememberUpgrade: !isProduction,
       timeout: 20000,
       forceNew: true,
       reconnection: true,
@@ -36,7 +42,17 @@ const TextCorpse: React.FC = () => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       autoConnect: true,
-    });
+    };
+
+    // In production, socket.io is proxied through nginx at /socket.io/
+    // Socket.io client defaults to /socket.io path, which matches nginx proxy
+    // Explicitly set path to ensure it works correctly with namespaces
+    if (isProduction) {
+      socketOptions.path = '/socket.io';
+    }
+
+    // Connect to the text-corpse namespace
+    const textCorpseSocket = io(`${baseUrl}/text-corpse`, socketOptions);
 
     setSocket(textCorpseSocket);
 
