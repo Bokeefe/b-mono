@@ -68,11 +68,11 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end; /* Keeps content at the bottom */
-  height: 100px; /* Or whatever height you need */
-  width: auto;
-  overflow-y: auto; /* Allows scrolling up to see old messages */
-  mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  // height: 100px; /* Or whatever height you need */
+  // width: auto;
+  // overflow-y: auto; /* Allows scrolling up to see old messages */
+  // mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  // -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
   p {
     margin-bottom: 16px;
     line-height: 1.6;

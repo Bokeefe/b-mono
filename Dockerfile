@@ -30,6 +30,10 @@ RUN apk add --no-cache nginx certbot
 
 WORKDIR /usr/src/app
 
+# Create persistent data directory (outside git-tracked files)
+# This directory will persist across deployments when using Docker volumes
+RUN mkdir -p /usr/src/app/data && chmod 755 /usr/src/app/data
+
 # Copy backend build and dependencies
 COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
 COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/

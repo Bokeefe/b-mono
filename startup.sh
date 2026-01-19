@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Create persistent data directory if it doesn't exist
+mkdir -p /usr/src/app/data
+chmod 755 /usr/src/app/data
+
 # Start the backend
 cd /usr/src/app/nest-server && node dist/main.js &
 BACKEND_PID=$!

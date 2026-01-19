@@ -14,78 +14,65 @@ export interface TextCorpseData {
 
 @Injectable()
 export class TextCorpseService {
-  // Path that works in both dev (ts-node) and production (compiled to dist)
-  // Try multiple possible locations
+  // Persistent data directory - outside git-tracked files for production
+  // Can be overridden with TEXT_CORPSE_DATA_DIR environment variable
+  private readonly dataDir = process.env.TEXT_CORPSE_DATA_DIR || '/usr/src/app/data';
+  private readonly dataFileName = 'text-corpse.data.json';
+
+  // Path that works in both dev (ts-node) and production
+  // In production, uses persistent directory outside git-tracked files
   private readonly dataFilePath = (() => {
-    // Option 1: In development with ts-node, __dirname is src/text-corpse
-    const devPath = path.join(__dirname, 'text-corpse.data.json');
+    // Check if we're in production (NODE_ENV=production or running from dist/)
+    const isProduction = process.env.NODE_ENV === 'production' || __dirname.includes('dist');
     
-    // Option 2: In production, the file should be copied to dist/text-corpse/
-    // So from dist/text-corpse/, the file is in the same directory
-    const prodPath = path.join(__dirname, 'text-corpse.data.json');
-    
-    // Option 3: Try going from dist/text-corpse up to nest-server/src/text-corpse
-    // This handles the case where src directory is copied in Docker
-    const prodSrcPath = path.join(__dirname, '..', '..', 'src', 'text-corpse', 'text-corpse.data.json');
-    
-    // Option 4: Use process.cwd() and find the correct path
-    const cwd = process.cwd();
-    // Try different possible locations from cwd
-    const possiblePaths = [
-      path.join(cwd, 'nest-server', 'dist', 'text-corpse', 'text-corpse.data.json'), // Production: cwd is /usr/src/app
-      path.join(cwd, 'nest-server', 'src', 'text-corpse', 'text-corpse.data.json'), // If src is copied
-      path.join(cwd, 'src', 'text-corpse', 'text-corpse.data.json'), // If cwd is nest-server
-      path.join(cwd, '..', 'nest-server', 'src', 'text-corpse', 'text-corpse.data.json'), // If cwd is inside nest-server
-    ];
-    
-    // Check which path exists (prioritize dev, then prod same dir, then prod src, then check all possible paths)
-    let selectedPath: string | null = null;
-    if (fs.existsSync(devPath)) {
-      selectedPath = devPath;
-      console.log(`[TextCorpseService] Using dev path: ${selectedPath}`);
-    } else if (fs.existsSync(prodPath)) {
-      selectedPath = prodPath;
-      console.log(`[TextCorpseService] Using production path (same dir): ${selectedPath}`);
-    } else if (fs.existsSync(prodSrcPath)) {
-      selectedPath = prodSrcPath;
-      console.log(`[TextCorpseService] Using production src path: ${selectedPath}`);
-    } else {
-      // Try all possible paths from cwd
-      for (const testPath of possiblePaths) {
-        if (fs.existsSync(testPath)) {
-          selectedPath = testPath;
-          console.log(`[TextCorpseService] Using cwd-based path: ${selectedPath}`);
-          break;
+    if (isProduction) {
+      // Production: Use persistent data directory
+      const persistentPath = path.join(this.dataDir, this.dataFileName);
+      
+      // Ensure the directory exists
+      if (!fs.existsSync(this.dataDir)) {
+        try {
+          fs.mkdirSync(this.dataDir, { recursive: true });
+          console.log(`[TextCorpseService] Created persistent data directory: ${this.dataDir}`);
+        } catch (error) {
+          console.error(`[TextCorpseService] Failed to create data directory ${this.dataDir}:`, error);
         }
       }
       
-      if (!selectedPath) {
-        // Final fallback - use the prod path even if it doesn't exist (will create empty file)
-        selectedPath = prodPath;
-        console.warn(`[TextCorpseService] No data file found, using fallback path: ${selectedPath}`);
-        console.warn(`[TextCorpseService] __dirname: ${__dirname}, cwd: ${cwd}`);
-      }
+      console.log(`[TextCorpseService] Using persistent data path: ${persistentPath}`);
+      return persistentPath;
+    } else {
+      // Development: Use source directory (git-tracked for dev convenience)
+      const devPath = path.join(__dirname, this.dataFileName);
+      console.log(`[TextCorpseService] Using dev path: ${devPath}`);
+      return devPath;
     }
-    
-    return selectedPath!;
   })();
 
   async getData(): Promise<TextCorpseData> {
     try {
+      // Ensure directory exists
+      const dataDir = path.dirname(this.dataFilePath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+        console.log(`[TextCorpseService] Created data directory: ${dataDir}`);
+      }
+
+      // Initialize file if it doesn't exist
       if (!fs.existsSync(this.dataFilePath)) {
-        console.error(`[TextCorpseService] File does not exist at: ${this.dataFilePath}`);
-        console.error(`[TextCorpseService] __dirname: ${__dirname}, cwd: ${process.cwd()}`);
-        return {} as TextCorpseData;
+        console.log(`[TextCorpseService] Data file does not exist, creating empty file at: ${this.dataFilePath}`);
+        const emptyData: TextCorpseData = {};
+        fs.writeFileSync(this.dataFilePath, JSON.stringify(emptyData, null, 2), 'utf-8');
+        return emptyData;
       }
       
       const fileContent = fs.readFileSync(this.dataFilePath, 'utf-8');
-      const raw = JSON.parse(fileContent);
-      
-      console.log(`[TextCorpseService] Successfully loaded data file from: ${this.dataFilePath}`);
-      console.log(`[TextCorpseService] Found ${Object.keys(raw).length} rooms: ${Object.keys(raw).join(', ')}`);
+      const raw = JSON.parse(fileContent || '{}');
       
       // Migrate old format (string values) to new format (object values)
       const migrated: TextCorpseData = {};
+      let needsMigration = false;
+      
       for (const [roomId, value] of Object.entries(raw)) {
         if (typeof value === 'string') {
           // Old format: migrate to new format
@@ -94,11 +81,21 @@ export class TextCorpseService {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
+          needsMigration = true;
         } else if (value && typeof value === 'object' && 'text' in value) {
           // New format: use as is
           migrated[roomId] = value as RoomData;
         }
       }
+      
+      // If migration happened, save the migrated data
+      if (needsMigration) {
+        await this.saveData(migrated);
+        console.log(`[TextCorpseService] Migrated data format and saved`);
+      }
+      
+      console.log(`[TextCorpseService] Successfully loaded data file from: ${this.dataFilePath}`);
+      console.log(`[TextCorpseService] Found ${Object.keys(migrated).length} rooms: ${Object.keys(migrated).join(', ')}`);
       
       return migrated;
     } catch (error) {

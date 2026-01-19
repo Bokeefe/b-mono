@@ -9,6 +9,7 @@ const TextCorpse: React.FC = () => {
   const [text, setText] = useState("");
   const [roomText, setRoomText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(true);
   const MAX_CHARS = 170;
 
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -134,6 +135,9 @@ const TextCorpse: React.FC = () => {
       handleSubmit(e);
     }
   };
+  const handleUnlock = (e: React.FormEvent) => {
+    setIsLocked(!isLocked);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,7 +162,7 @@ const TextCorpse: React.FC = () => {
         <div className="text-corpse-content">
           <h1>Text Corpse</h1>
           {roomId && <h2>Room: {roomId}</h2>}
-          <div className="text-corpse-body" ref={textBodyRef}>
+          <div className={`text-corpse-body ${isLocked ? 'locked' : ''}`}   ref={textBodyRef}>
             {isLoading
               ? "Loading..."
               : visibleText || "No text in this room yet..."}
@@ -177,6 +181,14 @@ const TextCorpse: React.FC = () => {
               {remainingChars} characters remaining
             </div>
           </div>
+          <button
+            type="button"
+            className="submit-button"
+            onClick={handleUnlock}
+            
+          >
+            {isLocked ? 'Un' : 'L'}ock
+          </button>
           <button
             type="submit"
             className="submit-button"
