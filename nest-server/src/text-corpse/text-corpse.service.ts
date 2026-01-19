@@ -20,36 +20,50 @@ export class TextCorpseService {
     // Option 1: In development with ts-node, __dirname is src/text-corpse
     const devPath = path.join(__dirname, 'text-corpse.data.json');
     
-    // Option 2: In production, try going from dist/text-corpse up to src/text-corpse
-    const prodPath = path.join(__dirname, '..', 'src', 'text-corpse', 'text-corpse.data.json');
+    // Option 2: In production, the file should be copied to dist/text-corpse/
+    // So from dist/text-corpse/, the file is in the same directory
+    const prodPath = path.join(__dirname, 'text-corpse.data.json');
     
-    // Option 3: Use process.cwd() and find the correct path
+    // Option 3: Try going from dist/text-corpse up to nest-server/src/text-corpse
+    // This handles the case where src directory is copied in Docker
+    const prodSrcPath = path.join(__dirname, '..', '..', 'src', 'text-corpse', 'text-corpse.data.json');
+    
+    // Option 4: Use process.cwd() and find the correct path
     const cwd = process.cwd();
     // Try different possible locations from cwd
     const possiblePaths = [
+      path.join(cwd, 'nest-server', 'dist', 'text-corpse', 'text-corpse.data.json'), // Production: cwd is /usr/src/app
+      path.join(cwd, 'nest-server', 'src', 'text-corpse', 'text-corpse.data.json'), // If src is copied
       path.join(cwd, 'src', 'text-corpse', 'text-corpse.data.json'), // If cwd is nest-server
-      path.join(cwd, 'nest-server', 'src', 'text-corpse', 'text-corpse.data.json'), // If cwd is workspace root
       path.join(cwd, '..', 'nest-server', 'src', 'text-corpse', 'text-corpse.data.json'), // If cwd is inside nest-server
     ];
     
-    // Check which path exists (prioritize dev, then prod, then check all possible paths)
+    // Check which path exists (prioritize dev, then prod same dir, then prod src, then check all possible paths)
     let selectedPath: string | null = null;
     if (fs.existsSync(devPath)) {
       selectedPath = devPath;
+      console.log(`[TextCorpseService] Using dev path: ${selectedPath}`);
     } else if (fs.existsSync(prodPath)) {
       selectedPath = prodPath;
+      console.log(`[TextCorpseService] Using production path (same dir): ${selectedPath}`);
+    } else if (fs.existsSync(prodSrcPath)) {
+      selectedPath = prodSrcPath;
+      console.log(`[TextCorpseService] Using production src path: ${selectedPath}`);
     } else {
       // Try all possible paths from cwd
       for (const testPath of possiblePaths) {
         if (fs.existsSync(testPath)) {
           selectedPath = testPath;
+          console.log(`[TextCorpseService] Using cwd-based path: ${selectedPath}`);
           break;
         }
       }
       
       if (!selectedPath) {
-        // Final fallback - use the first possible path even if it doesn't exist
-        selectedPath = possiblePaths[0];
+        // Final fallback - use the prod path even if it doesn't exist (will create empty file)
+        selectedPath = prodPath;
+        console.warn(`[TextCorpseService] No data file found, using fallback path: ${selectedPath}`);
+        console.warn(`[TextCorpseService] __dirname: ${__dirname}, cwd: ${cwd}`);
       }
     }
     
@@ -60,11 +74,15 @@ export class TextCorpseService {
     try {
       if (!fs.existsSync(this.dataFilePath)) {
         console.error(`[TextCorpseService] File does not exist at: ${this.dataFilePath}`);
+        console.error(`[TextCorpseService] __dirname: ${__dirname}, cwd: ${process.cwd()}`);
         return {} as TextCorpseData;
       }
       
       const fileContent = fs.readFileSync(this.dataFilePath, 'utf-8');
       const raw = JSON.parse(fileContent);
+      
+      console.log(`[TextCorpseService] Successfully loaded data file from: ${this.dataFilePath}`);
+      console.log(`[TextCorpseService] Found ${Object.keys(raw).length} rooms: ${Object.keys(raw).join(', ')}`);
       
       // Migrate old format (string values) to new format (object values)
       const migrated: TextCorpseData = {};
@@ -85,6 +103,8 @@ export class TextCorpseService {
       return migrated;
     } catch (error) {
       console.error(`[TextCorpseService] Error reading text-corpse data file:`, error instanceof Error ? error.message : error);
+      console.error(`[TextCorpseService] File path attempted: ${this.dataFilePath}`);
+      console.error(`[TextCorpseService] __dirname: ${__dirname}, cwd: ${process.cwd()}`);
       return {} as TextCorpseData;
     }
   }
