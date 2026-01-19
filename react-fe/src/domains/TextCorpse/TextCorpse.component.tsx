@@ -135,7 +135,7 @@ const TextCorpse: React.FC = () => {
       handleSubmit(e);
     }
   };
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = () => {
     setIsLocked(!isLocked);
   };
 

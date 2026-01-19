@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20 as build
+FROM node:20 AS build
 
 # Build Models first
 WORKDIR /usr/src/app/models
