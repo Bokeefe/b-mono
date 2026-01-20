@@ -53,6 +53,7 @@ The following files/directories must exist on the droplet for container volume m
 - `/etc/ssl/antigogglin/` - SSL certificates directory
 - `/root/b-mono-default.conf` - Custom nginx configuration
 - `/root/startup-no-certbot.sh` - Startup script override
+- `/root/text-corpse-data/` - Persistent data directory for text-corpse game (created automatically)
 
 ### GitHub Secrets Required
 
@@ -73,6 +74,10 @@ docker pull bokeefe96/b-mono-image:latest
 # Stop and remove old container
 docker rm -f b-mono || true
 
+# Create persistent data directory
+mkdir -p /root/text-corpse-data
+chmod 755 /root/text-corpse-data
+
 # Run new container with all required mounts and environment
 docker run -d --name b-mono --restart unless-stopped \
   -e DOMAIN=antigogglin.org \
@@ -80,6 +85,7 @@ docker run -d --name b-mono --restart unless-stopped \
   -v /etc/ssl/antigogglin:/etc/ssl/antigogglin:ro \
   -v /root/b-mono-default.conf:/etc/nginx/http.d/default.conf:ro \
   -v /root/startup-no-certbot.sh:/usr/src/app/startup.sh:ro \
+  -v /root/text-corpse-data:/usr/src/app/data \
   bokeefe96/b-mono-image:latest
 ```
 
