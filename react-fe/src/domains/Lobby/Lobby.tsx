@@ -92,13 +92,13 @@ const Lobby: React.FC = () => {
             <h1>Welcome, {name}!</h1>
 
             <div className="room-selection">
-                <h2>Join a Room</h2>
+                <h2>Create a new <a href="https://en.wikipedia.org/wiki/Exquisite_corpse" target="_blank" rel="noopener noreferrer">Exquisite Corpse</a></h2>
                 <select
                     value={selectedRoom}
                     onChange={handleRoomSelect}
                     className="room-dropdown"
                 >
-                    <option value="">Select a room...</option>
+                    <option value="">Add to an existing corpse...</option>
                     {rooms.map((room) => (
                         <option key={room} value={room}>
                             {room}
@@ -108,13 +108,13 @@ const Lobby: React.FC = () => {
             </div>
 
             <div className="create-room">
-                <h2>Or Create a New Room</h2>
+                <h2>Or Create a New One</h2>
                 <form onSubmit={handleCreateRoom}>
                     <input
                         type="text"
                         value={newRoomName}
                         onChange={(e) => setNewRoomName(e.target.value)}
-                        placeholder="Enter room name"
+                        placeholder="Enter name"
                         className="room-input"
                     />
                     <button type="submit" className="create-button">
