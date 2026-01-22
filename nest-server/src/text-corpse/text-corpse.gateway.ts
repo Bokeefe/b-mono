@@ -40,12 +40,27 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(client: Socket, payload: { roomId: string }) {
-    const { roomId } = payload;
+  async handleJoinRoom(client: Socket, payload: { roomId: string; password?: string }) {
+    const { roomId, password } = payload;
 
     if (!roomId) {
       console.error(`[TextCorpseGateway] No roomId provided in payload`);
+      client.emit('joinRoomError', { error: 'No roomId provided' });
       return;
+    }
+
+    // Check if room exists and verify password if needed
+    const roomData = await this.textCorpseService.getRoomDataFull(roomId);
+    if (roomData && roomData.password) {
+      // Room has a password, verify it
+      const isValid = await this.textCorpseService.verifyPassword(roomId, password || '');
+      if (!isValid) {
+        // Send error but also send the room data (text) so user can see it, just locked
+        const text = await this.textCorpseService.getRoomData(roomId);
+        client.emit('roomData', { roomId, text: text ?? '', isLocked: true });
+        client.emit('joinRoomError', { error: 'Invalid password' });
+        return;
+      }
     }
 
     // Leave previous room if any
@@ -60,11 +75,46 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Get room data from JSON file and send it to the client
     try {
-      const roomData = await this.textCorpseService.getRoomData(roomId);
-      client.emit('roomData', { roomId, text: roomData ?? '' });
+      const text = await this.textCorpseService.getRoomData(roomId);
+      client.emit('roomData', { roomId, text: text ?? '', isLocked: !!roomData?.password });
     } catch (error) {
       console.error(`[TextCorpseGateway] Error getting room data for ${roomId}:`, error);
-      client.emit('roomData', { roomId, text: '' });
+      client.emit('roomData', { roomId, text: '', isLocked: false });
+    }
+  }
+
+  @SubscribeMessage('unlockRoom')
+  async handleUnlockRoom(client: Socket, payload: { roomId: string; password: string }) {
+    const { roomId, password } = payload;
+
+    if (!roomId || !password) {
+      client.emit('unlockRoomError', { error: 'Room ID and password required' });
+      return;
+    }
+
+    const isValid = await this.textCorpseService.verifyPassword(roomId, password);
+    if (isValid) {
+      client.emit('unlockRoomSuccess', { roomId });
+    } else {
+      client.emit('unlockRoomError', { error: 'Invalid password' });
+    }
+  }
+
+  @SubscribeMessage('createRoom')
+  async handleCreateRoom(client: Socket, payload: { roomId: string; password: string; isPublic: boolean }) {
+    const { roomId, password, isPublic } = payload;
+
+    if (!roomId) {
+      client.emit('createRoomError', { error: 'Room ID required' });
+      return;
+    }
+
+    try {
+      await this.textCorpseService.createRoom(roomId, password, isPublic);
+      client.emit('createRoomSuccess', { roomId });
+    } catch (error) {
+      console.error(`[TextCorpseGateway] Error creating room ${roomId}:`, error);
+      client.emit('createRoomError', { error: 'Failed to create room' });
     }
   }
 
@@ -114,10 +164,11 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('getRooms')
   async handleGetRooms(client: Socket) {
     try {
-      const data = await this.textCorpseService.getData();
-      const roomIds = Object.keys(data || {});
-      // Emit a simple array of room objects with id to match frontend expectations
-      const activeRooms = roomIds.map((id) => ({ id }));
+      console.log('[TextCorpseGateway] getRooms requested by client:', client.id);
+      // Only return public rooms
+      const publicRoomIds = await this.textCorpseService.getPublicRooms();
+      const activeRooms = publicRoomIds.map((id) => ({ id }));
+      console.log('[TextCorpseGateway] Emitting activeRooms:', activeRooms);
       client.emit('activeRooms', activeRooms);
     } catch (error) {
       console.error('[TextCorpseGateway] Error getting rooms list:', error);

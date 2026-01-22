@@ -6,6 +6,8 @@ export interface RoomData {
   text: string;
   createdAt?: string;
   updatedAt?: string;
+  password?: string; // Optional password to unlock the room
+  isPublic?: boolean; // Whether room appears in public dropdown (default: true for backwards compatibility)
 }
 
 export interface TextCorpseData {
@@ -85,11 +87,29 @@ export class TextCorpseService {
             text: value,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            isPublic: true, // Default old rooms to public
           };
           needsMigration = true;
         } else if (value && typeof value === 'object' && 'text' in value) {
-          // New format: use as is
-          migrated[roomId] = value as RoomData;
+          // New format: migrate any old field names and ensure isPublic defaults to true if not set
+          const roomValue = value as any;
+          // Handle old "public" field (could be string "true"/"false" or boolean)
+          let isPublic = true;
+          if (roomValue.isPublic !== undefined) {
+            isPublic = roomValue.isPublic;
+          } else if (roomValue.public !== undefined) {
+            // Migrate from old "public" field
+            isPublic = roomValue.public === 'true' || roomValue.public === true;
+            needsMigration = true;
+          }
+          
+          migrated[roomId] = {
+            text: roomValue.text,
+            createdAt: roomValue.createdAt,
+            updatedAt: roomValue.updatedAt,
+            password: roomValue.password,
+            isPublic: isPublic,
+          };
         }
       }
       
@@ -135,8 +155,59 @@ export class TextCorpseService {
       text,
       createdAt: existingRoom?.createdAt || now,
       updatedAt: now,
+      password: existingRoom?.password, // Preserve password
+      isPublic: existingRoom?.isPublic !== undefined ? existingRoom.isPublic : true, // Default to public
     };
     await this.saveData(data);
+  }
+
+  async createRoom(roomId: string, password: string, isPublic: boolean = true): Promise<void> {
+    const data = await this.getData();
+    const now = new Date().toISOString();
+    
+    data[roomId] = {
+      text: '',
+      createdAt: now,
+      updatedAt: now,
+      password: password || undefined,
+      isPublic: isPublic,
+    };
+    await this.saveData(data);
+  }
+
+  async verifyPassword(roomId: string, password: string): Promise<boolean> {
+    const MASTER_PASSWORD = 'corpseunlock';
+    
+    // Master password unlocks any room
+    if (password === MASTER_PASSWORD) {
+      return true;
+    }
+    
+    const roomData = await this.getRoomDataFull(roomId);
+    
+    // If room has no password, allow access
+    if (!roomData || !roomData.password) {
+      return true;
+    }
+    
+    // Check if provided password matches
+    return roomData.password === password;
+  }
+
+  async getPublicRooms(): Promise<string[]> {
+    const data = await this.getData();
+    const allRoomIds = Object.keys(data);
+    console.log(`[TextCorpseService] Total rooms found: ${allRoomIds.length}`, allRoomIds);
+    
+    const publicRooms = allRoomIds.filter(roomId => {
+      const room = data[roomId];
+      const isPublic = room.isPublic !== false; // Default to public if undefined
+      console.log(`[TextCorpseService] Room ${roomId}: isPublic=${room.isPublic}, result=${isPublic}`);
+      return isPublic;
+    });
+    
+    console.log(`[TextCorpseService] Public rooms: ${publicRooms.length}`, publicRooms);
+    return publicRooms;
   }
 
   async appendRoomText(roomId: string, newText: string): Promise<string> {
@@ -178,6 +249,8 @@ export class TextCorpseService {
       text: finalText,
       createdAt: existingRoom?.createdAt || now,
       updatedAt: now,
+      password: existingRoom?.password, // Preserve password
+      isPublic: existingRoom?.isPublic !== undefined ? existingRoom.isPublic : true, // Preserve isPublic
     };
     await this.saveData(data);
     
