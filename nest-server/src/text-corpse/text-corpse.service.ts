@@ -19,6 +19,11 @@ export class TextCorpseService {
   private readonly dataDir = process.env.TEXT_CORPSE_DATA_DIR || '/usr/src/app/data';
   private readonly dataFileName = 'text-corpse.data.json';
 
+  // Public method to get the data file path (for backup controller)
+  getDataFilePath(): string {
+    return this.dataFilePath;
+  }
+
   // Path that works in both dev (ts-node) and production
   // In production, uses persistent directory outside git-tracked files
   private readonly dataFilePath = (() => {

@@ -1034,7 +1034,8 @@ const SloMo: React.FC = () => {
         <div className="bartender-background" style={{ backgroundImage: `url(${bartenderImage})` }}></div>
         <div className="genre-selection-content">
           <h1>playlists</h1>
-          <p>randomized slo mo playlists insired by the chopped, the screwed and the g🐐ated <a href="https://youtu.be/adaTEdqR4xI?si=kLuG-OzSM3qHGGvN" target="_blank">Caretaker</a></p>   
+          <p>randomized slo mo playlists insired by the chopped, the screwed and the g🐐ated <a href="https://youtu.be/adaTEdqR4xI?si=kLuG-OzSM3qHGGvN" target="_blank">Caretaker</a></p> 
+          <p>this is sort of in hibernation mode only one instrumental guitar playlist for you right now.</p>  
           {isLoadingGenres ? (
             <p>Loading genres...</p>
           ) : genres.length === 0 ? (
