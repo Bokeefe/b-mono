@@ -281,22 +281,22 @@ const TextCorpse: React.FC = () => {
               {remainingChars} characters remaining
             </div>
           </div>
-          {isLocked && (
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={text.trim().length === 0 }
+          >
+            Submit
+          </button>
+  
             <button
               type="button"
               className="submit-button"
               onClick={handleUnlock}
+              disabled={!isLocked}
             >
-              Unlock
+              {isLocked ? 'Unlock' : 'Lock'}
             </button>
-          )}
-          <button
-            type="submit"
-            className="submit-button"
-            disabled={text.trim().length === 0 || isLocked}
-          >
-            Submit
-          </button>
         </form>
       </div>
     </div>
