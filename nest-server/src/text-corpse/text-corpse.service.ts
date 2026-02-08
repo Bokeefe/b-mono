@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { env } from 'yargs';
 
 export interface RoomData {
   text: string;
@@ -30,8 +31,9 @@ export class TextCorpseService {
   // In production, uses persistent directory outside git-tracked files
   private readonly dataFilePath = (() => {
     // Check if we're in production (NODE_ENV=production or running from dist/)
-    const isProduction = process.env.NODE_ENV === 'production' || __dirname.includes('dist');
-    
+    // const isProduction = process.env.NODE_ENV === 'production' || __dirname.includes('dist');
+        const isProduction = process.env.NODE_ENV === 'production';
+    console.log(`[TextCorpseService] isProduction: ${isProduction}`,process.env.NODE_ENV === 'production' , __dirname.includes('dist'));
     if (isProduction) {
       // Production: Use persistent data directory
       const persistentPath = path.join(this.dataDir, this.dataFileName);
@@ -57,6 +59,7 @@ export class TextCorpseService {
   })();
 
   async getData(): Promise<TextCorpseData> {
+
     try {
       // Ensure directory exists
       const dataDir = path.dirname(this.dataFilePath);

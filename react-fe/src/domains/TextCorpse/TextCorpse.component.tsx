@@ -27,7 +27,8 @@ const TextCorpse: React.FC = () => {
     setIsLoading(true); // Reset loading state when roomId changes
 
     // Determine if we're in production
-    const isProduction = typeof import.meta !== "undefined" &&
+    const isProduction =
+      typeof import.meta !== "undefined" &&
       (import.meta as any).env?.MODE === "production";
 
     // Socket.io connection options
@@ -50,7 +51,7 @@ const TextCorpse: React.FC = () => {
     // Socket.io client defaults to /socket.io path, which matches nginx proxy
     // Explicitly set path to ensure it works correctly with namespaces
     if (isProduction) {
-      socketOptions.path = '/socket.io';
+      socketOptions.path = "/socket.io";
     }
 
     // Connect to the text-corpse namespace
@@ -61,19 +62,23 @@ const TextCorpse: React.FC = () => {
     let requestTimeout: NodeJS.Timeout;
 
     // Check if this is a new room being created
-    const roomCreationData = roomId ? sessionStorage.getItem(`room-${roomId}`) : null;
-    let roomPassword = '';
+    const roomCreationData = roomId
+      ? sessionStorage.getItem(`room-${roomId}`)
+      : null;
+    let roomPassword = "";
     let roomIsPublic = true;
-    
+
+    console.log("roomCreationData:", roomId);
+
     if (roomCreationData) {
       try {
         const parsed = JSON.parse(roomCreationData);
-        roomPassword = parsed.password || '';
+        roomPassword = parsed.password || "";
         roomIsPublic = parsed.isPublic !== undefined ? parsed.isPublic : true;
         // Clear the session storage after reading
         sessionStorage.removeItem(`room-${roomId}`);
       } catch (e) {
-        console.error('Error parsing room creation data:', e);
+        console.error("Error parsing room creation data:", e);
       }
     }
 
@@ -127,7 +132,7 @@ const TextCorpse: React.FC = () => {
 
     // Handle join room errors (like password required)
     textCorpseSocket.on("joinRoomError", (error: { error: string }) => {
-      if (error.error === 'Invalid password') {
+      if (error.error === "Invalid password") {
         setNeedsPassword(true);
         setIsLocked(true);
         setIsLoading(false);
@@ -152,7 +157,7 @@ const TextCorpse: React.FC = () => {
             setNeedsPassword(true);
           }
         }
-      }
+      },
     );
 
     // Handle unlock success
@@ -185,7 +190,7 @@ const TextCorpse: React.FC = () => {
           setRoomText(updatedText || "");
           setIsLoading(false);
         }
-      }
+      },
     );
 
     return () => {
@@ -224,13 +229,13 @@ const TextCorpse: React.FC = () => {
   };
   const handleUnlock = () => {
     if (!socket || !roomId) return;
-    
-    const password = prompt('Enter password to unlock this corpse:');
+
+    const password = prompt("Enter password to unlock this corpse:");
     if (password === null) {
       // User cancelled
       return;
     }
-    
+
     socket.emit("unlockRoom", { roomId, password });
   };
 
@@ -257,13 +262,23 @@ const TextCorpse: React.FC = () => {
         <div className="text-corpse-content">
           <h1>Text Corpse</h1>
           {roomId && <h2>Room: {roomId}</h2>}
-          <div className={`text-corpse-body ${isLocked ? 'locked' : ''}`} ref={textBodyRef}>
+          <div
+            className={`text-corpse-body ${isLocked ? "locked" : ""}`}
+            ref={textBodyRef}
+          >
             {isLoading
               ? "Loading..."
               : visibleText || "No text in this room yet..."}
           </div>
           {isLocked && needsPassword && (
-            <div style={{ padding: '10px', backgroundColor: '#ffebee', borderRadius: '4px', marginTop: '10px' }}>
+            <div
+              style={{
+                padding: "10px",
+                backgroundColor: "#ffebee",
+                borderRadius: "4px",
+                marginTop: "10px",
+              }}
+            >
               This corpse is locked. Click 'Unlock' to enter the password.
             </div>
           )}
@@ -284,19 +299,19 @@ const TextCorpse: React.FC = () => {
           <button
             type="submit"
             className="submit-button"
-            disabled={text.trim().length === 0 }
+            disabled={text.trim().length === 0}
           >
             Submit
           </button>
-  
-            <button
-              type="button"
-              className="submit-button"
-              onClick={handleUnlock}
-              disabled={!isLocked}
-            >
-              {isLocked ? 'Unlock' : 'Lock'}
-            </button>
+
+          <button
+            type="button"
+            className="submit-button"
+            onClick={handleUnlock}
+            disabled={!isLocked}
+          >
+            {isLocked ? "Unlock" : "Lock"}
+          </button>
         </form>
       </div>
     </div>
