@@ -6,6 +6,14 @@ interface MusicProps {}
 export const Music: React.FC<MusicProps> = () => {
   return (
     <div className="page-container">
+      <h1>
+        <a
+          href="https://open.spotify.com/playlist/4xcMWLMk7VDLfvxeI4Sg3p?si=595262ec25794040"
+          target="_blank"
+        >
+          My mega spotify playlist of the greatest songs I love
+        </a>
+      </h1>
       <h1>The Claimjumpers</h1>
       <iframe
         src="https://www.youtube.com/embed/meKeUyOBrRI?si=B4sgd-rOF3gUpqyf"
@@ -14,6 +22,9 @@ export const Music: React.FC<MusicProps> = () => {
         allowFullScreen
       ></iframe>
       <h1>Ginseng 2011-2013</h1>
+      <a href="https://soundcloud.com/ginse-eng" target="_blank">
+        SoundCloud
+      </a>
       <iframe
         src="https://www.youtube.com/embed/flq2Cjssxqo?si=TF4UX0g29oIY7BK8"
         title="YouTube video player"
@@ -32,6 +43,9 @@ export const Music: React.FC<MusicProps> = () => {
       <a href="https://www.discogs.com/artist/1826665-Cuticle">Discogs</a>
       <a href="https://open.spotify.com/artist/2NmYjWPrbiX8ebWt9JTO7Q">
         Spotify
+      </a>
+      <a href="https://soundcloud.com/cuticle" target="_blank">
+        SoundCloud
       </a>
       <iframe
         src="https://www.youtube.com/embed/cl6kB09ZwOo?si=OGBw7htxnWdWzVCw"

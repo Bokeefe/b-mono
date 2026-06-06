@@ -11,8 +11,9 @@ function About() {
         </div>
         <div className="text-cont">
           <h1>Welcome to the Antigogglin.org</h1>
-          <p>Hi, I am Brendan O'Keefe I do software development for work but this site is for all my side projects, ideas, portfolio.I wish I bought a better domain name but after setting it all up i am probably sticking with it.
-            ☮️
+          <p>
+            Hi, I am Brendan O'Keefe I do software development for work but this
+            site is for all my side projects, ideas, portfolio. ☮️
           </p>
 
           {/* <p>
@@ -25,9 +26,8 @@ function About() {
             used Pantone's 2025 fashion color trend for the color palette.
           </p> */}
 
-          <h1>Me</h1>
-          <p>this would be the toot-my-own-🎺horn🎺 section when I am looking for a job. luckily i am not doing that right now. anyone visiting prolly knows me.</p>
-          {/* <p>
+          {/* <h1>Me</h1>
+          <p>
             I am a very enthused software developer who loves complex problem
             solving and working on innovative teams. I really love the work of
             development and hope to stay coding forever!

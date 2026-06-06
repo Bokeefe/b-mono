@@ -68,8 +68,6 @@ const TextCorpse: React.FC = () => {
     let roomPassword = "";
     let roomIsPublic = true;
 
-    console.log("roomCreationData:", roomId);
-
     if (roomCreationData) {
       try {
         const parsed = JSON.parse(roomCreationData);
@@ -151,8 +149,9 @@ const TextCorpse: React.FC = () => {
           setRoomText(data.text ?? "");
           setIsLoading(false);
           // If room is locked (has password), start locked and require unlock
-          const shouldBeLocked = data.isLocked ?? false;
+          const shouldBeLocked = data.isLocked ?? true;
           setIsLocked(shouldBeLocked);
+          console.log("Received room data:", data);
           if (shouldBeLocked) {
             setNeedsPassword(true);
           }
