@@ -224,3 +224,19 @@ ssh -i ~/.ssh/github_actions_key root@[DROPLET_IP] "echo 'test'"
 # Test CD pipeline with SSH key secret
 
 # Test automated deployment - Docker now installed
+
+# AI server startup commands
+
+hoomans are no longer supposed to use their brain and touch the code, I have been using the open/free/local models through Lm Studio
+
+```
+# List Installed Models
+lms ls
+#
+lms server status
+# load specific model
+lms load qwen2.5-coder-7b-instruct
+#
+lms server start --port 1234 --cors
+
+```

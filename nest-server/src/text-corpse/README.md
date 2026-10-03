@@ -1,26 +1,35 @@
 # Text Corpse Game - Functionality Summary
 
 ## Overview
+
 A collaborative text-writing game where multiple users can contribute to shared "rooms" of text in real-time via WebSocket connections.
+
+## MVP
+
+Group to interact over this chat like application whenever someone submits text it gets added to the end of the collective writing in the room, but no one can see past a certain point in the writing. The idea is to be similar to a drawing exquisite corpse which data artists used to do currently there seems to be something broken with submitting text to the room and there seems to be a bug with the concept of unlocking it
 
 ## Architecture
 
 ### Backend (NestJS)
+
 - **Service**: `TextCorpseService` - Manages room data persistence
 - **Gateway**: `TextCorpseGateway` - Handles WebSocket connections on `/text-corpse` namespace
 - **Controller**: `TextCorpseController` - Provides `/backup` endpoint for data downloads
 
 ### Frontend (React)
+
 - **Lobby**: Room selection/creation interface
 - **TextCorpse Component**: Main game interface for writing/reading text
 
 ## Data Storage
 
 ### Development
+
 - File: `nest-server/src/text-corpse/text-corpse.data.json` (git-tracked)
 - Format: JSON object with room IDs as keys, each containing `text`, `createdAt`, `updatedAt`
 
 ### Production
+
 - File: `/usr/src/app/data/text-corpse.data.json` (persistent, outside container)
 - Mounted via Docker volume: `/root/text-corpse-data:/usr/src/app/data`
 - Automatically created if missing
@@ -29,6 +38,7 @@ A collaborative text-writing game where multiple users can contribute to shared 
 ## WebSocket Events
 
 ### Client → Server
+
 - `joinRoom` - Join a room and receive current text
 - `getRooms` - Request list of all active rooms
 - `getRoomData` - Request current text for a room
@@ -36,6 +46,7 @@ A collaborative text-writing game where multiple users can contribute to shared 
 - `updateText` - Replace entire room text
 
 ### Server → Client
+
 - `activeRooms` - Array of `{id: string}` room objects
 - `roomData` - Current text for a room `{roomId: string, text: string}`
 - `textUpdated` - Broadcast when room text changes
@@ -62,7 +73,7 @@ A collaborative text-writing game where multiple users can contribute to shared 
 ## File Path Resolution
 
 The service automatically detects environment:
+
 - **Development**: Uses source directory (`src/text-corpse/`)
 - **Production**: Uses persistent directory (`/usr/src/app/data/`)
 - Can be overridden via `TEXT_CORPSE_DATA_DIR` environment variable
-
