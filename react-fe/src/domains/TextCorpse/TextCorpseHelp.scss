@@ -1,0 +1,126 @@
+// Round "?" button that opens the "how to play" pop-up
+.help-button {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--blue);
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #6f8fc4;
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+// "How to play" pop-up
+.text-corpse-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.text-corpse-help-modal {
+  position: relative;
+  background: var(--light-beige);
+  color: var(--dark-grey);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+
+  p {
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+
+  .text-corpse-help-figure {
+    margin: 0 0 16px;
+
+    .text-corpse-help-image {
+      display: block;
+      width: auto;
+      margin: 0 auto;
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: 8px;
+    }
+
+    figcaption {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #666;
+      text-align: center;
+      line-height: 1.4;
+    }
+  }
+
+  ul {
+    margin: 0 0 16px;
+    padding-left: 20px;
+
+    li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.help-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #000;
+  }
+}
+
+.help-done-button {
+  display: block;
+  margin-left: auto;
+  padding: 12px 24px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
