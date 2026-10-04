@@ -242,7 +242,10 @@ const TextCorpse: React.FC = () => {
     e.preventDefault();
 
     const trimmedText = text.trim();
-    if (!trimmedText || !socket || !roomId || isLocked) {
+    // Writing is always allowed - the lock only hides the *existing* text
+    // (that is the whole point of the exquisite corpse: you write blind, then
+    //  unlock with the room password to read the full thing).
+    if (!trimmedText || !socket || !roomId) {
       return;
     }
 

@@ -25,6 +25,9 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
   server: Server;
 
   private clientToRoom: Map<string, string> = new Map();
+  // Rooms each connected client has successfully unlocked (with a password).
+  // A room is only "locked" for a client that hasn't unlocked it yet.
+  private unlockedRooms: Map<string, Set<string>> = new Map();
 
   constructor(private readonly textCorpseService: TextCorpseService) { }
 
@@ -33,10 +36,18 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   handleDisconnect(client: Socket) {
-    const roomId = this.clientToRoom.get(client.id);
-    if (roomId) {
-      this.clientToRoom.delete(client.id);
-    }
+    this.clientToRoom.delete(client.id);
+    this.unlockedRooms.delete(client.id);
+  }
+
+  private isUnlocked(clientId: string, roomId: string): boolean {
+    return this.unlockedRooms.get(clientId)?.has(roomId) ?? false;
+  }
+
+  private markUnlocked(clientId: string, roomId: string): void {
+    const rooms = this.unlockedRooms.get(clientId) ?? new Set<string>();
+    rooms.add(roomId);
+    this.unlockedRooms.set(clientId, rooms);
   }
 
   @SubscribeMessage('joinRoom')
@@ -51,35 +62,43 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Check if room exists and verify password if needed
     const roomData = await this.textCorpseService.getRoomDataFull(roomId);
-    if (roomData && roomData.password) {
-      // Room has a password, verify it
+    const requiresPassword = !!roomData?.password;
+
+    // A room is unlocked if it has no password or this client already unlocked it
+    let unlocked = !requiresPassword || this.isUnlocked(client.id, roomId);
+
+    if (requiresPassword && !unlocked) {
       const isValid = await this.textCorpseService.verifyPassword(roomId, password || '');
-      if (!isValid) {
-        // Send error but also send the room data (text) so user can see it, just locked
-        const text = await this.textCorpseService.getRoomData(roomId);
-        client.emit('roomData', { roomId, text: text ?? '', isLocked: true });
-        client.emit('joinRoomError', { error: 'Invalid password' });
-        return;
+      if (isValid) {
+        // Remember that this client may now see the full corpse
+        this.markUnlocked(client.id, roomId);
+        unlocked = true;
       }
     }
 
     // Leave previous room if any
     const previousRoom = this.clientToRoom.get(client.id);
-    if (previousRoom) {
+    if (previousRoom && previousRoom !== roomId) {
       client.leave(previousRoom);
     }
 
-    // Join the Socket.IO room
+    // Join the Socket.IO room. Even locked clients join so they still receive
+    // live text updates (a locked corpse only hides the *older* text).
     client.join(roomId);
     this.clientToRoom.set(client.id, roomId);
 
     // Get room data from JSON file and send it to the client
     try {
       const text = await this.textCorpseService.getRoomData(roomId);
-      client.emit('roomData', { roomId, text: text ?? '', isLocked: !!roomData?.password });
+      client.emit('roomData', { roomId, text: text ?? '', isLocked: !unlocked });
     } catch (error) {
       console.error(`[TextCorpseGateway] Error getting room data for ${roomId}:`, error);
-      client.emit('roomData', { roomId, text: '', isLocked: false });
+      client.emit('roomData', { roomId, text: '', isLocked: !unlocked });
+    }
+
+    // Tell the client it still needs to unlock a password-protected room
+    if (!unlocked) {
+      client.emit('joinRoomError', { error: 'Invalid password' });
     }
   }
 
@@ -94,6 +113,8 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
 
     const isValid = await this.textCorpseService.verifyPassword(roomId, password);
     if (isValid) {
+      // Remember the unlock so subsequent joins/refreshes stay unlocked
+      this.markUnlocked(client.id, roomId);
       client.emit('unlockRoomSuccess', { roomId });
     } else {
       client.emit('unlockRoomError', { error: 'Invalid password' });
@@ -153,8 +174,9 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
   async handleGetRoomData(client: Socket, payload: { roomId: string }) {
     const { roomId } = payload;
     try {
-      const roomData = await this.textCorpseService.getRoomData(roomId);
-      client.emit('roomData', { roomId, text: roomData ?? '' });
+      const roomData = await this.textCorpseService.getRoomDataFull(roomId);
+      const isLocked = !!roomData?.password && !this.isUnlocked(client.id, roomId);
+      client.emit('roomData', { roomId, text: roomData?.text ?? '', isLocked });
     } catch (error) {
       console.error(`[TextCorpseGateway] Error in getRoomData for ${roomId}:`, error);
       client.emit('roomData', { roomId, text: '' });
