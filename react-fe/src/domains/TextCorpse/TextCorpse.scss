@@ -178,3 +178,21 @@
     cursor: not-allowed;
   }
 }
+
+// Title row with the "how to play" button
+.text-corpse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  // Override the default h1 margin so it aligns with the round button
+  h1 {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 768px) {
+    margin-bottom: 24px;
+  }
+}

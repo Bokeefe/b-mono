@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { baseUrl } from "../../environment";
+import TextCorpseHelp from "./TextCorpseHelp.component";
 import "./TextCorpse.scss";
 
 const TextCorpse: React.FC = () => {
@@ -262,7 +263,10 @@ const TextCorpse: React.FC = () => {
     <div className="page-container text-corpse-container">
       <div className="text-corpse">
         <div className="text-corpse-content">
-          <h1>Text Corpse</h1>
+          <div className="text-corpse-header">
+            <h1>Text Corpse</h1> <TextCorpseHelp />
+          </div>
+
           {roomId && <h2>Room: {roomId}</h2>}
           <div
             className={`text-corpse-body ${isLocked ? "locked" : ""}`}

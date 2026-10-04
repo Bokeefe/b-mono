@@ -11,6 +11,28 @@
         text-align: center;
     }
 
+    // Title row with the "how to play" button
+    .lobby-header {
+        position: relative;
+        margin-bottom: 2rem;
+
+        h1 {
+            margin-bottom: 0;
+            text-align: center;
+        }
+
+        .help-button {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+
+            &:active {
+                transform: translateY(-50%) scale(0.94);
+            }
+        }
+    }
+
     .room-selection,
     .create-room {
         margin-bottom: 2rem;

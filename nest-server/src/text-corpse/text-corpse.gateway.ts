@@ -60,15 +60,14 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
       return;
     }
 
-    // Check if room exists and verify password if needed
-    const roomData = await this.textCorpseService.getRoomDataFull(roomId);
-    const requiresPassword = !!roomData?.password;
+    // Every corpse starts LOCKED (the text is hidden). A room only becomes
+    // unlocked once this client supplies a valid password - either while
+    // joining (e.g. the creator) or later via the `unlockRoom` event.
+    const providedPassword = (password ?? '').trim();
+    let unlocked = this.isUnlocked(client.id, roomId);
 
-    // A room is unlocked if it has no password or this client already unlocked it
-    let unlocked = !requiresPassword || this.isUnlocked(client.id, roomId);
-
-    if (requiresPassword && !unlocked) {
-      const isValid = await this.textCorpseService.verifyPassword(roomId, password || '');
+    if (!unlocked && providedPassword) {
+      const isValid = await this.textCorpseService.verifyPassword(roomId, providedPassword);
       if (isValid) {
         // Remember that this client may now see the full corpse
         this.markUnlocked(client.id, roomId);
@@ -96,8 +95,8 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
       client.emit('roomData', { roomId, text: '', isLocked: !unlocked });
     }
 
-    // Tell the client it still needs to unlock a password-protected room
-    if (!unlocked) {
+    // If a password was supplied but rejected, let the client know.
+    if (!unlocked && providedPassword) {
       client.emit('joinRoomError', { error: 'Invalid password' });
     }
   }
@@ -175,7 +174,7 @@ export class TextCorpseGateway implements OnGatewayConnection, OnGatewayDisconne
     const { roomId } = payload;
     try {
       const roomData = await this.textCorpseService.getRoomDataFull(roomId);
-      const isLocked = !!roomData?.password && !this.isUnlocked(client.id, roomId);
+      const isLocked = !this.isUnlocked(client.id, roomId);
       client.emit('roomData', { roomId, text: roomData?.text ?? '', isLocked });
     } catch (error) {
       console.error(`[TextCorpseGateway] Error in getRoomData for ${roomId}:`, error);
