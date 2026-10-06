@@ -29,9 +29,9 @@ const Home = () => {
     <div className="home">
       <div>
         {/* <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton> */}
-        <MobileButton onClick={() => handleNav("music")}>
+        {/* <MobileButton onClick={() => handleNav("music")}>
           music projects
-        </MobileButton>
+        </MobileButton> */}
         <MobileButton onClick={() => handleNav("slomo")}>
           slomo <br />
           world
