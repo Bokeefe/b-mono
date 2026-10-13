@@ -238,5 +238,6 @@ lms server status
 lms load qwen2.5-coder-7b-instruct
 #
 lms server start --port 1234 --cors
-
+#
+lms server stop
 ```

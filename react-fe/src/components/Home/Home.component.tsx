@@ -12,42 +12,22 @@ const Home = () => {
     navigate(`/${route}`);
   };
 
-  const checkHealth = async () => {
-    try {
-      const data = await apiService.healthCheck();
-      console.log("Health response:", data.status);
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  useEffect(() => {
-    checkHealth();
-  }, []);
+  const buttons = [
+    { route: "music", label: "music projects" },
+    { route: "slomo", label: "slomo\nworld" },
+    { route: "lunch", label: "lunch\napp" },
+    { route: "text-corpse", label: "text\ncorpse" },
+    { route: "about", label: "About" },
+  ];
 
   return (
     <div className="home">
-      <div>
-        {/* <MobileButton onClick={() => handleNav("resume")}>Resume</MobileButton> */}
-        <MobileButton onClick={() => handleNav("music")}>
-          music projects
-        </MobileButton>
-        <MobileButton onClick={() => handleNav("slomo")}>
-          slomo <br />
-          world
-        </MobileButton>
-        <MobileButton onClick={() => handleNav("lunch")}>
-          lunch
-          <br />
-          app{" "}
-        </MobileButton>
-        <MobileButton onClick={() => handleNav("text-corpse")}>
-          text
-          <br />
-          corpse
-          <br />
-        </MobileButton>
-        <MobileButton onClick={() => handleNav("about")}>About</MobileButton>
+      <div className="button-container">
+        {buttons.map((btn, index) => (
+          <MobileButton key={index} onClick={() => handleNav(btn.route)}>
+            {btn.label}
+          </MobileButton>
+        ))}
       </div>
     </div>
   );
