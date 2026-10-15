@@ -9,15 +9,14 @@ body {
   background-attachment: fixed;
   background-position: center;
   min-height: 100vh;
-  font-family: 'Quicksand', sans-serif; 
-  
+
   /* Force mobile browsers to load the background */
   @media (max-width: 768px) {
     background-size: 80px;
     background-attachment: scroll;
-    
+
     &::before {
-      content: '';
+      content: "";
       position: fixed;
       top: 0;
       left: 0;
@@ -50,7 +49,7 @@ body {
   opacity: 0.95;
   border-radius: 16px;
   margin: auto;
-  padding: .5rem;
+  padding: 0.5rem;
   max-width: 800px;
   display: flex;
   flex-direction: column;
@@ -59,37 +58,40 @@ body {
 }
 
 @font-face {
-  font-family: 'Caesar';
-  src: url('./style/fonts/Caesar_Dressing/CaesarDressing-Regular.ttf') format('truetype');
+  font-family: "Caesar";
+  src: url("./style/fonts/Caesar_Dressing/CaesarDressing-Regular.ttf")
+    format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .caesar-font {
-  font-family: 'Caesar', sans-serif;
+  font-family: "Caesar", sans-serif;
 }
 
 @font-face {
-  font-family: 'Oxygen';
-  src: url('./style/fonts/Oxygen_Mono/OxygenMono-Regular.ttf') format('truetype');
+  font-family: "Oxygen";
+  src: url("./style/fonts/Oxygen_Mono/OxygenMono-Regular.ttf")
+    format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .oxygen-font {
-  font-family: 'Oxygen', sans-serif;
+  font-family: "Oxygen", sans-serif;
 }
 
 @font-face {
-  font-family: 'Quicksand';
-  src: url('./style/fonts/Quicksand/Quicksand-VariableFont_wght.ttf') format('truetype');
+  font-family: "Quicksand";
+  src: url("./style/fonts/Quicksand/Quicksand-VariableFont_wght.ttf")
+    format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .quicksand-font {
-  font-family: 'Quicksand', sans-serif;
+  font-family: "Quicksand", sans-serif;
 }

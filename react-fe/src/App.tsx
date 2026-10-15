@@ -13,6 +13,7 @@ import TextCorpse from "./domains/TextCorpse/TextCorpse.component";
 import Music from "./domains/Music/Music.component";
 import SloMo from "./domains/SloMo/SloMo.component";
 import Backup from "./domains/Backup/Backup.component";
+import Claimjumpers from "./domains/Claimjumpers/Claimjumpers.component";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/text-corpse/:roomId" element={<TextCorpse />} />
             <Route path="/music" element={<Music />} />
             <Route path="/slomo" element={<SloMo />} />
+            <Route path="/claimjumpers" element={<Claimjumpers />} />
             {/* <Route path="/backup" element={<Backup />} /> */}
           </Route>
         </Routes>

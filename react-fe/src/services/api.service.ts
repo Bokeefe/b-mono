@@ -23,10 +23,24 @@ class ApiService {
 
   async getSlomoTracks(genre: string): Promise<string[]> {
     try {
-      const response = await fetch(`${baseUrl}/api/slomo/genres/${encodeURIComponent(genre)}/tracks`);
+      const response = await fetch(
+        `${baseUrl}/api/slomo/genres/${encodeURIComponent(genre)}/tracks`,
+      );
       return await response.json();
     } catch (error) {
       console.error(`Failed to fetch tracks for genre ${genre}:`, error);
+      throw error;
+    }
+  }
+
+  async getAlbumTracks(albumPath: string): Promise<string[]> {
+    try {
+      const response = await fetch(
+        `${baseUrl}/api/slomo/genres/${encodeURIComponent(albumPath)}/tracks`,
+      );
+      return await response.json();
+    } catch (error) {
+      console.error(`Failed to fetch tracks for genre ${albumPath}:`, error);
       throw error;
     }
   }
