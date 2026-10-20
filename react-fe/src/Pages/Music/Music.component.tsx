@@ -14,7 +14,9 @@ export const Music: React.FC<MusicProps> = () => {
           My mega spotify playlist of the greatest songs I love
         </a>
       </h1>
-      <h1>The Claimjumpers</h1>
+      <a href="/claimjumpers">
+        <h1>The Claimjumpers</h1>
+      </a>
       <iframe
         src="https://www.youtube.com/embed/meKeUyOBrRI?si=B4sgd-rOF3gUpqyf"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

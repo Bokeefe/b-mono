@@ -1,0 +1,31 @@
+.claimjumpers-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  font-size: 18px;
+  ol {
+    text-align: center;
+    margin-left: -2rem;
+    li {
+      // margin: 2rem 0;
+      padding: 1rem 0;
+    }
+  }
+}
+.active-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+audio {
+  display: none;
+}
+.controls-container {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  button {
+    border: none;
+    font-size: 1.5rem;
+  }
+}

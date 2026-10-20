@@ -9,12 +9,7 @@ import { TextCorpseModule } from './text-corpse/text-corpse.module';
 import { SlomoModule } from './slomo/slomo.module';
 
 @Module({
-  imports: [
-    FakerModule,
-    LunchModule,
-    TextCorpseModule,
-    SlomoModule
-  ],
+  imports: [FakerModule, LunchModule, TextCorpseModule, SlomoModule],
   controllers: [AppController, HealthController],
   providers: [AppService, HealthService],
 })

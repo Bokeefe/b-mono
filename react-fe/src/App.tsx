@@ -3,17 +3,17 @@ import "./App.scss";
 
 import Home from "./components/Home/Home.component";
 import MainLayout from "./components/MainLayout/MainLayout.component";
-import About from "./domains/About/About.component";
-import Lunch from "./domains/Lunch/Landing";
-import Room from "./domains/Lunch/Room";
-import Resume from "./domains/Resume/Resume.component";
+import About from "./Pages/About/About.component";
+import Lunch from "./Pages/Lunch/Landing";
+import Room from "./Pages/Lunch/Room";
+import Resume from "./Pages/Resume/Resume.component";
 import "./style/variables.css";
-import Lobby from "./domains/Lobby/Lobby";
-import TextCorpse from "./domains/TextCorpse/TextCorpse.component";
-import Music from "./domains/Music/Music.component";
-import SloMo from "./domains/SloMo/SloMo.component";
-import Backup from "./domains/Backup/Backup.component";
-import Claimjumpers from "./domains/Claimjumpers/Claimjumpers.component";
+import Lobby from "./Pages/Lobby/Lobby";
+import TextCorpse from "./Pages/TextCorpse/TextCorpse.component";
+import Music from "./Pages/Music/Music.component";
+import SloMo from "./Pages/SloMo/SloMo.component";
+import Backup from "./Pages/Backup/Backup.component";
+import Claimjumpers from "./Pages/Claimjumpers/Claimjumpers.component";
 
 function App() {
   return (

@@ -10,6 +10,8 @@ body {
   background-position: center;
   min-height: 100vh;
 
+  font-family: "Quicksand";
+
   /* Force mobile browsers to load the background */
   @media (max-width: 768px) {
     background-size: 80px;
