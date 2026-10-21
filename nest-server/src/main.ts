@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express'; // 1. Import this
 import { AppModule } from './app.module';
 import * as express from 'express';
 import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // 2. Type the app as NestExpressApplication
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.enableCors({
     origin: true, // Allow all origins
     credentials: true,
@@ -12,21 +15,37 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Serve static files but exclude /api, /audio, /socket.io, and /backup routes
+  // 3. Serve static files from the nest-server/public folder (covers /audio/... automatically)
+  // process.cwd() points to your 'nest-server' root directory
+  app.useStaticAssets(join(process.cwd(), 'public'));
+
+  // Serve static files for react-fe build but exclude /api, /audio, /socket.io, and /backup routes
   app.use((req, res, next) => {
     const path = req.path;
-    // Skip middleware for /api, /audio, /socket.io, and /backup routes - let NestJS handle them
-    if (path.startsWith('/api') || path.startsWith('/audio') || path.startsWith('/socket.io') || path.startsWith('/backup')) {
+    if (
+      path.startsWith('/api') ||
+      path.startsWith('/audio') ||
+      path.startsWith('/socket.io') ||
+      path.startsWith('/backup')
+    ) {
       return next();
     }
-    express.static(join(__dirname, '..', '..', 'react-fe', 'dist'))(req, res, next);
+    express.static(join(__dirname, '..', '..', 'react-fe', 'dist'))(
+      req,
+      res,
+      next,
+    );
   });
 
   // Handle React Router routes but exclude /api, /audio, /socket.io, and /backup routes
   app.use((req, res, next) => {
     const path = req.path;
-    // Skip for /api, /audio, /socket.io, and /backup routes - let NestJS handle them
-    if (path.startsWith('/api') || path.startsWith('/audio') || path.startsWith('/socket.io') || path.startsWith('/backup')) {
+    if (
+      path.startsWith('/api') ||
+      path.startsWith('/audio') ||
+      path.startsWith('/socket.io') ||
+      path.startsWith('/backup')
+    ) {
       return next();
     }
     res.sendFile(join(__dirname, '..', '..', 'react-fe', 'dist', 'index.html'));

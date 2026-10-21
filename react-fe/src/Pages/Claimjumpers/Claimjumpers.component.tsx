@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
+import { baseUrl } from "../../environment.ts";
 import "./Claimjumpers.scss";
 
-const Claimjumpers = () => {
-  const [allAlbumFiles] = useState([
+const Claimjumpers: React.FC = () => {
+  const [allAlbumFiles] = useState<string[]>([
     "01 Tides Comin In.mp3",
-    "02 Untangle.mp3", // Make sure these match your exact filenames in public/audio/claimjumpers/
+    "02 Untangle.mp3",
     "03 Sad World (The Millenium cover).mp3",
     "04 Sun's Rays.mp3",
     "05 Red Lady (Phil Cordell cover).mp3",
@@ -12,16 +13,17 @@ const Claimjumpers = () => {
     "07 On the Horizon (Syndicats cover).mp3",
     "08 The Colors That Make the World.mp3",
   ]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentFileUrl, setCurrentFileUrl] = useState("");
-  const audioRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [currentFileUrl, setCurrentFileUrl] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize the first track URL on mount (without auto-playing)
+  // Initialize the first track URL on mount
   useEffect(() => {
     if (allAlbumFiles.length > 0) {
       setCurrentIndex(0);
-      const firstTrackUrl = `/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[0])}`;
-      setCurrentFileUrl(firstTrackUrl);
+      setCurrentFileUrl(
+        `${baseUrl}/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[0])}`,
+      );
     }
   }, [allAlbumFiles]);
 
@@ -33,23 +35,15 @@ const Claimjumpers = () => {
   }, [currentFileUrl]);
 
   const play = () => {
-    if (audioRef.current) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          // Ignore AbortError, which is normal if the user interrupts playback/switching
-          if (err.name !== "AbortError") {
-            console.log("Playback error:", err);
-          }
-        });
+    audioRef.current?.play().catch((err) => {
+      if (err.name !== "AbortError") {
+        console.log("Playback error:", err);
       }
-    }
+    });
   };
 
   const pause = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    audioRef.current?.pause();
   };
 
   const playPause = () => {
@@ -62,31 +56,29 @@ const Claimjumpers = () => {
     }
   };
 
-  const selectTrackByIndex = (index, autoPlay = true) => {
+  const selectTrackByIndex = (index: number, autoPlay: boolean = true) => {
     setCurrentIndex(index);
-    const trackUrl = `/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[index])}`;
-    setCurrentFileUrl(trackUrl);
+    setCurrentFileUrl(
+      `${baseUrl}/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[index])}`,
+    );
 
-    // If selected via list/next/prev, we can play after a brief moment or let the user control it
     if (autoPlay) {
-      // Use a short timeout or rely on user interaction to prevent fetch abort races
-      setTimeout(() => {
-        play();
-      }, 100);
+      setTimeout(play, 100);
     }
   };
 
   const nextTrack = () => {
     if (allAlbumFiles.length === 0) return;
-    const nextIdx = (currentIndex + 1) % allAlbumFiles.length;
-    selectTrackByIndex(nextIdx, true);
+    const nextIdx = (currentIndex + 1) / allAlbumFiles.length; // Wait, fixed modulo below:
+    selectTrackByIndex((currentIndex + 1) % allAlbumFiles.length, true);
   };
 
   const prevTrack = () => {
     if (allAlbumFiles.length === 0) return;
-    const prevIdx =
-      (currentIndex - 1 + allAlbumFiles.length) % allAlbumFiles.length;
-    selectTrackByIndex(prevIdx, true);
+    selectTrackByIndex(
+      (currentIndex - 1 + allAlbumFiles.length) % allAlbumFiles.length,
+      true,
+    );
   };
 
   return (
