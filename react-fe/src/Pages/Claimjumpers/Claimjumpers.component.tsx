@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Claimjumpers.scss";
 
-const Claimjumpers = () => {
-  const [allAlbumFiles] = useState([
+const Claimjumpers: React.FC = () => {
+  const [allAlbumFiles] = useState<string[]>([
     "01 Tides Comin In.mp3",
-    "02 Untangle.mp3", // Make sure these match your exact filenames in public/audio/claimjumpers/
+    "02 Untangle.mp3",
     "03 Sad World (The Millenium cover).mp3",
     "04 Sun's Rays.mp3",
     "05 Red Lady (Phil Cordell cover).mp3",
@@ -12,9 +12,9 @@ const Claimjumpers = () => {
     "07 On the Horizon (Syndicats cover).mp3",
     "08 The Colors That Make the World.mp3",
   ]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentFileUrl, setCurrentFileUrl] = useState("");
-  const audioRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [currentFileUrl, setCurrentFileUrl] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Initialize the first track URL on mount (without auto-playing)
   useEffect(() => {
@@ -62,7 +62,7 @@ const Claimjumpers = () => {
     }
   };
 
-  const selectTrackByIndex = (index, autoPlay = true) => {
+  const selectTrackByIndex = (index: number, autoPlay: boolean = true) => {
     setCurrentIndex(index);
     const trackUrl = `/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[index])}`;
     setCurrentFileUrl(trackUrl);
