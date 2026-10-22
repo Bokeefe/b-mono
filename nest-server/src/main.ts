@@ -1,11 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express'; // 1. Import this
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import { join } from 'path';
 
 async function bootstrap() {
-  // 2. Type the app as NestExpressApplication
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.enableCors({
@@ -15,27 +14,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // 3. Serve static files from the nest-server/public folder (covers /audio/... automatically)
-  // process.cwd() points to your 'nest-server' root directory
+  // Serve static files from the nest-server/public folder (covers /audio/... automatically)
   app.useStaticAssets(join(process.cwd(), 'public'));
-
-  // Serve static files for react-fe build but exclude /api, /audio, /socket.io, and /backup routes
-  app.use((req, res, next) => {
-    const path = req.path;
-    if (
-      path.startsWith('/api') ||
-      path.startsWith('/audio') ||
-      path.startsWith('/socket.io') ||
-      path.startsWith('/backup')
-    ) {
-      return next();
-    }
-    express.static(join(__dirname, '..', '..', 'react-fe', 'dist'))(
-      req,
-      res,
-      next,
-    );
-  });
 
   // Handle React Router routes but exclude /api, /audio, /socket.io, and /backup routes
   app.use((req, res, next) => {
