@@ -12,17 +12,30 @@ its server contract.
   vote (changeable), and after a 20-minute timer the top vote wins.
 - **Frontend**: `domains/Lunch/Landing.tsx` (room list/create, stored name in
   `localStorage["name"]`), `domains/Lunch/Room.tsx` (voting UI + timer).
+- **Intro copy**: the "20 co workers" blurb on the landing page sits behind a
+  round "?" button (`domains/Lunch/LunchHelp.component.tsx`, rendered with the
+  shared `components/HelpPopup`).
 - **Backend**: `nest-server/src/lunch/lunch.gateway.ts` (default namespace).
 - **State**: in-memory `Map` — **lost on server restart**, no persistence.
 - **Socket events**:
   - client→server: `joinRoom {roomId,userName}`, `addSuggestion {roomId,suggestion}`,
     `vote {roomId,suggestionId,userName}`, `getRooms`
   - server→client: `roomState`, `activeRooms`, `timeUpdate` (seconds left),
-    `roomComplete {winner}`
+    `roomComplete {winner, completedAt}`
+  - `joinRoom` is **idempotent and replays state**: joining a finished room sends
+    the stored `winner`/`completedAt` back (plus a targeted `roomComplete`), and
+    the client re-emits it on socket reconnect and on `visibilitychange` so
+    phones that were backgrounded still see the decision.
 - **Rules**: `ROOM_TIMEOUT_SECONDS = 1200`; one vote per user (moving your vote
   removes the old one); winner = most votes, random tiebreak.
+- **Room lifecycle**: finished rooms (with `winner`/`completedAt`) are kept for
+  `COMPLETED_ROOM_RETENTION_MS = 4h` so a late visitor to `/room/<id>` still sees
+  the decision, then discarded (the URL starts a fresh vote). An in-progress room
+  that goes empty is kept for `EMPTY_ROOM_GRACE_MS = 2min` (and never dropped
+  while sockets are still attached) to survive mobile disconnects.
 - **Shared types**: `Room`/`Suggestion`/`ActiveRoom` from `@b-mono/models`
-  (used by `Landing.tsx`; `Room.tsx` re-declares local interfaces).
+  (`Room` carries `winner` + `completedAt`; used by `Landing.tsx`; `Room.tsx`
+  re-declares local interfaces).
 - **Docs**: `domains/Lunch/lunch.md`.
 
 ## TextCorpse — collaborative writing game

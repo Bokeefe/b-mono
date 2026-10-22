@@ -47,16 +47,34 @@ Socket.IO Gateway
 4. Users can propose lunch places
 5. Users vote on suggestions (can change votes)
 6. After 20 minutes, room completes and winner is displayed
-7. All users see the final decision
+7. The decision stays on the room for **4 hours**, so anyone opening the room URL later (on desktop or phone) sees the result instead of a fresh vote
+8. After those 4 hours the room is discarded and the same URL starts a new vote
 
 ### Real-Time Features
 - **Room State Sync**: All users see the same suggestions and votes in real-time
 - **Active Rooms List**: Landing page shows all active rooms
 - **Timer**: Countdown displayed to all users
 - **Vote Changes**: Users can change votes until timeout
+- **Reconnect resync**: the client re-emits `joinRoom` on every socket
+  (re)connect and whenever the tab becomes visible again, because phones drop
+  their socket when backgrounded/locked. `joinRoom` is idempotent and replays the
+  current state — including the final decision — so a phone that wakes up after
+  the timer ran out still lands on the result.
+- **Late arrivals**: joining a finished room replays `roomState` (with `winner`
+  and `completedAt`) plus a targeted `roomComplete` event.
+
+### Room Lifecycle
+| State | Behaviour |
+| --- | --- |
+| Active, users connected | Countdown runs; suggestions/votes accepted |
+| Active, no users | Kept for `EMPTY_ROOM_GRACE_MS` (2 min) so a phone can rejoin, then discarded |
+| Finished (`isActive: false`) | `winner` + `completedAt` kept on the room for `COMPLETED_ROOM_RETENTION_MS` (4 hours); not listed in `activeRooms` |
+| Finished, 4 hours elapsed | Discarded; the URL starts a new vote |
 
 ### Data Model
-- **Room**: Contains users, suggestions, start time, and active status
+- **Room**: Contains users, suggestions, start time, active status, plus
+  `winner` (the winning `Suggestion`, or `null`) and `completedAt` (ms timestamp,
+  or `null` while voting is open)
 - **Suggestion**: Contains place name, suggester, and votes array
 - **Voting**: Each user can vote once, but can change their vote
 - **Winner Selection**: Most votes wins (random tiebreaker if tied)
@@ -94,6 +112,10 @@ Socket.IO Gateway
 - **Room Management**: In-memory storage (Map-based, resets on server restart)
 - **Timer Logic**: 20-minute countdown from room creation, checks every second
 - **Winner Selection**: Most votes wins, random tiebreaker if tied
+- **Retention**: `COMPLETED_ROOM_RETENTION_MS = 4h` keeps a finished room (with
+  its `winner`) so late visitors see the decision; `EMPTY_ROOM_GRACE_MS = 2min`
+  keeps an in-progress room alive across a dropped socket. `cleanupRooms()` runs
+  every second and also refuses to drop a room that still has connected sockets.
 
 ### Frontend (React)
 - **Landing.tsx**: Room selection/creation page
@@ -109,10 +131,12 @@ Socket.IO Gateway
 - `getRooms`: Request active rooms list
 
 **Server → Client**:
-- `roomState`: Full room state (users, suggestions, votes)
-- `activeRooms`: List of all active rooms
-- `timeUpdate`: Remaining seconds in countdown
-- `roomComplete`: Final winner when timer expires
+- `roomState`: Full room state (users, suggestions, votes, `isActive`, `winner`,
+  `completedAt`)
+- `activeRooms`: List of all active rooms (finished rooms excluded)
+- `timeUpdate`: Remaining seconds in countdown (sent on join and every minute)
+- `roomComplete`: `{ winner, completedAt }` when the timer expires, and replayed
+  to any client that joins an already-finished room
 
 ## Deployment Notes
 
@@ -133,6 +157,7 @@ Socket.IO Gateway
 - **Environment detection**: Uses `import.meta.env.MODE` to determine production vs development
 
 ### Known Limitations
-- **In-memory storage**: Rooms reset on server restart (no persistence)
+- **In-memory storage**: Rooms reset on server restart (no persistence), so a
+  retained 4-hour result is lost if the backend restarts
 - **No authentication**: Users identified by name only (stored in localStorage)
 - **Polling overhead**: Slightly more HTTP requests than WebSocket, but functionally identical

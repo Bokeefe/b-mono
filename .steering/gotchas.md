@@ -11,8 +11,9 @@ Read this before debugging. These are the non-obvious traps in this repo.
 2. **Build `models` first.** `react-fe` imports `@b-mono/models` from
    `models/dist`. If `models` isn't built, frontend `tsc`/`vite build` fails.
    Run `cd models && npm run build` before `npm run build` in `react-fe`.
-3. **No database.** All Lunch state is in-memory (gone on restart); TextCorpse
-   state is one JSON file. Don't look for a DB/ORM.
+3. **No database.** All Lunch state is in-memory (gone on restart; that includes
+   the 4-hour retained results); TextCorpse state is one JSON file. Don't look for
+   a DB/ORM.
 
 ## Backend
 
