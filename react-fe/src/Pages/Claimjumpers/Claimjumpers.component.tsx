@@ -1,21 +1,28 @@
 import React, { useState, useEffect, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBackwardStep,
+  faForwardStep,
+  faPause,
+  faPlay,
+} from "@fortawesome/free-solid-svg-icons";
 import { baseUrl } from "../../environment.ts";
+import { apiService } from "../../services/api.service";
 import "./Claimjumpers.scss";
 
 const Claimjumpers: React.FC = () => {
-  const [allAlbumFiles] = useState<string[]>([
-    "01 Tides Comin In.mp3",
-    "02 Untangle.mp3",
-    "03 Sad World (The Millenium cover).mp3",
-    "04 Sun's Rays.mp3",
-    "05 Red Lady (Phil Cordell cover).mp3",
-    "06 Scatteredgood.mp3",
-    "07 On the Horizon (Syndicats cover).mp3",
-    "08 The Colors That Make the World.mp3",
-  ]);
+  const [allAlbumFiles, setAllAlbumFiles] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [currentFileUrl, setCurrentFileUrl] = useState<string>("");
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    apiService
+      .getClaimjumperTracks()
+      .then(setAllAlbumFiles)
+      .catch(() => setAllAlbumFiles([]));
+  }, []);
 
   // Initialize the first track URL on mount
   useEffect(() => {
@@ -57,10 +64,11 @@ const Claimjumpers: React.FC = () => {
   };
 
   const selectTrackByIndex = (index: number, autoPlay: boolean = true) => {
+    const file = allAlbumFiles[index];
+    if (!file) return;
+
     setCurrentIndex(index);
-    setCurrentFileUrl(
-      `${baseUrl}/audio/claimjumpers/${encodeURIComponent(allAlbumFiles[index])}`,
-    );
+    setCurrentFileUrl(`${baseUrl}/audio/claimjumpers/${encodeURIComponent(file)}`);
 
     if (autoPlay) {
       setTimeout(play, 100);
@@ -69,7 +77,6 @@ const Claimjumpers: React.FC = () => {
 
   const nextTrack = () => {
     if (allAlbumFiles.length === 0) return;
-    const nextIdx = (currentIndex + 1) / allAlbumFiles.length; // Wait, fixed modulo below:
     selectTrackByIndex((currentIndex + 1) % allAlbumFiles.length, true);
   };
 
@@ -86,12 +93,27 @@ const Claimjumpers: React.FC = () => {
       <div className="claimjumpers-container">
         <div>Claimjumpers - demo</div>
         <div className="controls-container">
-          <button onClick={prevTrack}>⏮️</button>
-          <button onClick={playPause}>⏯️</button>
-          <button onClick={nextTrack}>⏭️</button>
+          <button onClick={prevTrack} aria-label="Previous track">
+            <FontAwesomeIcon icon={faBackwardStep} />
+          </button>
+          <button
+            onClick={playPause}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+          </button>
+          <button onClick={nextTrack} aria-label="Next track">
+            <FontAwesomeIcon icon={faForwardStep} />
+          </button>
         </div>
         <div>
-          <audio ref={audioRef} controls onEnded={nextTrack}>
+          <audio
+            ref={audioRef}
+            controls
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={nextTrack}
+          >
             <source src={currentFileUrl} type="audio/mpeg" />
             Your browser does not support the audio element.
           </audio>
@@ -99,12 +121,12 @@ const Claimjumpers: React.FC = () => {
         <div>
           <ol>
             {allAlbumFiles.map((file, index) => {
-              const isPlaying = index === currentIndex;
+              const isCurrentTrack = index === currentIndex;
               return (
                 <li
                   key={index}
                   onClick={() => selectTrackByIndex(index, true)}
-                  className={isPlaying ? "active-track" : ""}
+                  className={isCurrentTrack ? "active-track" : ""}
                   style={{ cursor: "pointer", margin: "4px 0" }}
                 >
                   {file.slice(3).replace(".mp3", "")}

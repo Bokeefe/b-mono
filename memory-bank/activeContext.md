@@ -100,3 +100,46 @@
   the same ramp + 200px cell scale, pinned to the viewport while scrolling.
 - `npx vite build` passes; minified CSS contains the new rule.
 
+### 2026-10-22 (later) — Claimjumpers tracklist now comes from the API
+- `react-fe/src/Pages/Claimjumpers/Claimjumpers.component.tsx`: deleted the
+  hardcoded 8-file `allAlbumFiles` array (leftover from the demo commit
+  `f73d7c8`, before `2b378fa` "serve mp3 from api") and seeded it from
+  `apiService.getClaimjumperTracks()` (`GET /api/claimjumpers`).
+- Also dropped a dead `nextIdx` line in `nextTrack` and guarded
+  `selectTrackByIndex` against a missing index (the list is empty for one frame
+  while the fetch is in flight).
+- Server returns the same 8 filenames in the same order (`localeCompare`), so
+  display order and `file.slice(3)` title trimming are unchanged.
+- Verified in Firefox 158 over WebDriver BiDi (CDP is gone in FF 129+; drive
+  `ws://127.0.0.1:9222/session` from Node 24's built-in WebSocket):
+  8 `<li>` rendered from the API, first track active, next/next/prev moved to
+  "Untangle" with the matching `/audio/claimjumpers/02%20Untangle.mp3` src.
+- `tsc --noEmit` and `eslint` clean. Remaining dead code noted, not removed:
+  `services/api.service.ts#getClaimjumperTrack` (singular, returns
+  `response.url`) and `Pages/Claimjumpers/readDirectory.js` (Node `fs` helper,
+  imported nowhere).
+
+### 2026-10-22 (later) — Claimjumpers controls: emoji → Font Awesome
+- Added `@fortawesome/fontawesome-svg-core` ^7.3, `@fortawesome/free-solid-svg-icons`
+  ^7.3, `@fortawesome/react-fontawesome` ^3.5 to `react-fe/package.json`
+  (lockfile updated; the Dockerfile installs from `package*.json`, so prod is fine).
+- Buttons are now `faBackwardStep` / `faPlay`↔`faPause` / `faForwardStep` with
+  `aria-label`s; the play button swaps to pause from the audio element's own
+  `onPlay` / `onPause` events (not a click-local flag), so it stays correct when
+  autoplay is rejected, when a track ends, and when playback is toggled elsewhere.
+  `.controls-container button` gained `cursor: pointer`.
+- Dev-server gotcha: an already-running Vite server returns `504 Outdated
+  Optimize Dep` for newly added deps until it re-optimizes; a normal browser
+  auto-reloads, but verify icon work on a fresh port (`vite --port 5199`) if
+  screenshots look empty.
+- Verified over BiDi: 8 items, labels/icons `backward-step|play|forward-step`,
+  `play()` → `pause`, click → `play`, click → `pause`. `vite build` passes.
+- Controls now fill the card: `.controls-container { width: 100% }` (the card is
+  `align-items: center`, so a `column` flex child is content-width by default)
+  and `button { flex: 1 }` → three equal thirds (283px content box − 2×10px gap
+  ÷ 3 = 88px each, 40px tall) with `padding: 8px 0`, `border-radius: 8px`,
+  `rgba(0,0,0,.06)` background and a `.14` hover — mirrors `.active-track`'s
+  tint/radius instead of the default `buttonface` grey slabs.
+
+
+

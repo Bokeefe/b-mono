@@ -24,8 +24,20 @@ audio {
   display: flex;
   gap: 10px;
   margin: 10px 0;
+  width: 100%;
   button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
     border: none;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.06);
     font-size: 1.5rem;
+    cursor: pointer;
+    &:hover {
+      background: rgba(0, 0, 0, 0.14);
+    }
   }
 }

@@ -16,6 +16,7 @@
 | Build | Vite + `@vitejs/plugin-react` | ^5.0 / ^4.2 |
 | Routing | react-router-dom (`BrowserRouter`) | ^6.20 |
 | UI kit | `@mui/material`, `@mui/icons-material` | ^6.3 |
+| Icons | Font Awesome — `@fortawesome/react-fontawesome`, `free-solid-svg-icons`, `fontawesome-svg-core` (added Oct 2026, used in Claimjumpers) | ^3.5 / ^7.3 |
 | Styling | SCSS, `styled-components`, `@emotion/*` | — |
 | HTTP | native `fetch` (services) + `axios` (legacy examples) | axios ^1.7 |
 | Realtime | `socket.io-client` | ^4.8 |
