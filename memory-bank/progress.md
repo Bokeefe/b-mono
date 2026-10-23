@@ -114,6 +114,7 @@ areas are automated deployment reliability and test coverage.
 | Oct 2025 | SPA fallback prefix exclusions + static copy fixes | Missing `/assets/*` was returning HTML, breaking the SPA |
 | Oct 2025 | Lunch finished-room replay + mobile re-join on visibility change | Phones backgrounded during the 20-min vote lost the result |
 | Oct 2025 | Claimjumpers audio served by API *and* static route | Seeking needs Range requests (`sendFile`), playback uses static path |
+| Oct 2026 | Page background moved from `body` to a fixed viewport-sized `body::before` | `background-attachment: scroll` re-based the gradient/tile positioning area on the whole document, so mobile looked washed out and out of phase |
 
 ## How to keep this file honest
 

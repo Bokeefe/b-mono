@@ -80,3 +80,23 @@
   pages live under `react-fe/src/Pages/`; no frontend tests exist; backend has
   three `.spec.ts` files.
 - No source code modified.
+
+### 2026-10-22 (later) — page background unified for desktop + mobile
+- `react-fe/src/App.scss`: page background moved off `body` onto a fixed,
+  viewport-sized `body::before`; the whole `@media (max-width: 768px)` background
+  block deleted. Added `html { background-color: var(--brown) }` as the
+  overscroll fallback.
+- Why: the mobile override set `background-attachment: scroll`, which changes the
+  **background positioning area** from the viewport to the whole document. Since
+  `background-size: 200px` means `200px auto`, the gradient layer's `auto` height
+  becomes 100% of that area — so on phones the lavender→brown ramp was stretched
+  across the entire scroll height (you only saw the top slice) and the 200px tile
+  grid was re-centred on the document. The compensating `body::before` hack then
+  added a *second* grex.jpg copy at its natural 1024px scale with `opacity: .3`
+  and no `multiply` blend, which is why mobile looked larger-celled and washed
+  out.
+- Verified with headless Firefox screenshots at 1200px and 390px: desktop
+  rendering is byte-identical (same PNG md5) before/after, and mobile now shows
+  the same ramp + 200px cell scale, pinned to the viewport while scrolling.
+- `npx vite build` passes; minified CSS contains the new rule.
+
