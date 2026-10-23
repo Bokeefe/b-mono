@@ -4,11 +4,13 @@
   align-items: center;
   padding: 20px;
   font-size: 18px;
+
   ol {
     text-align: center;
     margin-left: -2rem;
     li {
-      // margin: 2rem 0;
+      margin: 2rem 0;
+
       padding: 1rem 0;
     }
   }
@@ -17,6 +19,35 @@
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 }
+.claimjumpers-title {
+  font-family: "Underdove", "Quicksand", sans-serif;
+  font-size: 3rem;
+  line-height: 0.5;
+  letter-spacing: 0.05em;
+}
+.claimjumpers-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 12px 0;
+  opacity: 1;
+}
+
+// Page-scoped override of the global `body::before` texture in App.scss.
+// Only present while the Claimjumpers route is mounted (class added in the
+// component's useEffect), so all other pages keep the grex pattern.
+body.claimjumpers-page::before {
+  background-image: url("../../assets/back_w_border.jpg");
+  background-color: #fff7d6; // the artwork's own cream border, fills any crop edge
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-blend-mode: normal; // App.scss multiplies its gradient + grex
+}
+
 audio {
   display: none;
 }
@@ -24,8 +55,23 @@ audio {
   display: flex;
   gap: 10px;
   margin: 10px 0;
+  width: 100%;
   button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
     border: none;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.06);
     font-size: 1.5rem;
+    cursor: pointer;
+    &:hover {
+      background: rgba(0, 0, 0, 0.14);
+    }
   }
+}
+.page-container {
+  max-width: 480px;
 }

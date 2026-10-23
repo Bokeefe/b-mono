@@ -137,5 +137,40 @@
             font-family: 'Oxygen', sans-serif;
             color: var(--brown);
         }
+
+        .result-note {
+            margin-top: 1rem;
+            color: #6c757d;
+            font-family: 'Quicksand', sans-serif;
+            font-size: .9rem;
+        }
+    }
+
+    // Phones: keep the vote rows readable and the result tappable
+    @media (max-width: 767px) {
+        .suggestion-form {
+            flex-direction: column;
+        }
+
+        // Nested under .suggestions-list so it matches the base rule's
+        // specificity (a bare `.suggestion-item` would lose to it).
+        .suggestions-list .suggestion-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: .75rem;
+
+            .suggestion-details {
+                justify-content: space-between;
+            }
+
+            .vote-button {
+                width: 100%;
+            }
+        }
+
+        .winner-announcement .winner {
+            font-size: 1.5rem;
+            padding: 1.25rem;
+        }
     }
 } 

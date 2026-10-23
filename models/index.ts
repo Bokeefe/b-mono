@@ -4,6 +4,10 @@ export interface Room {
     suggestions: Suggestion[];
     startTime: number;
     isActive: boolean;
+    /** Set when the timer expires; kept on the room so late visitors still see it. */
+    winner: Suggestion | null;
+    /** Timestamp (ms) the room was decided, or null while voting is open. */
+    completedAt: number | null;
 }
 
 export interface Suggestion {

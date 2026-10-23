@@ -15,7 +15,40 @@ interface RoomState {
     suggestions: Suggestion[];
     isActive: boolean;
     startTime?: number;
+    winner?: Suggestion | null;
+    completedAt?: number | null;
 }
+
+interface RoomCompletePayload {
+    winner?: Suggestion | null;
+    completedAt?: number | null;
+}
+
+// Landing collects the name, but people often open a room URL directly (shared
+// link, phone notification). Fall back to a prompt, then to "Guest", so the
+// socket can still join and receive the result.
+let namePrompted = false;
+
+const resolveUserName = (): string => {
+    const stored = localStorage.getItem('name')?.trim();
+    if (stored) {
+        return stored;
+    }
+
+    if (!namePrompted) {
+        namePrompted = true;
+        const entered = window.prompt('What is your name?')?.trim();
+        if (entered) {
+            localStorage.setItem('name', entered);
+            return entered;
+        }
+    }
+
+    return 'Guest';
+};
+
+const formatDecisionTime = (timestamp: number): string =>
+    new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 const Room: React.FC = () => {
     const { roomId } = useParams<{ roomId: string }>();
@@ -24,37 +57,75 @@ const Room: React.FC = () => {
     const [newSuggestion, setNewSuggestion] = useState('');
     const [isFinished, setIsFinished] = useState(false);
     const [winner, setWinner] = useState<string>('');
-    const userName = localStorage.getItem('name') || '';
+    const [completedAt, setCompletedAt] = useState<number | null>(null);
+    const [userName] = useState<string>(resolveUserName);
     const socket = socketService.getSocket();
 
     useEffect(() => {
-        // Join room when component mounts
-        if (roomId && userName) {
-            socket.emit('joinRoom', { roomId, userName });
+        if (!roomId) {
+            return;
         }
 
-        // Listen for room state updates
-        socket.on('roomState', (state: RoomState) => {
-            setRoomState(state);
-        });
+        // joinRoom is idempotent: it (re)attaches this socket to the room and
+        // replays the latest state — including the final result if voting is
+        // already over.
+        const joinRoom = () => socket.emit('joinRoom', { roomId, userName });
 
-        // Listen for room completion
-        socket.on('roomComplete', ({ winner }) => {
+        const applyCompletion = ({ winner: winningSuggestion, completedAt: finishedAt }: RoomCompletePayload) => {
             setIsFinished(true);
-            setWinner(winner?.place || 'No winner determined');
-        });
+            setWinner(winningSuggestion?.place || 'No winner determined');
+            setCompletedAt(finishedAt ?? null);
+        };
 
-        // Listen for time updates from server (every minute)
-        socket.on('timeUpdate', (timeLeft: number) => {
-            setTimeLeft(timeLeft);
-        });
+        const handleRoomState = (state: RoomState) => {
+            setRoomState(state);
+
+            // The winner is stored on the room, so a client that missed the
+            // `roomComplete` broadcast (late arrival, phone asleep) still ends
+            // up on the result as soon as any state arrives.
+            if (state.isActive) {
+                setIsFinished(false);
+                setWinner('');
+                setCompletedAt(null);
+            } else {
+                setIsFinished(true);
+                setWinner(state.winner?.place || 'No winner determined');
+                setCompletedAt(state.completedAt ?? null);
+            }
+        };
+
+        // Join immediately (socket.io buffers this if the socket is still
+        // connecting).
+        joinRoom();
+
+        // Mobile browsers suspend the socket when the tab is backgrounded and
+        // reconnect with a new socket id, which loses the socket.io room
+        // membership. Re-joining on (re)connect and on wake-up is what makes a
+        // decision appear on a phone that was asleep when the timer ran out.
+        const handleVisibilityChange = () => {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+            if (!socket.connected) {
+                socket.connect();
+            }
+            joinRoom();
+        };
+
+        socket.on('connect', joinRoom);
+        socket.on('roomState', handleRoomState);
+        socket.on('roomComplete', applyCompletion);
+        socket.on('timeUpdate', setTimeLeft);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            socket.off('roomState');
-            socket.off('roomComplete');
-            socket.off('timeUpdate');
+            socket.off('connect', joinRoom);
+            socket.off('roomState', handleRoomState);
+            socket.off('roomComplete', applyCompletion);
+            socket.off('timeUpdate', setTimeLeft);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [roomId, userName]);
+    }, [roomId, userName, socket]);
 
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -136,9 +207,15 @@ const Room: React.FC = () => {
                 </>
             ) : (
                 <div className="winner-announcement">
-                    <h2>Time's Up!</h2>
+                    <h2>Voting Closed</h2>
                     <p>Today's lunch spot is:</p>
                     <div className="winner">{winner}</div>
+                    {completedAt !== null && (
+                        <p className="result-note">
+                            Decided at {formatDecisionTime(completedAt)}. This result stays up for 4 hours,
+                            so anyone opening this link later sees it.
+                        </p>
+                    )}
                 </div>
             )}
             </div>

@@ -13,6 +13,12 @@ export interface Room {
   suggestions: Suggestion[];
   startTime: number;
   isActive: boolean;
+  // Set when the timer expires. Kept on the room so late visitors (or phones
+  // that dropped their socket) can still be told what the decision was.
+  winner: Suggestion | null;
+  completedAt: number | null;
+  // Timestamp of when the room last went empty. `null` while someone is in it.
+  emptySince: number | null;
 }
 
 interface Suggestion {
@@ -40,6 +46,16 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Room timeout duration in seconds (20 minutes)
   private readonly ROOM_TIMEOUT_SECONDS = 1200;
 
+  // How long a finished room sticks around so anyone opening the room URL
+  // later still sees which place won. After this the room is discarded and
+  // the URL starts a fresh vote.
+  private readonly COMPLETED_ROOM_RETENTION_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+  // Grace period for an in-progress room with no connected users. Phones drop
+  // their socket when backgrounded/locked, so we don't want to throw away a
+  // live vote the moment the last tab goes away.
+  private readonly EMPTY_ROOM_GRACE_MS = 2 * 60 * 1000; // 2 minutes
+
   private rooms: Map<string, Room> = new Map();
   private clientToUser: Map<string, { roomId: string; userName: string }> = new Map();
 
@@ -63,8 +79,10 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
         room.users = room.users.filter(user => user !== userName);
         
         if (room.users.length === 0) {
-          // Delete empty room
-          this.rooms.delete(roomId);
+          // Don't delete right away: a phone that was backgrounded should be
+          // able to rejoin the same room. cleanupRooms() discards it later if
+          // nobody comes back.
+          room.emptySince = Date.now();
         } else {
           // Update room for remaining users
           this.server.to(roomId).emit('roomState', room);
@@ -81,7 +99,7 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private sendActiveRooms() {
     const activeRooms = Array.from(this.rooms.entries())
-      .filter(([_, room]) => room.isActive)
+      .filter(([_, room]) => room.isActive && room.users.length > 0)
       .map(([roomId, room]) => ({
         id: roomId,
         userCount: room.users.length,
@@ -92,7 +110,12 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(client: Socket, payload: { roomId: string, userName: string }) {
-    const { roomId, userName } = payload;
+    const roomId = (payload?.roomId || '').trim();
+    const userName = (payload?.userName || '').trim();
+
+    if (!roomId) {
+      return;
+    }
     
     // Join the Socket.IO room
     client.join(roomId);
@@ -101,34 +124,48 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clientToUser.set(client.id, { roomId, userName });
 
     // Create or update room
-    if (!this.rooms.has(roomId)) {
-      this.rooms.set(roomId, {
+    let room = this.rooms.get(roomId);
+    if (!room) {
+      room = {
         id: roomId,
-        users: [userName],
+        users: [],
         suggestions: [],
         startTime: Date.now(),
-        isActive: true
-      });
-    } else {
-      const room = this.rooms.get(roomId);
-      if (room && !room.users.includes(userName)) {
-        room.users.push(userName);
-      }
+        isActive: true,
+        winner: null,
+        completedAt: null,
+        emptySince: null
+      };
+      this.rooms.set(roomId, room);
     }
 
-    // Send current room state to the client
-    const room = this.rooms.get(roomId);
+    if (userName && !room.users.includes(userName)) {
+      room.users.push(userName);
+    }
+    room.emptySince = null;
+
+    // Send current room state to everyone in the room
     this.server.to(roomId).emit('roomState', room);
     
-    // Send initial time update to the new user
-    if (room && room.isActive && room.startTime) {
-      const elapsed = Math.floor((Date.now() - room.startTime) / 1000);
-      const timeLeft = Math.max(0, this.ROOM_TIMEOUT_SECONDS - elapsed);
-      client.emit('timeUpdate', timeLeft);
+    if (room.isActive) {
+      // Send initial time update to the new user
+      client.emit('timeUpdate', this.getTimeLeft(room));
+    } else {
+      // The vote is already over (late arrival, or a phone waking up after the
+      // decision). Replay the decision to this client specifically.
+      client.emit('roomComplete', {
+        winner: room.winner,
+        completedAt: room.completedAt
+      });
     }
     
     // Update active rooms for all clients
     this.sendActiveRooms();
+  }
+
+  private getTimeLeft(room: Room): number {
+    const elapsed = Math.floor((Date.now() - room.startTime) / 1000);
+    return Math.max(0, this.ROOM_TIMEOUT_SECONDS - elapsed);
   }
 
   @SubscribeMessage('addSuggestion')
@@ -172,10 +209,11 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.sendActiveRooms();
   }
 
-  // Check for room timeouts every minute
+  // Tick every second: expire finished rooms and discard stale ones
   constructor() {
     setInterval(() => {
       this.checkRoomTimeouts();
+      this.cleanupRooms();
     }, 1000); // Check every second for more precise timing
 
     // Send time updates every minute
@@ -185,11 +223,9 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private sendTimeUpdates() {
-    const now = Date.now();
     this.rooms.forEach((room, roomId) => {
-      if (room.isActive && room.startTime) {
-        const elapsed = Math.floor((now - room.startTime) / 1000);
-        const timeLeft = Math.max(0, this.ROOM_TIMEOUT_SECONDS - elapsed);
+      if (room.isActive) {
+        const timeLeft = this.getTimeLeft(room);
         
         // Check if time is up
         if (timeLeft <= 0) {
@@ -211,13 +247,32 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private completeRoom(room: Room, roomId: string) {
+    if (!room.isActive) {
+      return;
+    }
+
     room.isActive = false;
-    
-    // Determine winner
-    let winner = null;
+    room.completedAt = Date.now();
+    room.winner = this.pickWinner(room.suggestions);
+
+    // Keep the result on the room (see COMPLETED_ROOM_RETENTION_MS) and tell
+    // everyone currently in the room. Clients that were disconnected while the
+    // timer ran out get this replayed on their next joinRoom.
+    this.server.to(roomId).emit('roomState', room);
+    this.server.to(roomId).emit('roomComplete', {
+      winner: room.winner,
+      completedAt: room.completedAt
+    });
+
+    // Finished rooms should no longer be offered on the landing page
+    this.sendActiveRooms();
+  }
+
+  private pickWinner(suggestions: Suggestion[]): Suggestion | null {
+    let winner: Suggestion | null = null;
     let maxVotes = 0;
-    
-    room.suggestions.forEach(suggestion => {
+
+    suggestions.forEach(suggestion => {
       if (suggestion.votes.length > maxVotes) {
         maxVotes = suggestion.votes.length;
         winner = suggestion;
@@ -229,6 +284,35 @@ export class LunchGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     });
 
-    this.server.to(roomId).emit('roomComplete', { winner });
+    return winner;
   }
-} 
+
+  /**
+   * Drop rooms nobody can use anymore:
+   * - in-progress rooms that have been empty past the grace period
+   * - finished rooms past the retention window
+   */
+  private cleanupRooms() {
+    const now = Date.now();
+    this.rooms.forEach((room, roomId) => {
+      if (room.isActive) {
+        // A room is only abandoned when nobody is connected to it either —
+        // guards against a disconnect that races a reconnect.
+        const connectedSockets = this.server?.sockets.adapter.rooms.get(roomId)?.size ?? 0;
+        if (
+          room.users.length === 0 &&
+          connectedSockets === 0 &&
+          room.emptySince !== null &&
+          now - room.emptySince >= this.EMPTY_ROOM_GRACE_MS
+        ) {
+          this.rooms.delete(roomId);
+        }
+        return;
+      }
+
+      if (room.completedAt !== null && now - room.completedAt >= this.COMPLETED_ROOM_RETENTION_MS) {
+        this.rooms.delete(roomId);
+      }
+    });
+  }
+}

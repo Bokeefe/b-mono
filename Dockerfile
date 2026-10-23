@@ -39,6 +39,9 @@ COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
 COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/
 RUN cd nest-server && npm install --production
 
+# Copy runtime static assets (claimjumpers mp3s served from /audio/...)
+COPY --from=build /usr/src/app/nest-server/public ./nest-server/public
+
 # Copy frontend build
 COPY --from=build /usr/src/app/react-fe/dist ./react-fe/dist
 

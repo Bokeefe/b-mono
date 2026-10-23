@@ -65,6 +65,7 @@ react-fe/src/
 ├── components/                 # shared shell
 │   ├── Home/                   # landing buttons
 │   ├── Header/                 # back button (navigates to "/")
+│   ├── HelpPopup/              # round "?" button + help modal (Lunch, TextCorpse)
 │   ├── MainLayout/             # Header + <Outlet/>
 │   └── MobileButton/           # big tappable button
 ├── domains/                    # one folder per feature (see domains.md)

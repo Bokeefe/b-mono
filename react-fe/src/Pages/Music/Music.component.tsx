@@ -15,7 +15,7 @@ export const Music: React.FC<MusicProps> = () => {
         </a>
       </h1>
       <a href="/claimjumpers">
-        <h1>The Claimjumpers</h1>
+        <h1 className="claimjumpers">The Claimjumpers</h1>
       </a>
       <iframe
         src="https://www.youtube.com/embed/meKeUyOBrRI?si=B4sgd-rOF3gUpqyf"
