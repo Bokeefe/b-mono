@@ -210,6 +210,34 @@
   scales it to the viewport height, so the 318px card covers most of it — only
   thin strips of the border show. Also note `Header` stays translucent lavender.
 
+### 2026-10-22 — iPhone reports "background image gone after 5922eb8"
+- **Cause:** 5922eb8 replaced the mobile-only `body::before { background:
+  url(grex.jpg); opacity: .3 }` with the desktop stack
+  `linear-gradient(...), url(grex.jpg)` + `background-blend-mode: multiply`.
+  The gradient is an opaque layer painted **over** grex.jpg, so the texture is
+  visible *only* through the blend. Any engine/compositing situation that drops
+  the blend (iOS Safari on fixed + `z-index:-1` pseudo-element layers) leaves a
+  flat gradient — i.e. "the background image is missing". Measured in WebKit
+  (`/tmp/pw/v-*.png`): blend ignored ⇒ 55 unique colors, grex gone.
+- **Fix (App.scss):** layer order swapped — `background-image: url("/grex.jpg"),
+  linear-gradient(...)` with `background-blend-mode: multiply, normal`. The
+  opaque texture is now the TOP layer, so an ignored blend degrades to "raw grex
+  texture visible" instead of "gradient only". `multiply` is commutative, so
+  where the blend works the result is **pixel-identical** (verified: full-app
+  WebKit screenshot at 390×844 dpr2, background strip maxdiff 0 / 0 px changed).
+  With the blend force-disabled, the same page now shows the cells (231,231,231).
+- Do **not** "fix" this by putting an alpha gradient above the tile: alpha
+  compositing cannot darken below the gradient color, so it looks washed out
+  (that is what the old `opacity: .3` mobile rule looked like).
+- `body.claimjumpers-page::before` is unaffected (single opaque artwork layer,
+  `background-blend-mode: normal`); verified pixel-identical after the change.
+- Still-unexplained alternative: if the phone was showing `/claimjumpers`, the
+  1.8 MB 2847×2834 artwork could be dropped by iOS image-memory limits, leaving
+  the flat `#fff7d6` — that page never depended on blending at all.
+- `background-size: 200px` (one value) applies to **both** layers, so the
+  lavender→brown gradient tiles in 200px strips rather than spanning the
+  viewport. That is pre-existing behavior (unchanged), left alone on purpose.
+
 
 
 
