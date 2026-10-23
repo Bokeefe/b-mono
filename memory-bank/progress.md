@@ -1,7 +1,8 @@
 # Progress — b-mono
 
 > What works, what's left, and why decisions were made. Update after significant
-> changes. Verified 2026-10-22 on `feature/new` @ `53134a1`.
+> changes. Verified 2026-10-22 on `feature/new` @ `53134a1`; toolchain re-verified
+> **2026-10-23 on Node 26.12.1 / TS 6 / Nest 12** (uncommitted upgrade).
 
 ## Status summary
 
@@ -12,7 +13,7 @@ areas are automated deployment reliability and test coverage.
 | Area | State |
 |------|-------|
 | Local dev (`npm run dev`) | ✅ Backend :4171 + Vite :5173 |
-| Production container | ✅ Running (nginx + Node 20) |
+| Production container | ⚠️ Built + smoke-tested locally on Node 26.12.1; prod still runs the previous Node 20 image until the next deploy |
 | Home / navigation shell | ✅ 5 buttons wired |
 | Resume | ⚠️ Route works, no Home button, PDF/TXT export present |
 | About | ✅ Content page |
@@ -56,7 +57,9 @@ areas are automated deployment reliability and test coverage.
 
 ### Infra / CI-CD
 - Root multi-stage `Dockerfile`: builds models → backend → frontend; runtime is
-  `node:20-alpine` + nginx + certbot; copies `nest-server/public` for audio.
+  `node:26.12.1-alpine` + nginx + certbot; prod install is `npm ci --omit=dev`;
+  copies `nest-server/public` for audio. `.dockerignore` keeps `node_modules`,
+  `dist`, logs and `.git` out of the build context.
 - `startup.sh`: mkdir data dir, launch `node dist/main.js` in background, verify
   the process, certbot-if-missing, then `nginx -g "daemon off;"`.
 - `ci.yml`: push to `main` / `feature/new` / `feature/fix` → docker build+push.
@@ -67,7 +70,9 @@ areas are automated deployment reliability and test coverage.
 
 ### Tests
 - Backend: `app.controller.spec.ts`, `faker.controller.spec.ts`,
-  `faker.service.spec.ts` (jest, `rootDir: src`).
+  `faker.service.spec.ts` (jest 30, `rootDir: src`) — **6/6 passing** on Node 26.
+  Scripts run `node --experimental-vm-modules .../jest.js` because Nest 12 is
+  ESM-only.
 - e2e config exists at `nest-server/test/jest-e2e.json`.
 
 ## What's left / known issues
@@ -94,7 +99,7 @@ areas are automated deployment reliability and test coverage.
 
 ### Low
 9. Root `package.json` dependency list is bloated with transitive packages.
-10. `react-fe` package name is `"ls"`; `engines` says Node 18 while Docker uses 20.
+10. `react-fe` package name is `"ls"` (leftover; harmless).
 11. `text-corpse.service.ts` imports unused `yargs` `env` (undeclared dep).
 12. Inconsistent controller prefixes (`api/x` vs `/api/x` vs `backup`).
 13. `.DS_Store` files committed under `src/` dirs; `deps/`, `usr/`, `src/` at root
@@ -116,6 +121,9 @@ areas are automated deployment reliability and test coverage.
 | Oct 2025 | Claimjumpers audio served by API *and* static route | Seeking needs Range requests (`sendFile`), playback uses static path |
 | Oct 2026 | Page background moved from `body` to a fixed viewport-sized `body::before` | `background-attachment: scroll` re-based the gradient/tile positioning area on the whole document, so mobile looked washed out and out of phase |
 | Oct 2026 | `body::before` lists `url(grex.jpg)` **before** the gradient (`blend: multiply, normal`) | Layer order = fallback: the texture is opaque and on top, so an engine that drops the blend still shows the image instead of an opaque gradient (iOS Safari "background image missing") |
+| Oct 2026 | Whole monorepo moved to **Node 26.12.1** (+ TS 6, Nest 12, Vite 7, jest 30) | Runtime refresh while 26.x is the current LTS-track line; `.nvmrc` + `engines` + Docker + CI all pin the same version |
+| Oct 2026 | Backend kept on **CommonJS** even though Nest 12 is ESM-only | Node 26 `require()`s ESM natively, so `node dist/main.js` works unchanged; converting the app to ESM (`.js` import specifiers, `import.meta.dirname`, ESM jest) was unnecessary risk |
+| Oct 2026 | React **18**, MUI **6**, react-router **6** intentionally not bumped | UI majors are unrelated to the Node runtime upgrade and each carries its own migration |
 
 ## How to keep this file honest
 

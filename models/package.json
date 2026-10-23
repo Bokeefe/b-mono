@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "engines": {
+    "node": "^26.12.1",
+    "npm": ">=11"
+  },
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build"
   },
   "devDependencies": {
-    "typescript": "^4.9.5"
+    "typescript": "^6.0.3"
   }
 }

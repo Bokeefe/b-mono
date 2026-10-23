@@ -2,6 +2,37 @@
 
 Read this before debugging. These are the non-obvious traps in this repo.
 
+## Toolchain — Node 26 / TS 6 / Nest 12 (added 2026-10-23)
+
+- **`@nestjs/*` 12 is ESM-only** (`"type": "module"`, no CJS entry). The backend
+  still compiles to CommonJS and `node dist/main.js` works because Node 26
+  `require()`s ESM natively (`process.features.require_module === true`). Do
+  **not** run the built server (or CI) on Node < 22.12 — `require(esm)` is what
+  makes it load at all.
+- **Jest needs `--experimental-vm-modules`** to `require()` those ESM packages
+  (jest-runtime gates `require(esm)` on `vm.SourceTextModule.hasAsyncGraph`).
+  All `test*` scripts already pass it; without it you get
+  `Must use import to load ES Module: .../@nestjs/testing/index.js`.
+- **TS 6 no longer auto-includes every `@types/*` package.** Only types reached
+  through the program are loaded. Anything using ambient globals (`NodeJS.*`,
+  `process`, jest's `describe`/`expect`) must list them in that tsconfig's
+  `types` — `nest-server/tsconfig.json` has `["node", "jest"]`. The frontend
+  intentionally has none: use `ReturnType<typeof setTimeout>` /
+  `ReturnType<typeof setInterval>` instead of `NodeJS.Timeout`.
+- **TS 6 requires `rootDir`** (`./src` in `nest-server`) and deprecates
+  `baseUrl` — imports must be relative (or package names).
+- **Node ^26.12.1 is mandatory** (`engines` in all four manifests, `.nvmrc`,
+  Docker images, CI `node-version-file`). Check `node -v` before debugging odd
+  install/build failures.
+- **`nest-server/tsconfig.build.tsbuildinfo`** is an incremental-build artifact
+  and is now gitignored.
+- **Lint baseline is already red**: `npx eslint` reports ~121 errors in
+  `nest-server` and ~53 in `react-fe`, almost all `prettier/prettier` plus some
+  `no-explicit-any` and unused vars. They predate the Node 26 upgrade — don't
+  treat them as regressions and don't run `lint` (it has `--fix`) before a
+  commit unless you intend to touch every file. ESLint stays on 8.57.1 because
+  the config is legacy `.eslintrc`.
+
 ## Local dev
 
 1. **Hardcoded dev API IP.** `react-fe/src/environment.ts` dev `api.url` is

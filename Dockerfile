@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20 AS build
+FROM node:26.12.1 AS build
 
 # Build Models first
 WORKDIR /usr/src/app/models
@@ -23,7 +23,7 @@ COPY ./react-fe ./
 RUN npm run build
 
 # Stage 2: Production
-FROM node:20-alpine
+FROM node:26.12.1-alpine
 
 # Install nginx and certbot
 RUN apk add --no-cache nginx certbot
@@ -37,7 +37,7 @@ RUN mkdir -p /usr/src/app/data && chmod 755 /usr/src/app/data
 # Copy backend build and dependencies
 COPY --from=build /usr/src/app/nest-server/dist ./nest-server/dist
 COPY --from=build /usr/src/app/nest-server/package*.json ./nest-server/
-RUN cd nest-server && npm install --production
+RUN cd nest-server && npm ci --omit=dev
 
 # Copy runtime static assets (claimjumpers mp3s served from /audio/...)
 COPY --from=build /usr/src/app/nest-server/public ./nest-server/public

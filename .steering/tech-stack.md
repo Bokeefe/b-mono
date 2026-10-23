@@ -2,10 +2,11 @@
 
 ## Languages / runtimes
 
-- **TypeScript** everywhere (frontend, backend, shared models).
-- **Node.js**: Docker images use `node:20` (build) / `node:20-alpine` (prod).
-  `react-fe/package.json` declares `"engines": { "node": "18.x" }` (stale — the
-  container is Node 20).
+- **TypeScript** everywhere (frontend, backend, shared models) — **^6.0.3**.
+- **Node.js**: `.nvmrc` = `26.12.1`; Docker images use `node:26.12.1` (build) /
+  `node:26.12.1-alpine` (prod); CI uses `actions/setup-node@v4` with
+  `node-version-file: .nvmrc`. Every `package.json` declares
+  `"engines": { "node": "^26.12.1", "npm": ">=11" }`.
 - **SCSS** + plain **CSS** for styling (no Tailwind in actual use — `tailwindcss`
   is only a devDependency, unused in components).
 
@@ -13,8 +14,8 @@
 
 | Concern | Choice | Version | Notes |
 |---------|--------|---------|-------|
-| UI framework | React | ^18.2 | |
-| Build tool | Vite | ^5.0 | `@vitejs/plugin-react` |
+| UI framework | React | ^18.2 | deliberately held back from 19 (out of scope of the Node 26 upgrade) |
+| Build tool | Vite | ^7.3 | `@vitejs/plugin-react` ^5.2 |
 | Routing | react-router-dom | ^6.20 | `BrowserRouter` in `App.tsx` |
 | Component lib | `@mui/material` + `@mui/icons-material` | ^6.3 | Used in Header, Resume |
 | Styling | `@emotion/*`, `styled-components`, SCSS | — | Emotion/SC are MUI peers |
@@ -28,17 +29,18 @@ Frontend scripts (`react-fe/package.json`):
 `dev` (vite), `build` (`tsc && vite build`), `preview`, `lint`, `test` (jest),
 `sass` (`sass src:dist`).
 
-Config: `vite.config.ts` (host 0.0.0.0, port 5173), `tsconfig.json` (ES2020,
-bundler resolution, strict).
+Config: `vite.config.ts` (host 0.0.0.0, port 5173), `tsconfig.json` (ES2020 lib,
+bundler resolution, strict). Browser code must use `ReturnType<typeof setTimeout>`
+rather than `NodeJS.Timeout` — TS 6 does not inject `@types/node` here.
 
 ## Backend — `nest-server/`
 
 | Concern | Choice | Version | Notes |
 |---------|--------|---------|-------|
-| Framework | NestJS | ^10 | `@nestjs/common`, `core`, `platform-express` |
-| Realtime | `@nestjs/websockets` + `platform-socket.io` | ^10.4 | |
-| Web server | Express (via Nest platform) | — | |
-| Fake data | `@faker-js/faker` | ^9.3 | Faker module |
+| Framework | NestJS | ^12.2 | **ESM-only** (`"type": "module"`); the CJS build runs via Node's native `require(esm)` |
+| Realtime | `@nestjs/websockets` + `platform-socket.io` | ^12.2 | |
+| Web server | Express (via Nest platform) | 5.x through Nest 12 | |
+| Fake data | `@faker-js/faker` | ^10.6 | Faker module |
 | Reactive | `rxjs` | ^7.8 | Nest peer |
 | Decorators | `reflect-metadata` | ^0.2 | |
 
@@ -48,20 +50,23 @@ Backend scripts (`nest-server/package.json`):
 `nest-cli.json` copies `**/*.json` assets into `dist/` (so `text-corpse.data.json`
 ships with the build).
 
-Config: `nest-server/tsconfig.json` (module `commonjs`, target ES2021,
-`strictNullChecks: false`, decorators enabled).
+Config: `nest-server/tsconfig.json` (module `commonjs`, target ES2023,
+`rootDir: ./src`, `types: ["node", "jest"]`, `strictNullChecks: false`,
+decorators enabled). Jest must run with `--experimental-vm-modules` (the scripts
+already do) so `require()` can load ESM-only Nest 12 packages.
 
 ## Shared models — `models/`
 
-Plain TS interfaces (`Room`, `Suggestion`, `ActiveRoom`). Built with `tsc` to
-`dist/` published as `@b-mono/models`. `prepare` script builds on install.
+Plain TS interfaces (`Room`, `Suggestion`, `ActiveRoom`). Built with `tsc`
+(TypeScript ^6.0.3, target ES2022) to `dist/`, published as `@b-mono/models`.
+`prepare` script builds on install.
 **The frontend cannot type-check until `models` is built.**
 
 ## Infrastructure / tooling
 
 | Concern | Choice |
 |---------|--------|
-| Containerization | **Docker** (multi-stage: `node:20` build → `node:20-alpine` + nginx + certbot) |
+| Containerization | **Docker** (multi-stage: `node:26.12.1` build → `node:26.12.1-alpine` + nginx + certbot) |
 | Static serving (prod) | **nginx** inside the container, proxies `/api` + `/socket.io` to `localhost:4171` |
 | TLS | Let's Encrypt via **certbot** (certs on droplet at `/etc/ssl/antigogglin`) |
 | CDN / proxy | **Cloudflare** (forces polling-only Socket.IO — see gotchas) |

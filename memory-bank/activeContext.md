@@ -3,6 +3,43 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-23 — Node 26 / TS 6 / Nest 12 upgrade
+
+- **Branch:** `feature/new`; upgrade changes are uncommitted in the working tree.
+- **Goal:** move the monorepo to **Node 26.12.1** and prove the production build
+  still works end to end.
+- **Landed:**
+  - Node pinned everywhere: `.nvmrc` (`26.12.1`), `engines`
+    (`node ^26.12.1`, `npm >=11`) in root / `models` / `nest-server` /
+    `react-fe`; Docker stages `node:26.12.1` and `node:26.12.1-alpine`; root
+    prod stage now `npm ci --omit=dev`; CI uses `actions/setup-node@v4` with
+    `node-version-file: .nvmrc`; new `.dockerignore`.
+  - TypeScript **^6.0.3** repo-wide (Nest 12 / `@nestjs/schematics@12` require
+    it). `models` target ES2022; `nest-server` target ES2023, `rootDir: ./src`,
+    `types: ["node", "jest"]`, `baseUrl` removed.
+  - NestJS 10 → **12.2.0** (ESM-only), `@faker-js/faker` 10.6, jest 30 +
+    ts-jest 29.4, Vite 5 → **7.3**, `@vitejs/plugin-react` 5.2,
+    `@testing-library/{react,dom,jest-dom}` 16.3/10.4/7.0, socket.io 4.8.4,
+    `@types/node` 26.6.5.
+  - React stays **18**, MUI **6**, react-router **6** — UI majors are unrelated
+    to a runtime upgrade.
+  - `react-fe`: `NodeJS.Timeout` → `ReturnType<typeof setTimeout>` /
+    `...typeof setInterval>` in `SloMo.component.tsx` +
+    `TextCorpse.component.tsx` (TS 6 doesn't inject `@types/node` into the DOM
+    project).
+  - Backend `test*` scripts run jest via
+    `node --experimental-vm-modules` (needed to `require()` ESM-only Nest);
+    stale scaffold specs repaired (missing `HealthService`/`FakerService`
+    providers, obsolete `'Hello World!'` assertion) → **6/6 green**.
+- **Verified on Node 26.12.1:** `models` build, `nest-server` build, `react-fe`
+  build (`tsc && vite build`), root `npm run build`, `npm test` (6/6), and a
+  prod-mode smoke test of `node dist/main.js` — `/api`, `/api/health`,
+  `/api/faker/animals`, `/api/slomo/genres`, `/api/claimjumpers`, `/backup`
+  (401 without password), SPA `/` and a deep route, hashed `/assets/*` 200,
+  missing asset 404, `/socket.io` handshake OK.
+- **Not verified:** `docker build` (Docker isn't installed on this machine) and a
+  real deploy. Lint sits at its pre-existing baseline (see `.steering/gotchas.md`).
+
 ## Session snapshot — 2026-10-22
 
 - **Branch:** `feature/new` at `53134a1` "fixes for lunch app" (tracked on

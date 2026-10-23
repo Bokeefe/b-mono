@@ -60,7 +60,7 @@ const TextCorpse: React.FC = () => {
 
     setSocket(textCorpseSocket);
 
-    let requestTimeout: NodeJS.Timeout;
+    let requestTimeout: ReturnType<typeof setTimeout>;
 
     // Check if this is a new room being created
     const roomCreationData = roomId

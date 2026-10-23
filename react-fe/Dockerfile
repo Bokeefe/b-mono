@@ -1,4 +1,4 @@
-FROM node:20 as build
+FROM node:26.12.1 as build
 
 # Set the working directory
 WORKDIR /usr/src/app

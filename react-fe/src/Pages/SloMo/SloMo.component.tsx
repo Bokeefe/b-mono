@@ -191,7 +191,7 @@ const SloMo: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const handleTrackEndRef = useRef<(() => void) | null>(null);
   const checkProgressRef = useRef<(() => void) | null>(null);
-  const progressCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
   const wasPlayingBeforeHiddenRef = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
