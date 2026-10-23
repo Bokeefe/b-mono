@@ -141,5 +141,77 @@
   `rgba(0,0,0,.06)` background and a `.14` hover — mirrors `.active-track`'s
   tint/radius instead of the default `buttonface` grey slabs.
 
+### 2026-10-22 — new display fonts registered
+- User dropped five font folders into `src/assets/fonts/` (still **untracked** in
+  git): `aesthetic-curves-demo/` "Aesthetic Curves Demo" (.ttf + .otf),
+  `classical-blending-demo/` "Classical Blending Demo" (.ttf + .otf),
+  `darib/DavysRibbons.ttf`, `enathica/Enathica Demo.ttf`,
+  `underdove/Underdove-Regular.ttf`. Pre-existing fonts live in
+  `src/style/fonts/` (Caesar, Oxygen, Quicksand, Astloch, Major Mono).
+- All five registered at the bottom of `App.scss` as `@font-face` (`.ttf`,
+  `format("truetype")`, `font-display: swap`) + one `.x-font` utility class each,
+  matching the Caesar/Oxygen/Quicksand pattern. Relative `url("./assets/...")`
+  paths are rewritten/hashed by Vite; **spaces in the filenames are fine** and
+  the build emits e.g. `Aesthetic Curves Demo-CGPgLcZI.ttf`.
+- Licensing/quality notes: the 177Studio demos ("Aesthetic Curves",
+  "Classical Blending") inject a `FREE FOR PERSONAL USE` watermark glyph and are
+  very wide; "Davy's Ribbons" renders lowercase as ornamental ribbons; Enathica
+  Demo has odd digit glyphs. "Underdove" (blackletter) is the most legible.
+- Demo wiring: `<div className="claimjumpers-title">` + `.claimjumpers-title
+  { font-family: "Underdove", "Quicksand", sans-serif; font-size: 2rem }` in
+  `Claimjumpers.scss` — page-scoped, so swapping families is a one-line change.
+- Verified: all six faces report `loaded` in `document.fonts`; title width 224px
+  in Underdove vs 304px in `sans-serif` (proves no fallback); 8 tracks; desktop
+  and 390px mobile screenshots good; `vite build` emits all five fonts.
+- Gotcha for future verification runs: the LAN API (`10.210.155.132:4171`) can
+  take >2.5s, so BiDi screenshots need a ~3.5-4s wait or the list renders empty;
+  and the BiDi harness needs a fresh headless Firefox per run (a second session
+  on the same browser throws).
+
+### 2026-10-22 — square cover image on Claimjumpers
+- `//HERE` placeholder (which was rendering as literal JSX text) replaced with a
+  square cover image: `import frontImage from "../../assets/Front_w_border.jpg"`
+  (same asset-import pattern as `About.component.tsx`'s `performa.png`) +
+  `<img className="claimjumpers-image" alt="Claimjumpers cover" />`.
+- `.claimjumpers-image { width: 100%; max-width: 320px; aspect-ratio: 1 / 1;
+  object-fit: cover; border-radius: 12px }` → measured 320×320 desktop /
+  318×318 at 390px viewport, ratio exactly 1.0000. Source is 2859×2865 (0.2%
+  off square) so `cover` crops ≈3px total — effectively the whole image.
+- TODO-ish: `Front_w_border.jpg` is **6.8 MB / 2859px**; `vite build` copies it
+  as-is (`Front_w_border-<hash>.jpg`, 6.5 MB). Downscale before shipping, e.g.
+  `sips -Z 1200 --setProperty formatOptions 80 src/assets/Front_w_border.jpg`.
+- Title is now three stacked `.claimjumpers-title` divs ("Claimjumpers", "~",
+  "demo") at `font-size: 3rem; line-height: 0.5` — user's own edit.
+
+### 2026-10-22 — Claimjumpers-only background (`back_w_border.jpg`)
+- The site's background is `body::before` in `App.scss`: fixed, z-index -1,
+  `linear-gradient(lavender,brown)` + `url("/grex.jpg")` (public/), `multiply`,
+  `200px repeat`. To vary it per page, **don't edit that block** — override it.
+- Mechanism used: `useEffect` in the page adds `claimjumpers-page` to
+  `document.body` and removes it in the cleanup, then
+  `body.claimjumpers-page::before { background-image: url("../../assets/back_w_border.jpg");
+  background-color: #fff7d6; background-size: cover; background-repeat: no-repeat;
+  background-position: center; background-blend-mode: normal }` in
+  `Claimjumpers.scss`. Class selector beats `body::before` on specificity, so
+  load order is irrelevant; cleanup keeps it route-scoped (StrictMode's
+  effect→cleanup→effect cycle re-adds it correctly).
+- `background-blend-mode: normal` is the load-bearing reset — inheriting
+  `multiply` would blend the photo with the cream color and darken it.
+  `#fff7d6` was sampled from the artwork's own border (canvas getImageData).
+- Tried `contain` + cream gutters first (probe: /tmp/bgtest/bgprobe.mjs):
+  at 1366×768 the artwork is only 772px wide — narrower than the 800px card —
+  so the frame was hidden behind the card and flat cream strips showed at the
+  sides. `cover` instead keeps the illuminated borders flanking the card.
+- Verified at 1366×768 and 390×844: computed `background-image` is the asset for
+  `/claimjumpers` and reverts to the grex stack on `/about` (class gone, `grex.jpg`,
+  `multiply`, `repeat`); 8 tracks still render; `vite build` emits
+  `back_w_border-<hash>.jpg` and references it from the CSS.
+- Caveat: the artwork is square (2847×2834) and 1.8 MB. On a 390px phone, `cover`
+  scales it to the viewport height, so the 318px card covers most of it — only
+  thin strips of the border show. Also note `Header` stays translucent lavender.
+
+
+
+
 
 

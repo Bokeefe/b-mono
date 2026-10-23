@@ -8,6 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { baseUrl } from "../../environment.ts";
 import { apiService } from "../../services/api.service";
+import frontImage from "../../assets/Front_w_border.jpg";
 import "./Claimjumpers.scss";
 
 const Claimjumpers: React.FC = () => {
@@ -22,6 +23,13 @@ const Claimjumpers: React.FC = () => {
       .getClaimjumperTracks()
       .then(setAllAlbumFiles)
       .catch(() => setAllAlbumFiles([]));
+  }, []);
+
+  // Scope the back-cover artwork to this route only; removed on unmount so
+  // every other page keeps the global grex background from App.scss.
+  useEffect(() => {
+    document.body.classList.add("claimjumpers-page");
+    return () => document.body.classList.remove("claimjumpers-page");
   }, []);
 
   // Initialize the first track URL on mount
@@ -68,7 +76,9 @@ const Claimjumpers: React.FC = () => {
     if (!file) return;
 
     setCurrentIndex(index);
-    setCurrentFileUrl(`${baseUrl}/audio/claimjumpers/${encodeURIComponent(file)}`);
+    setCurrentFileUrl(
+      `${baseUrl}/audio/claimjumpers/${encodeURIComponent(file)}`,
+    );
 
     if (autoPlay) {
       setTimeout(play, 100);
@@ -91,15 +101,19 @@ const Claimjumpers: React.FC = () => {
   return (
     <div className="page-container">
       <div className="claimjumpers-container">
-        <div>Claimjumpers - demo</div>
+        <div className="claimjumpers-title">Claimjumpers</div>
+        <div className="claimjumpers-title">~</div>
+        <div className="claimjumpers-title">demo</div>
+        <img
+          src={frontImage}
+          alt="Claimjumpers cover"
+          className="claimjumpers-image"
+        />
         <div className="controls-container">
           <button onClick={prevTrack} aria-label="Previous track">
             <FontAwesomeIcon icon={faBackwardStep} />
           </button>
-          <button
-            onClick={playPause}
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
+          <button onClick={playPause} aria-label={isPlaying ? "Pause" : "Play"}>
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
           </button>
           <button onClick={nextTrack} aria-label="Next track">

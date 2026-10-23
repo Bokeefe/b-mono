@@ -91,3 +91,65 @@ body {
 .quicksand-font {
   font-family: "Quicksand", sans-serif;
 }
+
+@font-face {
+  font-family: "Aesthetic Curves";
+  src: url("./assets/fonts/aesthetic-curves-demo/Aesthetic Curves Demo.ttf")
+    format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.aesthetic-curves-font {
+  font-family: "Aesthetic Curves", sans-serif;
+}
+
+@font-face {
+  font-family: "Classical Blending";
+  src: url("./assets/fonts/classical-blending-demo/Classical Blending Demo.ttf")
+    format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.classical-blending-font {
+  font-family: "Classical Blending", sans-serif;
+}
+
+@font-face {
+  font-family: "Davys Ribbons";
+  src: url("./assets/fonts/darib/DavysRibbons.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.davys-ribbons-font {
+  font-family: "Davys Ribbons", sans-serif;
+}
+
+@font-face {
+  font-family: "Enathica";
+  src: url("./assets/fonts/enathica/Enathica Demo.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.enathica-font {
+  font-family: "Enathica", sans-serif;
+}
+
+@font-face {
+  font-family: "Underdove";
+  src: url("./assets/fonts/underdove/Underdove-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.underdove-font {
+  font-family: "Underdove", sans-serif;
+}
