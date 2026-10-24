@@ -13,24 +13,8 @@
   }
 }
 
-.home-intro {
-  max-width: 30rem;
-  margin-bottom: 1.5rem;
-  padding: 0 1rem;
-  text-align: center;
-
-  h1 {
-    margin-bottom: 0.5rem;
-    font-family: "Underdove", "Quicksand", sans-serif;
-    font-size: 3rem;
-    letter-spacing: 0.05em;
-  }
-
-  p {
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
-}
+// The `<h1>` + description live in `.home > .sr-only` (App.scss) so the landing
+// page renders as buttons only while crawlers/screen readers still get them.
 
 // The navigation is `<Link>`s styled as buttons, so they need the box model
 // that `<button>` used to provide for free.

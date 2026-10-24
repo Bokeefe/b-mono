@@ -6,9 +6,14 @@ import "./Home.scss";
  * The home page is the site's crawl entry point, so the navigation is real
  * `<Link>`s (not `<button>`s + `navigate()`): search engines only follow `href`s,
  * and the styling comes from the same `.mobile-btn` classes as before.
+ *
+ * The heading + one-line description are `.sr-only` (see `App.scss`): they are
+ * in the DOM, in the prerendered HTML and in the accessibility tree, so crawlers
+ * get a real `h1` and screen readers get a description of the site, but they are
+ * clipped to 1px instead of painted — the landing page stays just the buttons.
  */
 const links = [
-  { route: "music", label: "music projects" },
+  { route: "music", label: "music" },
   { route: "slomo", label: "slomo\nworld" },
   { route: "lunch", label: "lunch\napp" },
   { route: "text-corpse", label: "text\ncorpse" },
@@ -19,7 +24,7 @@ const links = [
 const Home = () => {
   return (
     <div className="home">
-      <div className="home-intro">
+      <div className="sr-only">
         <h1>Antigogglin</h1>
         <p>
           Projects, music and experiments by Brendan O&rsquo;Keefe — a

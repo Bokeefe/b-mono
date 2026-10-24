@@ -107,14 +107,18 @@ react-fe/src/
 | `/music` | `Pages/Music` | MainLayout |
 | `/slomo` | `Pages/SloMo` | MainLayout |
 | `/claimjumpers` | `Pages/Claimjumpers` | MainLayout |
+| `*` | `Pages/NotFound` | MainLayout |
 | `/backup` | `Pages/Backup` | **commented out** in `App.tsx` |
 
 `MainLayout` = `<Header/>` + `<Outlet/>`; `Header` is a back-to-`/` button.
+Each path also has an entry in `src/seo/routes.ts` (metadata + prerender mode);
+that list and `App.tsx` are validated against each other at build time.
 
-### Home buttons
-`Home.component.tsx` holds a `buttons` array and `handleNav(route)`:
-`music`, `slomo`, `lunch`, `text-corpse`, `about`.
-`resume` and `claimjumpers` have routes but **no Home button** — URL-only.
+### Home links
+`Home.component.tsx` holds a `links` array rendered as `<Link>`s (real `href`s,
+so crawlers can follow them) plus an `<h1>` and a paragraph of copy:
+`music`, `slomo`, `lunch`, `text-corpse`, `resume`, `about`.
+`claimjumpers` has a route but **no Home link** — URL-only.
 
 ## Data flow patterns
 
@@ -175,8 +179,10 @@ Lunch constants (in `lunch.gateway.ts`):
    service); register the module in `app.module.ts`.
 2. Shared types → `models/index.ts`, then `cd models && npm run build`.
 3. `react-fe/src/Pages/<Name>/<Name>.component.tsx` (+ `.scss`).
-4. Add a `<Route>` in `App.tsx`; add an entry to the `buttons` array in
-   `components/Home/Home.component.tsx`.
+4. Add a `<Route>` in `App.tsx` **and** an entry in `src/seo/routes.ts` (title,
+   description, `render: "prerender" | "shell"`); add a `<Link>` to the `links`
+   array in `components/Home/Home.component.tsx`. The prerender step fails the
+   build if step 4's two route lists disagree.
 5. Add an API method to `services/api.service.ts` (or a new service file).
 
 ### Deploy-affecting changes
@@ -187,4 +193,19 @@ runtime dirs (`nest-server/public`, `react-fe/dist`) affect production.
 ### Build order (non-negotiable)
 `models` → `nest-server` → `react-fe`. The root Dockerfile does exactly this;
 locally run `cd models && npm run build` before building `react-fe`.
+
+### The frontend build produces more than a bundle
+`react-fe` `build` = `tsc` → `vite build` (client) → `scripts/prerender.mjs`.
+The prerender step bundles `src/entry-server.tsx` with `vite build --ssr`
+(`ssr.noExternal: true`), renders `/`, `/about`, `/resume`, `/music`,
+`/claimjumpers` with `renderToString` + `StaticRouter` + Emotion critical CSS,
+then writes `dist/<route>/index.html`, `dist/sitemap.xml` and `dist/404.html`,
+and deletes `dist-ssr/`. `/slomo`, `/lunch`, `/text-corpse` are socket/audio
+driven and only get a metadata shell.
+
+Request flow for a page therefore looks like:
+`nginx (443, gzip, /assets immutable, 404 page) → Express :4171 →
+dist/<route>/index.html (prerendered) → React boots with createRoot and takes
+over`. Unknown paths return **404**, `/room/:id` and `/text-corpse/:id` return
+the shell with `X-Robots-Tag: noindex`.
 

@@ -1,0 +1,43 @@
+name: Lighthouse CI
+
+# Guards the SEO work: prerendered metadata, crawlable links, alt text and
+# Core Web Vitals budgets. Runs against the real built `dist` (the same files
+# nginx serves in production), not the dev server.
+on:
+  push:
+    branches: ["main", "feature/new", "feature/fix"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build frontend (includes prerender + sitemap)
+        working-directory: react-fe
+        run: |
+          npm install
+          npm run build
+
+      - name: Serve the prerendered build
+        run: |
+          nohup npx --yes http-server react-fe/dist -p 8080 --silent > /tmp/http-server.log 2>&1 &
+          npx --yes wait-on http://127.0.0.1:8080/
+
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.14 autorun --config=./lighthouserc.json
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          if-no-files-found: ignore

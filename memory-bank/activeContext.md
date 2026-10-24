@@ -3,6 +3,108 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-24 (later) — "/slomo has no 🎸 genre button" — **not a regression**
+
+- **Report:** on `feature/seo` the SloMo genre screen showed no button; on
+  `feature/new` it did. The genre *is* the emoji (the only genre folder is `🎸`),
+  so "the guitar emoji button" is the entire genre list.
+- **Ruled out with evidence:** `GET /api/slomo/genres` → `200 ["🎸"]` (plain and
+  gzip), CORS reflects every dev origin (`localhost/127.0.0.1/192.168.2.1/
+  10.210.155.132:5173`), and the button renders in dev (:5173) **and** from
+  `dist` (:4171) at 390×844, 430×932 and 1440×900. `feature/new` rendered side
+  by side (`git archive` → Vite on :5174) is pixel-equivalent. SloMo's whole diff
+  is `bartender.png` → `bartender.webp`; `.mobile-btn`/`slideInUp` untouched.
+- **Cause: stale local state** (user confirmed fixed after reload/restart). Two
+  branch-local traps produce this exact symptom: the dev backend dies at boot if
+  `compression` isn't installed (`nest-server` dep is new) — only SloMo's UI
+  needs the API, so only SloMo looks broken; and `@emotion/server` in
+  `react-fe/package.json` makes Vite re-optimize deps, so a tab left open across
+  that reload can stick on the first render ("Loading genres…"). See
+  `.steering/gotchas.md` #34 for the 3-step diagnosis.
+- **Debug recipe worth reusing:** headless Firefox
+  (`--headless --new-instance --profile <dir>` so it doesn't collide with the
+  user's open Firefox) against a wrapper page that delays `load` ~7 s — a plain
+  `--screenshot` fires at `load`, before `useEffect` resolves, and always shows
+  "Loading genres…" (false negative).
+- **State:** `feature/seo` @ `57652cc` "seo work" + 12 uncommitted entries
+  (`nest-server/src/main.ts`, `compression` dep, `Dockerfile`, memory-bank +
+  `.steering` docs, `lighthouse.yml` + `lighthouserc.json`).
+
+## Session snapshot — 2026-10-24 — SEO / crawlability + prerendering pass
+
+- **Branch:** `feature/seo`, branched from `feature/new` (the develop branch);
+  the SEO pass is commit `57652cc` with the server/Docker/CI pieces below still
+  uncommitted (12 working-tree entries).
+- **Goal:** make the site findable and shareable — it was a pure client-rendered
+  SPA with one static `<title>BVerse</title>`, no description, no robots.txt, no
+  sitemap, no crawlable links on the home page, and a catch-all that answered
+  **HTTP 200** for every unknown URL (infinite soft 404s). `/robots.txt` and
+  `/sitemap.xml` returned the SPA shell as `text/html`.
+- **Landed:**
+  - `react-fe/src/seo/routes.ts` — single source of truth for per-route title,
+    description, `render: "prerender" | "shell"`, `changefreq`, `priority`,
+    plus `DYNAMIC_ROUTES` (`/room/:roomId`, `/text-corpse/:roomId`) which are
+    `noindex`.
+  - `react-fe/src/seo/SeoManager.tsx` — syncs `<title>`/description/robots/
+    canonical/OG/Twitter with `useLocation()` on client navigations.
+  - `react-fe/src/entry-server.tsx` + `react-fe/scripts/prerender.mjs` — build
+    step that bundles the route tree with `vite build --ssr`, renders it with
+    `renderToString` + `StaticRouter` + an Emotion cache, and writes
+    `dist/<route>/index.html`, `dist/sitemap.xml`, `dist/404.html`. It fails the
+    build if `App.tsx` and `routes.ts` drift apart.
+  - `App.tsx` split into `AppRoutes` (router-free, reusable by the prerenderer)
+    and `App` (`BrowserRouter` + `SeoManager`), plus a `*` → `NotFound` route.
+  - `index.html` rewritten: description/canonical/OG/Twitter/theme-color, a
+    `<noscript>` summary, and `seo:start`/`seo:end` **meta** markers (Vite strips
+    HTML comments from production builds).
+  - Home page: the 5 `<button>`s (invisible to crawlers) became `<Link>`s,
+    with an `<h1>` + real copy (later moved into a `.sr-only` wrapper — see the
+    snapshot above); a `/resume` button was added.
+  - Heading hierarchy fixed: About 3×`h1` → 1×`h1`+`h2`s, Music 4×`h1` → 1+`h2`s,
+    Resume gained the missing `h1` (name), Claimjumpers title divs → `h1`.
+  - `react-fe/public/robots.txt`, `og-image.jpg` (1200×630), `apple-touch-icon.png`.
+  - Server (`nest-server/src/main.ts`): `compression()`, immutable
+    `/assets/*` caching, prerendered-dir lookup **without** the `/about` →
+    `/about/` redirect, trailing-slash 301, `no-cache` for HTML, real
+    **404 + `404.html`** for unknown URLs, `X-Robots-Tag: noindex` for live
+    rooms, and a path-traversal guard.
+  - nginx (`Dockerfile`): gzip, 1-year immutable asset cache, **http→https** and
+    **www→apex** 301s, `try_files $uri $uri/index.html $uri.html =404` +
+    `error_page 404 /404.html`, room regex location with `X-Robots-Tag`.
+  - Core Web Vitals: all bitmaps → WebP (`performa` 744 KB→6.6 KB, `bartender`
+    564 KB→22 KB, `Front_w_border` 1.8 MB→320 KB, `back_w_border` 1.8 MB→280 KB,
+    `grex` 123 KB→15 KB, `ex-corpse` 816 KB→117 KB); the 8 used fonts → WOFF2
+    (`Aesthetic Curves` 775 KB→160 KB, `Classical Blending` 536 KB→92 KB,
+    `Underdove` 206 KB→54 KB); `width`/`height` + `loading="lazy"` where relevant.
+  - `.github/workflows/lighthouse.yml` + `lighthouserc.json` (SEO score is a hard
+    failure, accessibility/performance are warnings).
+- **Verified on Node 26.12.1:** root `npm run build` (models + Nest + Vite +
+  prerender), `npm test` (3 suites / 6 tests), and a prod smoke test of
+  `node dist/main.js`: `/`, `/about`, `/resume`, `/music`, `/claimjumpers`,
+  `/slomo`, `/lunch`, `/text-corpse` → 200; `/nope` → **404** with the noindex
+  404 page; `/about/` → **301** `/about`; `/room/abc` + `/text-corpse/abc` → 200
+  with `X-Robots-Tag: noindex, nofollow`; `/robots.txt` → `text/plain`;
+  `/sitemap.xml` → `application/xml`; `/og-image.jpg` → 200; hashed assets →
+  `public, max-age=31536000, immutable` **and** gzip; `/api/health` → 200;
+  `/backup` → 401; `/socket.io/?EIO=4` → 200; traversal attempt → 404.
+  Prerendered output: home 72 words + `<h1>` + 6 crawlable links, about 568 words
+  (the agent-written "ethical organic local fair trade AI" blurb is the bulk of
+  it; model name lives in `LOCAL_MODEL` at the top of `About.component.tsx`),
+  résumé **589 words**, music 53 words + 5 iframes.
+- **Not verified:** `docker build` (Docker still not installed — the new nginx
+  config is unexercised), the Lighthouse workflow (needs a GitHub runner with
+  Chrome), and the visual result of the Home/Claimjumpers/About markup changes
+  (no browser pass). Prod still serves the old image until the next deploy.
+- **Deliberate decisions:**
+  - Prerender by **SSR-rendering React at build time**, not with Puppeteer — no
+    Chromium in the Docker build stage. Needed `ssr: { noExternal: true }`
+    because MUI's ESM build uses directory imports Node cannot resolve.
+  - Only `prerender` routes get real markup; `/slomo`, `/lunch`, `/text-corpse`
+    are socket/audio-driven and get metadata-only shells.
+  - `main.tsx` keeps `createRoot` (not `hydrateRoot`): the prerendered DOM is
+    discarded on boot, which avoids hydration mismatches on the live pages.
+  - Canonical host is `https://antigogglin.org` (apex, no `www`).
+
 ## Session snapshot — 2026-10-23 — Node 26 / TS 6 / Nest 12 upgrade
 
 - **Branch:** `feature/new`; upgrade changes are uncommitted in the working tree.

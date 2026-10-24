@@ -14,17 +14,19 @@ areas are automated deployment reliability and test coverage.
 |------|-------|
 | Local dev (`npm run dev`) | ✅ Backend :4171 + Vite :5173 |
 | Production container | ⚠️ Built + smoke-tested locally on Node 26.12.1; prod still runs the previous Node 20 image until the next deploy |
-| Home / navigation shell | ✅ 5 buttons wired |
-| Resume | ⚠️ Route works, no Home button, PDF/TXT export present |
-| About | ✅ Content page |
-| Music | ✅ Static embeds |
-| SloMo | ✅ Works; reverb + mobile background playback tension documented |
+| Home / navigation shell | ✅ 6 real `<Link>`s + `<h1>` + copy (was 5 JS-only buttons) |
+| Resume | ✅ Route works **and** is linked from Home; 589 words prerendered |
+| About | ✅ Content page, single `h1` |
+| Music | ✅ Static embeds, single `h1` |
+| SloMo | ✅ Works; genre list comes from the API (a dead dev backend is the usual "no 🎸 button" cause — see `.steering/gotchas.md` #34); reverb + mobile background playback tension documented |
 | Lunch | ✅ Core flow + mobile reconnect/replay fixes landed |
 | TextCorpse | ✅ Works with JSON persistence + volume mount |
-| Claimjumpers | ⚠️ Newest feature; routes + audio API work, no Home button |
+| Claimjumpers | ⚠️ Newest feature; routes + audio API work, still not linked from Home |
 | Backup (`/backup`) | ⛔ Route commented out in `App.tsx` |
 | Faker API | ✅ `nest-server/src/faker` |
 | Examples (`/fetch`,`/axios`,`/sandbox`) | ⛔ Page files removed; not routed |
+| SEO / crawlability | ✅ Per-route metadata, prerendered HTML, robots.txt, sitemap.xml, real 404s, WebP/WOFF2 assets |
+| Accessibility / Lighthouse | ⚠️ Lighthouse CI wired (`.github/workflows/lighthouse.yml`) but never executed — needs a CI run |
 
 ## What works (verified in code)
 
@@ -75,6 +77,35 @@ areas are automated deployment reliability and test coverage.
   ESM-only.
 - e2e config exists at `nest-server/test/jest-e2e.json`.
 
+### SEO / crawlability (added 2026-10-24)
+- **Prerendered HTML** for `/`, `/about`, `/resume`, `/music`, `/claimjumpers`
+  (`react-fe/dist/<route>/index.html`), metadata-only shells for `/slomo`,
+  `/lunch`, `/text-corpse`. Built by `scripts/prerender.mjs` →
+  `src/entry-server.tsx` (`renderToString` + `StaticRouter` + Emotion critical CSS).
+- **Per-route metadata** comes from `react-fe/src/seo/routes.ts` (title,
+  description, canonical, OG/Twitter, changefreq, priority) and is mirrored in the
+  browser by `SeoManager` on every navigation.
+- `dist/sitemap.xml`, `dist/404.html`, `public/robots.txt`, `public/og-image.jpg`,
+  `public/apple-touch-icon.png` are all generated/committed as described.
+- **Structured data:** site-wide JSON-LD `WebSite` + `Person` graph lives in
+  `index.html` outside the per-route block, so every prerendered page carries it.
+- **Real 404s:** unknown paths return status 404 + `404.html` (Express and nginx);
+  `/about/` 301s to `/about`; live rooms return the shell with
+  `X-Robots-Tag: noindex, nofollow`.
+- **Caching/compression:** `/assets/*` → `public, max-age=31536000, immutable`,
+  HTML → `no-cache`, gzip in Express (`compression`) and nginx.
+- **Assets:** bitmaps are WebP (`performa` 744 KB→6.6 KB, `bartender` 564 KB→22 KB,
+  `Front_w_border` 1.8 MB→320 KB, `back_w_border` 1.8 MB→280 KB, `grex` 123 KB→15 KB,
+  `ex-corpse` 816 KB→117 KB); the 8 used fonts are WOFF2 (TTFs remain on disk as
+  sources but are no longer emitted).
+- **Crawlable navigation:** Home uses `<Link>`s with an `<h1>` + description in a
+  `.sr-only` wrapper (in the DOM, the prerendered HTML and the a11y tree, but
+  clipped to 1px so the page still looks like buttons only); one `h1`
+  per page (Resume's name, Claimjumpers' title, About/Music demoted subheads).
+- **Lighthouse CI** (`.github/workflows/lighthouse.yml` + `lighthouserc.json`)
+  asserts SEO ≥ 0.9 as an error; performance/accessibility are warnings until a
+  real run sets a baseline.
+
 ## What's left / known issues
 
 ### High priority
@@ -93,7 +124,8 @@ areas are automated deployment reliability and test coverage.
 5. **Hardcoded master password** `corpseunlock` in `text-corpse.service.ts`.
 6. **Duplicate `/api/health`** definitions (`AppController` and
    `HealthController`) — unpredictable precedence.
-7. **URL-only features**: `/resume` and `/claimjumpers` lack Home buttons.
+7. **URL-only feature**: `/claimjumpers` still has no Home button (`/resume`
+   gained one in the 2026-10-24 SEO pass).
 8. **`.steering/` docs drifted** (`domains/` → `Pages/`, `Examples` removed,
    Claimjumpers missing).
 
@@ -106,6 +138,12 @@ areas are automated deployment reliability and test coverage.
     are vestigial/empty.
 14. `nest-server/Dockerfile` and `react-fe/Dockerfile` are legacy — editing them
     changes nothing in production.
+15. **Triage note (2026-10-24):** "SloMo lost its 🎸 genre button" was stale local
+    state, not a regression — the SEO branch only swapped that page's background
+    image. Because SloMo is the one page whose UI depends on `/api`, a dev
+    backend that failed to boot (new `compression` dep not installed) or a Vite
+    dep re-optimization (`@emotion/server` added) shows up **only** there. Check
+    `curl localhost:4171/api/slomo/genres` before reading the component.
 
 ## Evolution of decisions
 
@@ -124,6 +162,12 @@ areas are automated deployment reliability and test coverage.
 | Oct 2026 | Whole monorepo moved to **Node 26.12.1** (+ TS 6, Nest 12, Vite 7, jest 30) | Runtime refresh while 26.x is the current LTS-track line; `.nvmrc` + `engines` + Docker + CI all pin the same version |
 | Oct 2026 | Backend kept on **CommonJS** even though Nest 12 is ESM-only | Node 26 `require()`s ESM natively, so `node dist/main.js` works unchanged; converting the app to ESM (`.js` import specifiers, `import.meta.dirname`, ESM jest) was unnecessary risk |
 | Oct 2026 | React **18**, MUI **6**, react-router **6** intentionally not bumped | UI majors are unrelated to the Node runtime upgrade and each carries its own migration |
+| Oct 2026 | Prerender with **SSR-at-build** (`vite build --ssr` + `renderToString`) instead of Puppeteer/`react-snap` | Keeps Chromium out of the Docker build stage; `react-snap` is unmaintained |
+| Oct 2026 | `ssr: { noExternal: true }` in the prerender build | MUI's ESM build imports directories (`@mui/material/utils`) that Node's ESM resolver rejects |
+| Oct 2026 | Prerender only content routes; socket/audio pages get metadata shells | `/slomo`, `/lunch`, `/text-corpse` touch `AudioContext`/`io()` and cannot render statically |
+| Oct 2026 | `createRoot` retained (no `hydrateRoot`) | Avoids hydration mismatches on live pages; prerendered DOM is for crawlers/social bots, then discarded |
+| Oct 2026 | `seo:start`/`seo:end` **meta** markers instead of HTML comments | Vite's production HTML minifier strips comments |
+| Oct 2026 | Canonical host `antigogglin.org`; `www` + `http` 301 to it | One host avoids split ranking signals; Cloudflare + nginx previously served both |
 
 ## How to keep this file honest
 

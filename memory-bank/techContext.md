@@ -118,6 +118,50 @@ npm run dev
 - **Fix `react-fe/src/environment.ts` first** — dev `api.url` is a hardcoded LAN
   IP (`http://10.210.155.132`). Change to `http://localhost`.
 
+## SEO / prerender pipeline
+
+- **Source of truth:** `react-fe/src/seo/routes.ts` — every route's title,
+  description, `render: "prerender" | "shell"`, `changefreq`, `priority`, plus
+  `DYNAMIC_ROUTES` (`/room/:roomId`, `/text-corpse/:roomId`) which are `noindex`.
+  Site-level constants (`SITE.url = https://antigogglin.org`, OG image, locale)
+  live there too.
+- **Build chain:** `react-fe` `build` = `tsc && vite build && node
+  scripts/prerender.mjs`. The script runs `vite build --ssr src/entry-server.tsx`
+  (`ssr: { noExternal: true }`, output `dist-ssr/entry-server.mjs`), imports it,
+  renders each prerender route with `renderToString` + `StaticRouter` +
+  `@emotion/server` critical CSS, then writes:
+  `dist/<route>/index.html`, `dist/sitemap.xml`, `dist/404.html`, and deletes
+  `dist-ssr/`. It also **fails the build** when `App.tsx` and `routes.ts` disagree
+  about the route list, and asserts the `seo:start`/`seo:end` markers exist in
+  `dist/index.html`.
+- **Head injection:** `react-fe/index.html` holds default metadata between two
+  `<meta name="seo:start">`/`<meta name="seo:end">` markers; the script swaps that
+  block per route. Meta markers (not comments) because Vite's HTML minifier
+  strips comments.
+- **Client side:** `src/seo/SeoManager.tsx` runs `useLocation()` and rewrites
+  title/description/robots/canonical/OG/Twitter on navigation. `App.tsx` exports
+  `AppRoutes` (router-free, used by the prerenderer) and default `App`
+  (`BrowserRouter` + `SeoManager`).
+- **Prerenderable vs shell:** `/`, `/about`, `/resume`, `/music`, `/claimjumpers`
+  render statically. `/slomo`, `/lunch`, `/text-corpse` are socket/audio driven
+  and only get a metadata shell. `main.tsx` still uses `createRoot`, so browsers
+  replace the prerendered DOM (crawlers/social bots keep the HTML).
+- **Serving:** Express resolves `/about` → `dist/about/index.html` (no redirect),
+  301s `/about/` → `/about`, returns 404 + `dist/404.html` for unknown paths, adds
+  `X-Robots-Tag: noindex` to live rooms, caches `/assets/*` for a year
+  (`immutable`), sets `no-cache` on HTML and compresses with `compression()`.
+- **nginx (prod):** gzip, `/assets/` immutable, `try_files $uri $uri/index.html
+  $uri.html =404` + `error_page 404 /404.html`, room regex location with
+  `X-Robots-Tag`, http→https and www→apex 301s.
+- **Asset tooling used for this pass** (local, one-off — not wired into the
+  build): `cwebp` (Homebrew) for bitmaps, `sips` for the 1200×630 OG image, and
+  `python3 -m pip install --user fonttools brotli` +
+  `TTFont(src).flavor = 'woff2'` for fonts. Re-run those if new artwork or
+  typefaces are added.
+- **Lighthouse CI:** `.github/workflows/lighthouse.yml` builds `react-fe`, serves
+  `dist` with `http-server`, runs `@lhci/cli` against `/`, `/about/`, `/resume/`,
+  `/music/` with `lighthouserc.json` (SEO ≥ 0.9 is an error).
+
 ## Tooling notes / constraints
 
 - `.eslintrc.cjs` at root; `nest-server/.eslintrc.js` + `.prettierrc` in backend.

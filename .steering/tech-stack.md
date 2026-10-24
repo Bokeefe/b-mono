@@ -24,9 +24,13 @@
 | Audio | `pizzicato` (Web Audio FX), HTML5 `<audio>` | ^0.6 | see SloMo gotchas |
 | PDF / print | `jspdf`, `react-to-print` | ^2.5 / ^3.0 | Resume export |
 | Shared types | `@b-mono/models` | `file:../models` | requires `models/` built |
+| Prerender / SEO | `src/entry-server.tsx` + `scripts/prerender.mjs` | Vite SSR | `renderToString` + `StaticRouter` + `@emotion/server`; metadata in `src/seo/routes.ts` |
+| Images / fonts | WebP + WOFF2 | — | `cwebp` / `fonttools` converted once; source PNG/JPG/TTF stay on disk |
+| Lighthouse | `@lhci/cli` (CI only) | 0.14 | `.github/workflows/lighthouse.yml` + `lighthouserc.json` |
 
 Frontend scripts (`react-fe/package.json`):
-`dev` (vite), `build` (`tsc && vite build`), `preview`, `lint`, `test` (jest),
+`dev` (vite), `build` (`tsc && vite build && node scripts/prerender.mjs`),
+`prerender` (reruns only the prerender), `preview`, `lint`, `test` (jest),
 `sass` (`sass src:dist`).
 
 Config: `vite.config.ts` (host 0.0.0.0, port 5173), `tsconfig.json` (ES2020 lib,
