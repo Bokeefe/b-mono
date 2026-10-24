@@ -1,16 +1,47 @@
 .home {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  align-items: center;
   height: 93vh;
   margin: auto;
+
   > div {
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
 }
+
+.home-intro {
+  max-width: 30rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+  text-align: center;
+
+  h1 {
+    margin-bottom: 0.5rem;
+    font-family: "Underdove", "Quicksand", sans-serif;
+    font-size: 3rem;
+    letter-spacing: 0.05em;
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+}
+
+// The navigation is `<Link>`s styled as buttons, so they need the box model
+// that `<button>` used to provide for free.
+.home .mobile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  white-space: pre-line;
+}
+
 .home > * {
   display: flex;
 }

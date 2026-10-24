@@ -157,10 +157,13 @@ function Resume() {
         </IconButton>
       </div>
       <div>
+        {/* The résumé's single <h1>; job sections below use <h2>/<h3>. */}
+        <h1 className="text-xl font-bold">{jobsCopy.header.name}</h1>
+        <p className="text-lg font-semibold">{jobsCopy.header.title}</p>
         <Section
           job={{
-            title: jobsCopy.header.name,
-            company: jobsCopy.header.title,
+            title: "",
+            company: "",
             description: [jobsCopy.header.description],
             technologies: (jobsCopy.header as any).technologies,
             period: "",

@@ -19,7 +19,15 @@
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 }
+.claimjumpers-heading {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-weight: normal;
+}
+
 .claimjumpers-title {
+  display: block;
   font-family: "Underdove", "Quicksand", sans-serif;
   font-size: 3rem;
   line-height: 0.5;
@@ -40,7 +48,7 @@
 // Only present while the Claimjumpers route is mounted (class added in the
 // component's useEffect), so all other pages keep the grex pattern.
 body.claimjumpers-page::before {
-  background-image: url("../../assets/back_w_border.jpg");
+  background-image: url("../../assets/back_w_border.webp");
   background-color: #fff7d6; // the artwork's own cream border, fills any crop edge
   background-size: cover;
   background-repeat: no-repeat;

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../../services/api.service';
 import MobileButton from '../../components/MobileButton/MobileButton';
 import fireplaceGif from '../../assets/fireplace.webp';
-import bartenderImage from '../../assets/bartender.png';
+import bartenderImage from '../../assets/bartender.webp';
 import * as Pizzicato from 'pizzicato';
 import { Sound, Effects } from 'pizzicato';
 import './SloMo.scss';

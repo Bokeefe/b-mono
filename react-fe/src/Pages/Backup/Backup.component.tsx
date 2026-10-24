@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import miniB from "../../assets/performa.png";
+import miniB from "../../assets/performa.webp";
 import "./Backup.scss";
 
 function Backup() {

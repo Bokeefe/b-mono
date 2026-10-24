@@ -10,12 +10,13 @@ export const Music: React.FC<MusicProps> = () => {
         <a
           href="https://open.spotify.com/playlist/4xcMWLMk7VDLfvxeI4Sg3p?si=595262ec25794040"
           target="_blank"
+          rel="noopener noreferrer"
         >
           My mega spotify playlist of the greatest songs I love
         </a>
       </h1>
       <a href="/claimjumpers">
-        <h1 className="claimjumpers">The Claimjumpers</h1>
+        <h2 className="claimjumpers">The Claimjumpers</h2>
       </a>
       <iframe
         src="https://www.youtube.com/embed/meKeUyOBrRI?si=B4sgd-rOF3gUpqyf"
@@ -23,8 +24,8 @@ export const Music: React.FC<MusicProps> = () => {
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
       ></iframe>
-      <h1>Ginseng 2011-2013</h1>
-      <a href="https://soundcloud.com/ginse-eng" target="_blank">
+      <h2>Ginseng 2011-2013</h2>
+      <a href="https://soundcloud.com/ginse-eng" target="_blank" rel="noopener noreferrer">
         SoundCloud
       </a>
       <iframe
@@ -41,12 +42,12 @@ export const Music: React.FC<MusicProps> = () => {
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
       ></iframe>
-      <h1>Cuticle 2009-2015</h1>
+      <h2>Cuticle 2009-2015</h2>
       <a href="https://www.discogs.com/artist/1826665-Cuticle">Discogs</a>
       <a href="https://open.spotify.com/artist/2NmYjWPrbiX8ebWt9JTO7Q">
         Spotify
       </a>
-      <a href="https://soundcloud.com/cuticle" target="_blank">
+      <a href="https://soundcloud.com/cuticle" target="_blank" rel="noopener noreferrer">
         SoundCloud
       </a>
       <iframe

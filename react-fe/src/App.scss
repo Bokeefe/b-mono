@@ -24,7 +24,7 @@ body {
     // grex.jpg completely, which looks like "the background image is missing".
     // multiply is commutative, so the rendered result is unchanged where the
     // blend does work (verified pixel-identical in WebKit at 390x844).
-    background-image: url("/grex.jpg"),
+    background-image: url("/grex.webp"),
       linear-gradient(to bottom, var(--lavender), var(--brown));
     background-blend-mode: multiply, normal;
     background-size: 200px;
@@ -62,8 +62,8 @@ body {
 
 @font-face {
   font-family: "Caesar";
-  src: url("./style/fonts/Caesar_Dressing/CaesarDressing-Regular.ttf")
-    format("truetype");
+  src: url("./style/fonts/Caesar_Dressing/CaesarDressing-Regular.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -75,8 +75,8 @@ body {
 
 @font-face {
   font-family: "Oxygen";
-  src: url("./style/fonts/Oxygen_Mono/OxygenMono-Regular.ttf")
-    format("truetype");
+  src: url("./style/fonts/Oxygen_Mono/OxygenMono-Regular.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -88,8 +88,8 @@ body {
 
 @font-face {
   font-family: "Quicksand";
-  src: url("./style/fonts/Quicksand/Quicksand-VariableFont_wght.ttf")
-    format("truetype");
+  src: url("./style/fonts/Quicksand/Quicksand-VariableFont_wght.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -101,8 +101,8 @@ body {
 
 @font-face {
   font-family: "Aesthetic Curves";
-  src: url("./assets/fonts/aesthetic-curves-demo/Aesthetic Curves Demo.ttf")
-    format("truetype");
+  src: url("./assets/fonts/aesthetic-curves-demo/Aesthetic Curves Demo.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -114,8 +114,8 @@ body {
 
 @font-face {
   font-family: "Classical Blending";
-  src: url("./assets/fonts/classical-blending-demo/Classical Blending Demo.ttf")
-    format("truetype");
+  src: url("./assets/fonts/classical-blending-demo/Classical Blending Demo.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -127,7 +127,7 @@ body {
 
 @font-face {
   font-family: "Davys Ribbons";
-  src: url("./assets/fonts/darib/DavysRibbons.ttf") format("truetype");
+  src: url("./assets/fonts/darib/DavysRibbons.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -139,7 +139,7 @@ body {
 
 @font-face {
   font-family: "Enathica";
-  src: url("./assets/fonts/enathica/Enathica Demo.ttf") format("truetype");
+  src: url("./assets/fonts/enathica/Enathica Demo.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -151,7 +151,7 @@ body {
 
 @font-face {
   font-family: "Underdove";
-  src: url("./assets/fonts/underdove/Underdove-Regular.ttf") format("truetype");
+  src: url("./assets/fonts/underdove/Underdove-Regular.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;

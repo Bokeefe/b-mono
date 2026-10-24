@@ -4,10 +4,99 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌎</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BVerse</title>
+    <meta name="theme-color" content="#3b2a20" />
+
+    <!--
+      SEO: everything between the two meta markers below is replaced at build
+      time by scripts/prerender.mjs with that route's metadata. Meta tags are
+      used instead of HTML comments because Vite strips comments from the
+      production HTML. Defaults below describe "/".
+    -->
+    <meta name="seo:start" content="" />
+    <title>Antigogglin — Brendan O'Keefe's projects, music and experiments</title>
+    <meta
+      name="description"
+      content="Brendan O'Keefe's personal site: a collaborative exquisite-corpse drawing app, a slowdown playlist generator, a lunch-ordering app, and the music of The Claimjumpers, Ginseng and Cuticle."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://antigogglin.org/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Antigogglin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://antigogglin.org/" />
+    <meta
+      property="og:title"
+      content="Antigogglin — Brendan O'Keefe's projects, music and experiments"
+    />
+    <meta
+      property="og:description"
+      content="Brendan O'Keefe's personal site: a collaborative exquisite-corpse drawing app, a slowdown playlist generator, a lunch-ordering app, and the music of The Claimjumpers, Ginseng and Cuticle."
+    />
+    <meta property="og:image" content="https://antigogglin.org/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A woven grey pattern with a lavender-to-brown gradient, the Antigogglin.org background texture"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Antigogglin — Brendan O'Keefe's projects, music and experiments"
+    />
+    <meta
+      name="twitter:description"
+      content="Brendan O'Keefe's personal site: a collaborative exquisite-corpse drawing app, a slowdown playlist generator, a lunch-ordering app, and the music of The Claimjumpers, Ginseng and Cuticle."
+    />
+    <meta name="twitter:image" content="https://antigogglin.org/og-image.jpg" />
+    <meta name="seo:end" content="" />
+
+    <!-- Site-level structured data (same on every page, so it lives outside the
+         per-route block above). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://antigogglin.org/#website",
+            "url": "https://antigogglin.org/",
+            "name": "Antigogglin",
+            "description": "Projects, music and experiments by Brendan O'Keefe.",
+            "inLanguage": "en-US",
+            "publisher": { "@id": "https://antigogglin.org/#person" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://antigogglin.org/#person",
+            "name": "Brendan O'Keefe",
+            "url": "https://antigogglin.org/about",
+            "jobTitle": "Software Engineer",
+            "sameAs": [
+              "https://github.com/Bokeefe",
+              "https://www.linkedin.com/in/brendanokeefe96"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p><strong>Antigogglin</strong></p>
+      <p>
+        Projects, music and experiments by Brendan O'Keefe. The interactive
+        parts of this site (the exquisite corpse drawing app, the lunch app and
+        the playlist generator) need JavaScript.
+      </p>
+      <ul>
+        <li><a href="/resume">Résumé</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/music">Music</a></li>
+        <li><a href="/claimjumpers">The Claimjumpers</a></li>
+      </ul>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

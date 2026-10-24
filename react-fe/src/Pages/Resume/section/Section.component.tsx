@@ -14,8 +14,10 @@ function Section({ job }: SectionProps) {
   return (
     <div className="section">
       <div>
-        <h2 className="text-xl font-bold">{job.company}</h2>
-        <h3 className="text-lg font-semibold">{job.title}</h3>
+        {/* Empty headings are skipped so the résumé header can supply its own
+            <h1> without rendering stray <h2>/<h3> elements. */}
+        {job.company && <h2 className="text-xl font-bold">{job.company}</h2>}
+        {job.title && <h3 className="text-lg font-semibold">{job.title}</h3>}
         <p className="text-sm text-gray-600">{job.period}</p>
 
         <div className="mt-4">

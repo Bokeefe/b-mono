@@ -25,9 +25,13 @@ const TextCorpseHelp: React.FC = () => {
       </p>
       <figure className="text-corpse-help-figure">
         <img
-          src="/ex-corpse.png"
+          src="/ex-corpse.webp"
           alt="An exquisite corpse drawing: the head and wings of a seagull attached to the legs of a horse, drawn in three horizontal sections"
           className="text-corpse-help-image"
+          width={832}
+          height={1136}
+          loading="lazy"
+          decoding="async"
         />
         <figcaption>
           A classic "exquisite corpse" drawing — the surrealist parlor game this

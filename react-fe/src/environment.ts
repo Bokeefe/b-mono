@@ -14,8 +14,10 @@ const development: Environment = {
 };
 
 const production: Environment = {
+  // `window` is unavailable during the build-time prerender, so guard it: this
+  // module is evaluated by both the browser bundle and the SSR entry.
   api: {
-    url: window.location.origin,
+    url: typeof window === "undefined" ? "" : window.location.origin,
   },
 };
 

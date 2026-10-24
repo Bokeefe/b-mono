@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { baseUrl } from "../../environment.ts";
 import { apiService } from "../../services/api.service";
-import frontImage from "../../assets/Front_w_border.jpg";
+import frontImage from "../../assets/Front_w_border.webp";
 import "./Claimjumpers.scss";
 
 const Claimjumpers: React.FC = () => {
@@ -101,13 +101,18 @@ const Claimjumpers: React.FC = () => {
   return (
     <div className="page-container">
       <div className="claimjumpers-container">
-        <div className="claimjumpers-title">Claimjumpers</div>
-        <div className="claimjumpers-title">~</div>
-        <div className="claimjumpers-title">demo</div>
+        <h1 className="claimjumpers-heading">
+          <span className="claimjumpers-title">Claimjumpers</span>
+          <span className="claimjumpers-title">~</span>
+          <span className="claimjumpers-title">demo</span>
+        </h1>
         <img
           src={frontImage}
-          alt="Claimjumpers cover"
+          alt="The Claimjumpers album cover art"
           className="claimjumpers-image"
+          width={1400}
+          height={1403}
+          fetchPriority="high"
         />
         <div className="controls-container">
           <button onClick={prevTrack} aria-label="Previous track">
