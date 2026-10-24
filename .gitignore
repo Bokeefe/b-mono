@@ -32,3 +32,8 @@ dist-ssr
 # Persistent production data (outside git-tracked files)
 /usr/src/app/data/
 data/
+
+# Python tooling (tools/)
+__pycache__/
+*.pyc
+tools/spotify-playlist/out/

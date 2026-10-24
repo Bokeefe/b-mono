@@ -3,6 +3,55 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-24 (evening) — local Spotify playlist scraper (`tools/spotify-playlist/`)
+
+- **Ask:** a local tool that turns a public Spotify playlist into a numbered
+  song/album/artist list (example: `open.spotify.com/playlist/4xcMWLMk7VDLfvxeI4Sg3p`).
+- **Shipped:** `tools/spotify-playlist/spotify_playlist.py` (stdlib only, Python
+  3.9+, ~1100 lines), `README.md`, `test_spotify_playlist.py` (24 unittest
+  cases, **all green**, no network — local `http.server` mock). Nothing in the
+  build/CI/Docker path changed; the script is standalone.
+- **Why not one scraper:** the playlist page is client-rendered and
+  `open.spotify.com/get_access_token` / `api-partner` / `api.spotify.com` all
+  return 403/401 anonymously (verified 2026-10-24). What *does* work without
+  auth is `open.spotify.com/embed/playlist/<id>`, whose `__NEXT_DATA__` blob has
+  title + artists + duration for **up to 100 tracks** — but **no album name**
+  (verified: the string `album` does not appear in the blob). Hence:
+  - `--source auto` (default): official Web API when `SPOTIFY_CLIENT_ID` /
+    `SPOTIFY_CLIENT_SECRET` are set → album, pagination, ISRC, release date;
+  - otherwise embed scrape + album fill from public **Deezer** search
+    (`api.deezer.com/search?q=`), matched on normalised title + duration ±4 s +
+    artist-token overlap, 5 threads paced at ~8 req/s (54 s → 12.7 s for 100
+    tracks). Live result on the example playlist: **81/100 albums resolved**;
+    misses are real catalogue gaps (e.g. William Onyeabor "Fantastic Man",
+    Droopy Eye), not matcher bugs.
+- **Formats:** `table` (default, aligned numbered columns), `list`
+  (`1. Song — Album — Artist`), `markdown`, `csv`, `tsv`, `json`; `-o FILE` with
+  extension-inferred format, `--fields`, `--max-col`, `--no-enrich`,
+  `--no-header`, `--quiet`. Exit 0/1, warnings on stderr.
+- **Web API notes encoded:** try `/playlists/{id}/items` first and fall back to
+  `/tracks` (403 for apps created after 2024-11-27), skip `track: null` entries,
+  treat `type: episode` as album = show name, and stop at 20 000 entries.
+- **Not verified:** the Web API path against the real Spotify API (no client
+  credentials available) — covered only by the mock-server tests. First real run
+  with credentials should be treated as the acceptance test.
+- **Follow-up (same day) — `--source browser`.** Added
+  `tools/spotify-playlist/browser/scrape_playlist.mjs` (Playwright, its own
+  `package.json`; `node_modules` is git-ignored) plus `--source browser` in the
+  CLI. **Live result: the example playlist is 138 tracks** (`total_on_spotify:
+  138`, **0 empty albums**) — so the embed's 100 was genuinely truncation.
+  Parsing: `[data-testid="tracklist-row"]` → numeric first `[role="gridcell"]`
+  (the "Recommended" rows have no number) + `a[href*="/track|artist|album/"]`.
+  The grid is virtualised, so rows must be **accumulated while scrolling**
+  (`mouse.wheel`); reading the DOM once at the end captured only 28/138.
+  Also added `added_at` (Date added) to the Track model, JSON and `--fields`.
+- **No anonymous-API route exists:** `open.spotify.com/api/token` now answers
+  `400 … "Usage of this endpoint is not permitted under the Spotify Developer
+  Terms and Developer Policy, and applicable law"` (with or without `totp`
+  params), so the old TOTP/token scraping approach is closed. The browser route
+  works logged-out (h1 + rows render for anonymous visitors) but is ToS-gray and
+  markup-dependent — document as personal use only.
+
 ## Session snapshot — 2026-10-24 (later) — "/slomo has no 🎸 genre button" — **not a regression**
 
 - **Report:** on `feature/seo` the SloMo genre screen showed no button; on

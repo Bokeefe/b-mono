@@ -106,6 +106,25 @@ areas are automated deployment reliability and test coverage.
   asserts SEO ≥ 0.9 as an error; performance/accessibility are warnings until a
   real run sets a baseline.
 
+### Local tooling (added 2026-10-24)
+- `tools/spotify-playlist/` — standalone Python 3.9+ CLI (stdlib only) that
+  dumps a public Spotify playlist as a numbered song/album/artist list in
+  `table` / `list` / `markdown` / `csv` / `tsv` / `json`. Three sources:
+  embed scrape (`__NEXT_DATA__`, ≤100 tracks, no album) by default;
+  `--source browser` (Playwright in `tools/spotify-playlist/browser/`, no API
+  key — **verified: 138/138 tracks with 0 missing albums** on the example
+  playlist, where the embed stopped at 100); and the official Web API when
+  `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` are set. Deezer fills missing
+  albums on the no-auth embed path. **Not wired into npm, CI, Docker or the
+  app** — run it by hand:
+  `python3 tools/spotify-playlist/spotify_playlist.py <playlist-url>`.
+  28 stdlib unittest cases (`python3 -m unittest discover -s tools/spotify-playlist -p 'test_*.py'`),
+  all green, no network needed (the browser source is exercised with a fake Node
+  script, not Playwright).
+- Playwright's Chromium lives in `~/Library/Caches/ms-playwright` (~200 MB);
+  `browser/node_modules` is git-ignored. Note `open.spotify.com/api/token` is now
+  blocked with an explicit Developer-Terms message, so no anonymous API exists.
+
 ## What's left / known issues
 
 ### High priority

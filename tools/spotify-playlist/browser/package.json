@@ -1,0 +1,13 @@
+{
+  "name": "spotify-playlist-browser",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Optional Playwright scraper used by ../spotify_playlist.py --source browser",
+  "type": "module",
+  "scripts": {
+    "start": "node scrape_playlist.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}
