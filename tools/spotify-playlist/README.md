@@ -2,6 +2,7 @@
 
 Local CLI that turns a public Spotify playlist into a numbered list of
 **song / album / artist**. Standard-library Python 3.9+, no `pip install`.
+JSON output can be fed to `tools/soulseek-dl/` to actually fetch the files.
 
 ```
 $ python3 tools/spotify-playlist/spotify_playlist.py \

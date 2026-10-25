@@ -124,6 +124,14 @@ areas are automated deployment reliability and test coverage.
 - Playwright's Chromium lives in `~/Library/Caches/ms-playwright` (~200 MB);
   `browser/node_modules` is git-ignored. Note `open.spotify.com/api/token` is now
   blocked with an explicit Developer-Terms message, so no anonymous API exists.
+- `tools/soulseek-dl/` — `sync.py` turns the playlist JSON export into
+  `sockseek-tracks.csv` (`Artist,Title,Album,Length`) and drives **Sockseek**
+  (formerly sldl/slsk-batchdl) to download matches; `--dry-run` uses
+  `--print jobs`, which works without credentials. SoulseekQt has no API and
+  Soulseek allows one session per account (so quit the GUI or use a second
+  account). 19 unit tests. **Live download verified** (`--limit 2`): login →
+  search → `2 succeeded, 0 failed`, mp3s ffprobe-clean, files in
+  `<output-dir>/sockseek-tracks/` with `_index.csv` for resume.
 
 ## What's left / known issues
 

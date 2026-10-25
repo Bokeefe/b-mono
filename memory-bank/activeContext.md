@@ -3,6 +3,29 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-25 — second playlist download (`The World Is Getting Worst (Acoustic)`)
+
+- Scraped `open.spotify.com/playlist/7K6qCYaSM1ZfmBpKxtgVn2` with
+  `--source browser` → **133/133 tracks, 0 missing albums** in ~7.5 s, written to
+  `tools/spotify-playlist/out/playlist2.json`.
+- CSV `out/sockseek-the-world-is-getting-worst-acoustic.csv`; downloads land in
+  `~/Music/playlist-out/sockseek-the-world-is-getting-worst-acoustic/`.
+  First run: **106/133** downloaded (88 mp3, 17 flac, 1 alac/m4a, 1.4 GB, no
+  `.incomplete` leftovers, ffprobe spot-check clean); 27 failed — 21
+  `No search results` (reason 9), 6 `All downloads failed` (reason 4).
+  Re-run is resumable (state 1 skipped, state 2 retried).
+- **Sockseek path rules confirmed from source:** a CSV's basename becomes
+  `JobList.ItemName`, which becomes the default output subfolder
+  (`Csv.cs:59-60`, `FileManager.cs:91-97`), and `_index.csv` defaults inside
+  that folder (`JobPreparer.cs:199-202`). So every playlist fed as
+  `sockseek-tracks.csv` shares one folder + index; pass `--csv` with a distinct
+  basename to separate them.
+- **`--name-format` caveat:** paths are joined to the output dir
+  (`FileManager.cs:252-260`), so `'{artist}/{album}/{title}'` *replaces* the CSV
+  subfolder rather than nesting inside it — include `{default-folder}` to keep it.
+- The first library folder is now `~/Music/playlist-out/mtv3/` (renamed from
+  `sockseek-tracks/`); the new playlist folder sits beside it.
+
 ## Session snapshot — 2026-10-24 (evening) — local Spotify playlist scraper (`tools/spotify-playlist/`)
 
 - **Ask:** a local tool that turns a public Spotify playlist into a numbered
@@ -51,6 +74,41 @@
   params), so the old TOTP/token scraping approach is closed. The browser route
   works logged-out (h1 + rows render for anonymous visitors) but is ToS-gray and
   markup-dependent — document as personal use only.
+- **Follow-up — `tools/soulseek-dl/` (playlist → files).** SoulseekQt has **no
+  CLI/API/IPC** (its only listeners are the peer ports 59080/59081) and Soulseek
+  allows one session per account, so the GUI can't be driven. Built a bridge to
+  **Sockseek** (the renamed `sldl`/`slsk-batchdl`, v3.0.6, single binary):
+  `sync.py` converts `playlist.json` → `sockseek-tracks.csv`
+  (`Artist,Title,Album,Length`, which Sockseek auto-detects) and shells out with
+  `--skip-music-dir` / `--print jobs` (dry run) / `--limit` / `--pref-format`.
+  Verified: the real export produced **138/138 parsed jobs** via
+  `--print jobs` (no credentials, no network); 19 unit tests green. Sockseek's
+  own Spotify input is unusable here (needs a dev app **and** Premium), which is
+  why the CSV bridge exists.
+- **Live download verified (same session, after the user fixed their Soulseek
+  password):** `--limit 2` → login OK → search → download →
+  `Completed: 2 succeeded, 0 failed`. One peer went stale after 30 s and
+  Sockseek auto-retried another user and succeeded (normal P2P behaviour). Both
+  mp3s `ffprobe` clean (338 s / 151 s, ~320–380 kbps VBR, correct tags). Files
+  land in `<output-dir>/sockseek-tracks/` (subfolder named after the CSV) with an
+  `_index.csv` resume state; `--name-format '{artist}/{album}/{title}'` gives a
+  proper tree. `output-dir = ~/…` does tilde-expand.
+- **Missed tracks (user ran the full list):** first full run gave **124/138**;
+  `_index.csv` state 2 + `failurereason` 9 (`No search results`, 9 tracks) and 4
+  (`All downloads failed`, 5 tracks). Re-running with
+  `--search-timeout 15000 --max-retries 5` recovered 6 → **130/138**. Root
+  causes: the default 5000 ms search window, artist-qualified queries matching
+  poorly (verified: title-only `Back to School` = 827 hits, `Deftones - Back to
+  School` = 0), title spelling drift, and dead peers. `--extra` quoting was also
+  broken (a quoted string became one argv token) — fixed with `shlex.split`, and
+  `--search-timeout` / `--max-retries` / `--length-tol` are now first-class flags
+  (`--length-tol` must be emitted as `--length-tol=-1`).
+- **Shell gotcha fixed:** `~/bin` on PATH must be exported from `~/.zshenv`
+  (read by non-interactive shells), not only `~/.zshrc`; `sync.py` also probes
+  `~/bin/sockseek` + `/usr/local/bin/sockseek` directly. Earlier failure mode was
+  `tar: #: Not found in archive` caused by an inline `# comment` on a command
+  line in a zsh where `interactive_comments` is off — don't put trailing
+  comments in documented one-liners.
 
 ## Session snapshot — 2026-10-24 (later) — "/slomo has no 🎸 genre button" — **not a regression**
 
