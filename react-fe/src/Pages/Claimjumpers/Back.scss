@@ -1,0 +1,229 @@
+// The back-cover artwork (`assets/back_w_border.webp`, 1400x1394) is the page
+// background. It is painted with `background-size: cover`, which crops one axis
+// on any viewport that isn't 1400:1394, so the text box cannot be positioned in
+// viewport percentages — it has to be positioned against the *artwork*:
+//
+//   --scale       rendered px per source px (same `max()` that `cover` uses)
+//   panel offsets (source px position) * --scale, measured from the art centre
+//
+// Numbers measured on the artwork by scanning for the low-saturation cream run
+// through the image centre (the blank panel inside the painted border):
+//   x 490..879 (390 wide), y 419..1038 (620 tall) in a 1400x1394 image.
+// Re-measure these four values if the artwork is ever replaced.
+.claimjumpers-back {
+  --art-w: 1400;
+  --art-h: 1394;
+  --art-cx: 700; // half of --art-w: the artwork's centre
+  --art-cy: 697; // half of --art-h
+  --panel-x: 490;
+  --panel-y: 419;
+  --panel-w: 390;
+  --panel-h: 620;
+  // `--art-red` (the artwork's painted red, used by the versal and the
+  // now-playing track) is a shared palette entry now — see style/variables.css.
+
+  --header-h: 64px; // matches .outlet's margin-top in MainLayout.scss
+  --stage-h: calc(100dvh - var(--header-h));
+  --scale: max(calc(100vw / var(--art-w)), calc(var(--stage-h) / var(--art-h)));
+
+  // The artwork's own cream margin, so a cover crop never shows a seam.
+  background-color: #fff7d6;
+}
+
+.claimjumpers-back-stage {
+  position: relative;
+  height: var(--stage-h);
+  overflow: hidden;
+  background-image: url("../../assets/back_w_border.webp");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+// The container for text in the middle of the artwork. That area is empty on the
+// cover, so keep copy short — anything taller than the panel scrolls inside it
+// (overflow-y) instead of spilling over the painted border.
+.claimjumpers-back-panel {
+  position: absolute;
+  left: calc(50% + (var(--panel-x) - var(--art-cx)) * var(--scale));
+  top: calc(50% + (var(--panel-y) - var(--art-cy)) * var(--scale));
+  width: calc(var(--panel-w) * var(--scale));
+  height: calc(var(--panel-h) * var(--scale));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  // `safe` keeps the top of the copy reachable once it outgrows the panel: a
+  // centred flex container with `overflow-y: auto` clips the overflow at the
+  // scroll origin, so the player controls would be unreachable on a phone.
+  // Harmless while everything fits, and ignored (falls back to `center`) in
+  // engines that don't know the keyword.
+  justify-content: safe center;
+  gap: calc(14 * var(--scale));
+  padding: calc(26 * var(--scale));
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  // A scroll container drops its children's `min-height: auto` floor, so
+  // without this they shrink into each other instead of scrolling when the copy
+  // gets long — which the player controls now make likely at 390 wide.
+  > * {
+    flex-shrink: 0;
+  }
+
+  color: var(--dark-grey);
+  // Copy face. Every face registered in App.scss is a one-line swap here or via
+  // its `.x-font` utility class.
+  font-family: "quicksand", "Quicksand", sans-serif;
+  font-weight: 900;
+  font-size: calc(25 * var(--scale));
+  // line-height: 1;
+  text-align: center;
+  letter-spacing: 0;
+
+  -webkit-font-smoothing: antialiased; // subtracts weight
+  -moz-osx-font-smoothing: grayscale;
+  filter: blur(0.3px);
+  // Masthead. `<ClaimjumpersTitle>` owns the face, the weight, the smoothing and
+  // the illuminated initial (`components/ClaimjumpersTitle/ClaimjumpersTitle.scss`);
+  // only the two knobs that depend on *this* panel are set here.
+  //
+  // Panel-width constraint: the content box is only 338 source px, so a wide
+  // display cut can break the masthead mid-word — which is why the shared
+  // component keeps letter-spacing at 0 and the versal at 1.8em.
+  .claimjumpers-title {
+    --claimjumpers-title-size: calc(65 * var(--scale));
+
+    // The negative top margin pulls the masthead up into the panel's own bit of
+    // breathing room. The bottom margin is smaller than the top one because the
+    // versal now *hangs* into the gap below the baseline: at -18px her tail lands
+    // on the "1." of the track list (measured 6.5px of overlap at 390 wide), and
+    // -8px leaves ~3.5px of air. Both margins sit in the panel's centring flow,
+    // so 1px of bottom margin buys 1px of clearance — measured, not guessed.
+    // Scaled, unlike the -18px: the hang is 0.558em of the heading, so it shrinks
+    // with `--scale` while a fixed -8px does not — at 320 wide a flat -8px left
+    // the tail 1px inside the "1.". -13 * --scale is -4.7px at 320 (-3.0px of
+    // air), -7.3px at 390 and -13.4px at 1440.
+    margin: -18px 0 calc(-13 * var(--scale));
+  }
+
+  p,
+  ol,
+  ul {
+    margin: -18px 0 0 50px;
+  }
+
+  ol,
+  ul {
+    padding-left: 1.2em;
+    text-align: left;
+    // Lower-cases the list as *rendered* only: the text nodes in
+    // `Back.component.tsx` keep their real capitals, so the DOM, the prerendered
+    // HTML and whatever a crawler or screen reader reads are unchanged — this is
+    // purely a paint-time transform. It inherits, which is why the `.subnote`
+    // credits drop to lower case too; give a child `text-transform: none` to
+    // exempt it. Compare `font-variant-caps: all-small-caps`, which is a font
+    // feature (different shapes) rather than a case conversion.
+    text-transform: lowercase;
+    color: slategray;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  // Track-list leading. The line box of every line in an <li> is at least as
+  // tall as that <li>'s strut (its own font-size x line-height), so the panel's
+  // 1.3 was what made the small credit lines airy: a 0.8em .subnote still got a
+  // full-height line box, and no line-height on the child can shrink that.
+  li {
+    line-height: 1.1;
+  }
+
+  .subnote {
+    font-size: 0.8em;
+    text-align: center;
+    // was 0.8, i.e. below 1: clipped the descenders in "(The Millenium cover)"
+    line-height: 1.1;
+  }
+  .fine-text {
+    color: slategray;
+    font-size: 0.5em;
+    text-align: center;
+    line-height: 1.1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Player
+// ---------------------------------------------------------------------------
+
+// The audio element is the engine, not the UI: the three buttons and the track
+// list are the controls. (Claimjumpers.scss hides the front-cover page's player
+// the same way, but this page must not depend on that stylesheet.)
+.claimjumpers-back audio {
+  display: none;
+}
+
+// Sized in `--scale` units so the controls sit inside the painted panel on a
+// phone as well as on a desktop. Claimjumpers.scss also styles
+// `.controls-container` (the front-cover page, fixed rem sizes); scoping these
+// rules to the panel wins on specificity whichever stylesheet loads last.
+.claimjumpers-back-panel .controls-container {
+  display: flex;
+  gap: calc(8 * var(--scale));
+  width: 100%;
+
+  button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(5 * var(--scale)) 0;
+    border: none;
+    border-radius: calc(7 * var(--scale));
+    background: rgba(0, 0, 0, 0.06);
+    color: inherit;
+    font-size: calc(24 * var(--scale));
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.14);
+    }
+
+    // No track list yet (API unreachable): the controls keep their place, just
+    // greyed, so the layout is identical once the list arrives.
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+// Every track is a real <button> so it is keyboard reachable and announced as
+// actionable; strip the UA button chrome and let the panel's <ol> styling show
+// through unchanged.
+.claimjumpers-back-panel .back-track {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+
+  // `is-current` is the "now playing" marker; the same ink as the artwork's
+  // painted border makes it visible without adding a second palette entry.
+  &:hover:not(:disabled),
+  &.is-current {
+    color: var(--art-red);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}

@@ -18,6 +18,9 @@ export interface RouteSeo {
   /** `prerender` renders the route to HTML at build time; `shell` emits the
    *  SPA shell with route-specific metadata (used for socket-driven pages). */
   render: "prerender" | "shell";
+  /** Reachable by URL but never crawled: the route is served with a `noindex`
+   *  robots tag and left out of `sitemap.xml` (scratch pages, previews). */
+  noindex?: boolean;
   changefreq?: "daily" | "weekly" | "monthly" | "yearly";
   priority?: string;
 }
@@ -79,6 +82,14 @@ export const ROUTES: RouteSeo[] = [
     render: "prerender",
     changefreq: "yearly",
     priority: "0.6",
+  },
+  {
+    path: "/claimjumpers-back",
+    title: "Claimjumpers — back cover (scratch)",
+    description:
+      "Scratch page for the Claimjumpers back cover. Unlinked and not indexed.",
+    render: "shell",
+    noindex: true,
   },
   {
     path: "/slomo",
@@ -156,7 +167,10 @@ export function resolveSeo(pathname: string): RouteSeo & { noindex: boolean } {
   }
 
   const match = ROUTES.find((route) => route.path === path);
-  return { ...(match ?? NOT_FOUND_SEO), noindex: !match };
+  return {
+    ...(match ?? NOT_FOUND_SEO),
+    noindex: !match || match.noindex === true,
+  };
 }
 
 /** Absolute URL for a route path (canonical tags, sitemap, og:url). */

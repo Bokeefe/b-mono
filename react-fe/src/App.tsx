@@ -14,6 +14,7 @@ import Music from "./Pages/Music/Music.component";
 import SloMo from "./Pages/SloMo/SloMo.component";
 import Backup from "./Pages/Backup/Backup.component";
 import Claimjumpers from "./Pages/Claimjumpers/Claimjumpers.component";
+import Back from "./Pages/Claimjumpers/Back.component";
 import NotFound from "./Pages/NotFound/NotFound.component";
 import SeoManager from "./seo/SeoManager";
 
@@ -38,6 +39,8 @@ export function AppRoutes() {
         <Route path="/music" element={<Music />} />
         <Route path="/slomo" element={<SloMo />} />
         <Route path="/claimjumpers" element={<Claimjumpers />} />
+        {/* Scratch page: URL-only, not linked from anywhere. */}
+        <Route path="/claimjumpers-back" element={<Back />} />
         {/* <Route path="/backup" element={<Backup />} /> */}
         <Route path="*" element={<NotFound />} />
       </Route>

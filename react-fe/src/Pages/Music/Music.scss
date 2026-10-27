@@ -2,9 +2,13 @@
   width: 100%;
   height: 500px;
 }
-.claimjumpers {
-  font-family: "Underdove", "Quicksand", sans-serif;
-  font-size: 3rem;
-  line-height: 0.5;
-  letter-spacing: 0.05em;
+
+// The band's mark linking to its landing page. The type itself (Underdove, the
+// red illuminated initial) lives in
+// `components/ClaimjumpersTitle/ClaimjumpersTitle.scss`; only the leading of the
+// old stacked wordmark (`.claimjumpers`, line-height 0.5) is kept here. Note
+// `versal={false}` in the component: "The Claimjumpers" starts on a "T", which
+// Underdove does not ship, so a versal would fall back to Quicksand mid-word.
+.claimjumpers-mark {
+  --claimjumpers-title-leading: 0.5;
 }

@@ -1,9 +1,7 @@
-import React from "react";
+import ClaimjumpersTitle from "../../components/ClaimjumpersTitle/ClaimjumpersTitle.component";
 import "./Music.scss";
 
-interface MusicProps {}
-
-export const Music: React.FC<MusicProps> = () => {
+export const Music = () => {
   return (
     <div className="page-container">
       <h1>
@@ -16,8 +14,9 @@ export const Music: React.FC<MusicProps> = () => {
         </a>
       </h1>
       <a href="/claimjumpers">
-        <h2 className="claimjumpers">The Claimjumpers</h2>
+        <ClaimjumpersTitle />
       </a>
+      <h2>first album ~out soon~</h2>
       <iframe
         src="https://www.youtube.com/embed/meKeUyOBrRI?si=B4sgd-rOF3gUpqyf"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -25,7 +24,11 @@ export const Music: React.FC<MusicProps> = () => {
         allowFullScreen
       ></iframe>
       <h2>Ginseng 2011-2013</h2>
-      <a href="https://soundcloud.com/ginse-eng" target="_blank" rel="noopener noreferrer">
+      <a
+        href="https://soundcloud.com/ginse-eng"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         SoundCloud
       </a>
       <iframe
@@ -47,7 +50,11 @@ export const Music: React.FC<MusicProps> = () => {
       <a href="https://open.spotify.com/artist/2NmYjWPrbiX8ebWt9JTO7Q">
         Spotify
       </a>
-      <a href="https://soundcloud.com/cuticle" target="_blank" rel="noopener noreferrer">
+      <a
+        href="https://soundcloud.com/cuticle"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         SoundCloud
       </a>
       <iframe

@@ -3,6 +3,216 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-27 — masthead extracted to `ClaimjumpersTitle`
+
+- **Ask:** the band-title styling was copy-pasted across pages; make it one
+  reusable component (needed in 3 places).
+- **New component:** `src/components/ClaimjumpersTitle/` —
+  `ClaimjumpersTitle.component.tsx` + `.scss`. Props: `as` (heading level,
+  default `h1`), `children` (default `"Claimjumpers"`), `className`, `versal`
+  (default `true`). It renders
+  `<h1 class="claimjumpers-title claimjumpers-title--versal">Claimjumpers</h1>`;
+  the illuminated initial is `::first-letter` CSS only, so the DOM, the
+  prerendered HTML and screen readers keep the same plain string.
+- **The type recipe now lives once:** Underdove → Quicksand,
+  `font-weight: normal`, `letter-spacing: 0`, antialiased/grayscale,
+  `filter: blur(0.3px)`, and the 1.8em red versal with its -0.31em drop. Pages
+  tune two custom properties instead of restating the rules:
+  `--claimjumpers-title-size` (default `3rem`) and
+  `--claimjumpers-title-leading` (default `normal`). The back cover sets the
+  size in `--scale` units and keeps its measured negative margins; `/music` sets
+  only the leading (0.5) and passes `versal={false}` ("The Claimjumpers" starts
+  on a `T`, which Underdove does not ship — a versal would fall back to
+  Quicksand mid-word).
+- **Sizing datum** (font `hmtx`, not guessed): "Claimjumpers" is 4.655em wide in
+  Underdove, 0.614em of which is the `C` — with the 1.8em versal the mark is
+  ~5.15em, i.e. ~247px at 3rem, so it fits the 480px landing column on one line.
+- **`--art-red` moved to `style/variables.css`** (`:root`): the versal and the
+  back cover's now-playing track now share the sampled red, and `Back.scss` no
+  longer declares it locally.
+- **Bug fixed by the extraction:** the rewritten front page had added a bare
+  `h1 { … }` block to `Claimjumpers.scss`. Vite bundles page CSS globally, so
+  that rule was re-painting **every** `h1` on the site in Underdove with a red
+  first letter, and its `font-size: calc(65 * var(--scale))` was invalid on
+  `/claimjumpers` (`--scale` only exists on `.claimjumpers-back`) — the landing
+  masthead was falling back to the inherited 16px. It is class-scoped now, at a
+  real 3rem.
+- **Verified:** `tsc --noEmit` + eslint on the touched files + `npm run build`
+  (vite + prerender) all green; the bundle contains only `.claimjumpers-title*`
+  rules for Underdove, and `dist/claimjumpers/index.html` /
+  `dist/music/index.html` carry the expected class names.
+- **Dead CSS left in place on purpose** (`Claimjumpers.scss`, from the removed
+  front-cover player): `.claimjumpers-container`, `.active-track`,
+  `.claimjumpers-image`, `.controls-container` and `audio { display: none }`
+  (a *global* hide). Also `.page-container { max-width: 480px }` there applies
+  to every page — it is what keeps `/music` narrow, so scoping it would widen
+  the whole site and needs its own change.
+
+## Session snapshot — 2026-10-27 — `/claimjumpers-back` is now a working player
+
+- **Ask:** wire prev / play-pause / next, click-a-track and auto-advance into the
+  back cover, ported from the front-cover player. Route stays
+  `/claimjumpers-back` (still unlinked), `/claimjumpers` untouched.
+- **Component (`Back.component.tsx`).** Same data path as the front cover:
+  `apiService.getClaimjumperTracks()` → sorted filenames, streamed from the
+  static `${baseUrl}/audio/claimjumpers/` mount (not the controller's
+  `sendFile`). State is `allAlbumFiles` / `currentIndex` / `isPlaying` plus
+  `autoPlayRef`; an effect on `currentFileUrl` calls `audio.load()` and then
+  `play()` when the change came from a user gesture (called straight from the
+  handler, which keeps the gesture alive for mobile autoplay rules). `play` is a
+  `useCallback` so that effect doesn't re-`load()` on every render, and the
+  same-index case calls it directly instead of via a state change.
+- **`isPlaying` is driven by the element**, not by the click: `onPlay`/`onPause`
+  set it, so the button stays honest when autoplay is rejected, when the track
+  ends (`onEnded={nextTrack}`) or when playback stops anywhere else.
+- **The printed titles are curated and do not match the filenames**
+  (`03 Sad World (The Millenium cover).mp3` prints as "Sad World* / feat
+  Gwendolyn Stanley"), so `TRACKLIST` is paired **positionally** with the sorted
+  API list: entry `i` plays file `i`. Reordering or renaming on disk means
+  editing that array. Because the route is `noindex`, `prerender.mjs` emits a
+  metadata **shell** for it rather than SSR'd markup, so the track titles exist
+  only in the client bundle (checked: no "Tide" in
+  `dist/claimjumpers-back/index.html`, and `sitemap.xml` has no entry).
+- **Controls are real `<button>`s** with `disabled={!hasTracks}`; the eight list
+  entries are buttons too (disabled until their file exists,
+  `aria-current="true"` on the now-playing one) so the page keeps its printed
+  numbering while being keyboard reachable.
+- **CSS (`Back.scss`).** Player rules are scoped under
+  `.claimjumpers-back-panel .controls-container` because `Claimjumpers.scss`
+  styles `.controls-container` too (front cover, fixed rem); everything here is
+  in `--scale` units. `justify-content: safe center` + `> * { flex-shrink: 0 }`
+  is gotcha #38's fix, applied now that the controls make the panel content
+  taller.
+- **Verified (headless Firefox over WebDriver BiDi, 390×844, real dev servers):**
+  play → `paused: false`, icon/label flips to "Pause"; next → `02 Untangle.mp3`;
+  seeking to `duration - 0.6` fires `onEnded` and auto-advances to track 2; prev
+  from 1 wraps to 8, next from 8 wraps to 1; clicking list entry 6 loads
+  `06 Scatteredgood.mp3`; next while paused starts playing (same as the front
+  cover). With `GET /api/claimjumpers` stubbed to reject: no `<source>` is
+  rendered (`networkState: 0`, no request) and every control is disabled and
+  inert. `npx tsc --noEmit` and ESLint clean on the page.
+- **Layout measured** at 320×640, 390×844, 844×390 and 1440×900: content fits the
+  panel with no internal scroll at 320/390/1440 (panel 343.5px vs 344px of
+  content at 390). In landscape the panel is still cropped vertically by `cover`
+  (pre-existing) and the fine print now ends ~2px past the stage edge.
+- **New gotcha #40:** an empty `<source src="">` resolves to the document, so the
+  audio element fetches the page as media — render the tag conditionally.
+
+## Session snapshot — 2026-10-26 — scratch page `/claimjumpers-back`
+
+- **Ask:** a new frontend page inside `react-fe/src/Pages/Claimjumpers/`, "back",
+  on route `/claimjumpers-back`, deliberately **unlinked** (no Home button, no
+  link from `/claimjumpers`) — a private playground page.
+- **Files:** `Pages/Claimjumpers/Back.component.tsx` + `Back.scss`, a
+  `<Route path="/claimjumpers-back">` in `App.tsx`, and one entry in
+  `seo/routes.ts` (required — `scripts/prerender.mjs` fails the build when the
+  two route lists disagree).
+- **New `RouteSeo.noindex` flag (optional).** A `noindex` route still gets a
+  `dist/<route>/index.html` shell so the URL 200s through Express/nginx, but its
+  `<meta name="robots">` is `noindex, nofollow`, `resolveSeo` reports
+  `noindex: true` in the browser, and `scripts/prerender.mjs` filters it out of
+  `dist/sitemap.xml`. Reuse it for future scratch/preview pages instead of
+  leaving them out of `ROUTES` (which would make them 404 in production).
+- **Verified:** `models` build → `npx tsc --noEmit` clean → `npm run build`
+  (prerender logs `/claimjumpers-back shell`) → `node dist/main.js` + curl:
+  `/claimjumpers-back` **200** with the right title and noindex,
+  `/claimjumpers-back/` **301**, `/nope-not-real` still **404**, and
+  `sitemap.xml` still lists only the original 8 routes.
+- **Follow-up, same day — the back cover became the page background.** The page
+  now paints `assets/back_w_border.webp` as a `cover`-sized background and
+  exposes `.claimjumpers-back-panel`, a text container sitting over the blank
+  cream panel in the artwork (measured on the image: x 490–879, y 419–1038 of
+  1400×1394). Overlay offsets use
+  `--scale: max(calc(100vw / 1400), calc((100dvh - 64px) / 1394))` — rendered px
+  per source px, the same `max()` `cover` uses — so the copy stays inside the
+  painted border while `cover` crops one axis. The old `.page-container` card was
+  dropped, because the artwork has to be full-bleed. Verified with headless
+  Firefox `--screenshot` at 390×844, 844×390 and 1440×900 (text centred inside
+  the panel in all three; in landscape the panel is cropped vertically but the
+  copy is still centred).
+- **Follow-up, same day — type experiments.** Every face in `src/assets/fonts/` is
+  now registered at the bottom of `App.scss` (the 4 new drops — BONESOUP, Biokes,
+  Kihre Vintage, Panhead — plus 4 that had been sitting there unregistered:
+  Lancaster, Rotunda Pommerania, MK Broken Types, AEIOU), each with a `.x-font`
+  utility class, matching the Caesar/Oxygen/Quicksand pattern. `src` points at the
+  shipped `.otf`/`.ttf` (`format("opentype")` / `format("truetype")`) so swapping a
+  file needs no other change; `npm run build` emits all 8 into `dist/assets/` with
+  content hashes. `Roboto`'s 15 weight files are deliberately still unregistered.
+  `Back.scss` now assigns **"Kihre Vintage" to `h1`–`h3`** and **"Biokes" to the
+  panel copy** (one-line swaps; every other face is an `.x-font` class away).
+  Two consequences worth remembering: Kihre is 7.64em wide for "Claimjumpers", so
+  the masthead dropped from `2.5em` to `1.6em` (and lost its
+  `letter-spacing: 0.03em`) to stay inside the 338-source-px panel, and Biokes has
+  no apostrophes at all, so `'` in "Tide's"/"Comin'"/"Sun's" renders from
+  Quicksand via per-glyph fallback. Coverage holes for all of them are in
+  `.steering/gotchas.md` #37. Verified at 1440×900 and 390×844: heading ink
+  321px of the 347px content box, and the track list now fits on one line per
+  entry ("8. The Colors that Make the World" no longer wraps). `npm run build` is
+  clean; `npm run lint` fails in this checkout on 54 pre-existing problems
+  (App.tsx, SloMo, Music, Resume, …) — none in the files touched here, and ESLint
+  does not lint `.scss`.
+
+## Session snapshot — 2026-10-26 (later) — font housekeeping: Roboto in, `*-demo` out
+
+- **Ask:** register Roboto, delete every font folder ending in `*-demo`, and
+  lower-case the track list with CSS.
+- **Roboto registered** as **two** families at the bottom of `App.scss`, 16
+  `@font-face` rules with hand-written weights: `"Roboto"` 100/300/400/500/700/900
+  (+ italic each, 12 files) and `"Roboto Condensed"` 400 + 700 (+ italic each, 4
+  files), plus `.roboto-font` / `.roboto-condensed-font`. The files' own metadata
+  can't be trusted (`Roboto-Black` claims `usWeightClass 400`; Condensed is a
+  subfamily, not a width axis) — see gotcha #37. `.ttf` only, no `.woff2`, so
+  `dist/assets/` now carries 21 `.ttf` (~2.7 MB of Roboto among them); browsers
+  still fetch a face only when a page uses it. Fallback is
+  `"Helvetica Neue", Arial` rather than Quicksand, since Roboto is a grotesque.
+- **`*-demo` folders removed.** `aesthetic-curves-demo/` (27.6 MB, mostly specimen
+  PNGs) and `classical-blending-demo/` were **deleted from the worktree during this
+  session** (files on disk gone, `git status` still tracking them as ` D` — the
+  build earlier in the session had still emitted
+  `dist/assets/Aesthetic Curves Demo-ZVGIB-hm.woff2`, so the deletion came after
+  it, from outside these edits). Their `@font-face` rules and `.x-font` classes are
+  gone; `git checkout -- <path>` restores either folder.
+  `kihre-vintage-demo/` and the new `whiskey-ranch-demo/` are **untracked**, so
+  `rm` would have been unrecoverable — they were **moved to
+  `/tmp/b-demo-fonts-quarantine/`** instead. Nothing referenced Kihre any more
+  (the panel is on `"aeiou"` copy + `"Underdove"` headings), so its `@font-face`
+  and `.kihre-vintage-font` went too, and the stale Kihre comment in `Back.scss`
+  was rewritten to state the panel's 338-source-px width constraint without it.
+  **Still to decide:** `enathica/Enathica Demo.woff2` is a personal-use demo cut
+  too — the only `Demo` file left, and the next thing to replace if the site ever
+  sells anything.
+- **Track list lower-cased in CSS only:** `text-transform: lowercase` on the
+  panel's `ol, ul` in `Back.scss`. Paint-time only — the text nodes keep their
+  capitals, so the DOM, prerendered HTML, and screen-reader/crawler text are
+  unchanged. It inherits into `.subnote`, so credits lower-case too.
+- **New coverage hole:** `"Underdove"` (the current heading face) has **no
+  uppercase `T` and no `0`** — recorded in the `App.scss` inventory. The
+  lowercase list dodges it by accident; a drop cap or an uppercase "T" would fall
+  back to Quicksand mid-word.
+- **Gotcha #38:** the `h1 { margin: -30px 0 }` the page uses to tighten the gap
+  collides with line 1 at 390×844 (measured 22px overlap) while looking fine at
+  1440×900 — a display face's line box is much taller than its ink, so negative
+  margins need `--scale` units. Same gotcha notes that the panel's
+  `overflow-y: auto` cancels flex `min-height: auto`, so children would shrink and
+  overlap instead of scrolling if the copy outgrows the panel
+  (`> * { flex-shrink: 0 }` is the fix if it ever does).
+- **Versal on the masthead.** The `C` of "Claimjumpers" is red (`--art-red:
+  #c8502c`, sampled from the artwork's painted border — no new palette entry in
+  `style/variables.css`) and 1.8em, via `h1::first-letter` — CSS only, so the DOM
+  and the prerendered shell still say `Claimjumpers` and the letter is the same
+  letter, just painted larger and red. Size is measured, not chosen: the word
+  already used 164 of 189 rendered px at 390 wide for a 21px-wide `C`, so 2em left
+  1.6px and would wrap on any metric difference; 1.8em keeps 6px (11.5px at
+  1440), one line at 390/1440/320. `line-height: 0` on the pseudo-element keeps
+  the taller glyph out of line-box sizing, so the h1's height and the `-18px`
+  margin pulling the list up are untouched (`panelFreeV` stayed 21.1px at 390) and
+  the C overhangs upward like a real versal — gotcha #39 has the formula.
+  Roboto); every `url()` in `App.scss` resolves on disk; `npm run build` exits 0
+  with only the pre-existing chunk-size warning and prerenders all 9 routes;
+  `dist/assets/` has 21 `.ttf` + 6 `.woff2`; no `Kihre`/`Aesthetic`/`Classical`
+  left in the built CSS; headless screenshots at 1440×900 and 390×844 show the
+  list in lower case.
+
 ## Session snapshot — 2026-10-25 — second playlist download (`The World Is Getting Worst (Acoustic)`)
 
 - Scraped `open.spotify.com/playlist/7K6qCYaSM1ZfmBpKxtgVn2` with

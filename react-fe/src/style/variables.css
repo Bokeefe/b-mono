@@ -8,4 +8,8 @@
   --olive: #9a8e52;
   --blue: #8aa4d0;
   --dark-grey: #333333;
+  /* Sampled from the painted red border of the Claimjumpers album art (the
+     border's reds cluster at #c8502c..#d85830). Shared: the illuminated initial
+     in components/ClaimjumpersTitle and the back cover's now-playing track. */
+  --art-red: #c8502c;
 }

@@ -22,6 +22,7 @@ areas are automated deployment reliability and test coverage.
 | Lunch | ✅ Core flow + mobile reconnect/replay fixes landed |
 | TextCorpse | ✅ Works with JSON persistence + volume mount |
 | Claimjumpers | ⚠️ Newest feature; routes + audio API work, still not linked from Home |
+| Claimjumpers back (`/claimjumpers-back`) | 🧪 Scratch page for the author: works (200 + shell), unlinked and `noindex` (kept out of the sitemap). The back-cover art (`back_w_border.webp`) is now the full-bleed page background with a text panel positioned over the art's blank centre panel |
 | Backup (`/backup`) | ⛔ Route commented out in `App.tsx` |
 | Faker API | ✅ `nest-server/src/faker` |
 | Examples (`/fetch`,`/axios`,`/sandbox`) | ⛔ Page files removed; not routed |
@@ -55,7 +56,16 @@ areas are automated deployment reliability and test coverage.
 - Singleton socket client with polling-only transport and reconnect logging.
 - SloMo player (1225 lines) with speed/reverb and persisted prefs.
 - Resume export via jsPDF / react-to-print / Blob.
-- Claimjumpers player page using `${baseUrl}/audio/claimjumpers/...`.
+- Claimjumpers landing page (`/claimjumpers`) is now just the masthead + links;
+  the player lives on `/claimjumpers-back`.
+- `components/ClaimjumpersTitle` is the single source of the band masthead
+  (Underdove + red `::first-letter` versal, `--claimjumpers-title-size` /
+  `--claimjumpers-title-leading` hooks) — used by `/claimjumpers`,
+  `/claimjumpers-back` and the `/music` link, so the look cannot drift.
+- `/claimjumpers-back` back cover is a full player too (prev / play-pause / next,
+  click-a-track, `onEnded` auto-advance, wrap-around at both ends, `noindex`
+  shell, still unlinked) — verified end-to-end over WebDriver BiDi, see
+  `activeContext.md` 2026-10-27.
 
 ### Infra / CI-CD
 - Root multi-stage `Dockerfile`: builds models → backend → frontend; runtime is

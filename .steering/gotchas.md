@@ -132,7 +132,10 @@ Read this before debugging. These are the non-obvious traps in this repo.
 30. **Unknown URLs now return 404 + `dist/404.html`** (Express and nginx), and
     `/about/` 301s to `/about`. A new client-only route must be prerendered,
     shell-rendered, or added to `DYNAMIC_ROUTE_PATTERNS` in `nest-server/src/main.ts`
-    — otherwise it will 404 in production.
+    — otherwise it will 404 in production. Routes that should never be crawled
+    (scratch/preview pages) go in `ROUTES` with `noindex: true`: that still writes
+    the `dist/<route>/index.html` shell, but tags it `noindex, nofollow` and
+    skips it in `dist/sitemap.xml` (`/claimjumpers-back` is the example).
 31. **Images and fonts are WebP / WOFF2 now.** `src/assets/*.png|jpg` and the
     `.ttf` files still exist as sources but nothing imports them (Vite only emits
     referenced assets). New artwork should be converted with
@@ -170,6 +173,102 @@ Read this before debugging. These are the non-obvious traps in this repo.
     description, JSON-LD) outside it. `.sr-only` elements are `position:
     absolute`, so they add no layout box; `.home > *{display:flex}` in
     `Home.scss` does not conflict.
+36. **A `background-size: cover` artwork can't have its overlay positioned in
+    viewport percentages.** `Pages/Claimjumpers/Back.scss` anchors a text panel to
+    the blank middle of `back_w_border.webp`: `--scale: max(calc(100vw / 1400),
+    calc((100dvh - 64px) / 1394))` is rendered px per source px — the same `max()`
+    that `cover` uses — and every overlay offset is `(source px) *
+    var(--scale)` measured from the artwork centre. Viewport percentages drift as
+    soon as `cover` crops one axis. Measure the target area in the image itself
+    (PIL: scan the low-saturation run through the image centre) and keep the
+    source-pixel numbers in a comment so they can be re-measured if the art
+    changes. Also: `--stage-h` must subtract the 64px `.outlet` margin
+    (`MainLayout.scss`), or the stage is a header-height too tall and the page
+    scrolls.
+37. **Demo fonts have holes — check coverage *and* width before assigning one.**
+    `react-fe/src/assets/fonts/` holds a pile of free/demo cuts, all registered at
+    the bottom of `App.scss` with one `.x-font` utility class each. Several are
+    incomplete and the browser will not tell you: a missing glyph silently falls
+    back *per character* to the next family in the stack (which is why every one
+    of those stacks ends in `"Quicksand"`). Measured with `fontTools`
+    (`TTFont(path).getBestCmap()`): **Kihre Vintage has no digits** (an `<ol>`'s
+    markers would come from the fallback), **Biokes has no apostrophes** (neither
+    U+0027 nor U+2019), BONESOUP has no `( ) & /` and is caps-only, Panhead has no
+    `/`. Check width too, with
+    `sum(hmtx[cmap[ord(c)]][0] for c in text) / head.unitsPerEm`: Kihre's
+    "Claimjumpers" is 7.64em, so inside the 338-source-px back-cover panel it
+    breaks mid-word above ~1.7em. Register the shipped `.otf`/`.ttf` directly
+    (`format("opentype")` / `format("truetype")`) rather than deriving `.woff2`
+    copies — a generated copy silently goes stale the next time the font is
+    swapped, which is exactly what that page is for. Vite emits `.otf`/`.ttf`
+    referenced from CSS into `dist/assets/` with a content hash, no config needed.
+
+    Two more reasons not to trust a font binary's metadata: (a) filenames and
+    internal names diverge — `LANCAS__.TTF` is "Lancaster", `_aeiou2U.ttf` is
+    "_a e i o u", `DavysRibbons.ttf` is "DaRib", `PANHEAD_.ttf` is **`[PANHEAD]`**
+    (the brackets are real in the Windows `name` record, the one browsers read, so
+    an installed copy answers only to a quoted `font-family: "[PANHEAD]"`), and
+    Kihre's records say "Kihre Vintage Demo". (b) `usWeightClass` is often wrong:
+    `Roboto-Black.ttf` reports **400**, and its Condensed cuts are a *subfamily*
+    rather than a width axis, so registering all 16 Roboto files under one family
+    leaves four `(weight, style)` buckets with 2–3 files each and the browser
+    silently keeps whichever came last. The `@font-face` descriptors are what CSS
+    matches, so hand-write them per file and give Condensed its own family name.
+
+38. **A display face's line box is not its ink, so negative margins on the `h1`
+    only bite at small sizes.** The back page pulls the track list up with
+    `h1 { margin: -30px 0 }`. At 1440×900 the heading's line box is 87px for 66.9px
+    of type, the ink stops well above the box bottom, and the -30px reads as a
+    pleasantly tight gap. At 390×844 the same -30px is *larger than the gap + the
+    heading's descent*, so the ink of "Claimjumpers" (the `p`/`j` tails) lands on
+    "1. tide's…" — measured overlap 22px (h1 bottom 370.8 vs first `<li>` top
+    348.6), while the `<ol>` box still overlaps the `<h1>` box by 15.6px on
+    desktop where nothing collides. Check the *ink*, not the box, at both widths:
+    `getBoundingClientRect()` on the `h1` and the first `li` will report an
+    overlap on desktop too. Any such margin belongs in `--scale` units
+    (`calc(-8 * var(--scale))`) so it tightens proportionally instead of
+    over-correcting on phones.
+
+    Related: the panel is `display: flex; flex-direction: column; overflow-y:
+    auto`. Because the overflow is not `visible`, the children's `min-height:
+    auto` protection is dropped, so *if* the copy ever outgrows the panel the
+    items shrink below their content and overlap rather than scrolling —
+    the opposite of what the comment above `.claimjumpers-back-panel` promises.
+    `> * { flex-shrink: 0 }` is the fix and is now in place (2026-10-27, when the
+    player controls were added and the panel content grew); with it, `safe
+    center` keeps the top of the copy reachable at the scroll origin instead of
+    clipping it.
+
+39. **A centred one-line heading has a fixed width budget, and `::first-letter`
+    gets no allowance of its own.** Enlarging the first glyph adds
+    `(N − 1) × glyphWidth` to the line, so size the initial off measurements, not
+    taste: a Range over the `h1`'s contents gives the tight text width, a 1-char
+    Range gives the glyph's advance, and `N_max ≈ 1 + (contentWidth − textWidth) /
+    glyphW`. On this page that is 164 of 189px used at 390 wide and 301 of 347 at
+    1440 — a 21px-wide "C" — so the masthead wraps just past 2em; it is set at
+    1.8em to keep 6px. Everything scales with `--scale`, so the ratio holds at
+    every width (checked at 320 too).
+    `::first-letter` also inherits `line-height`, and at 1.8em that would grow the
+    line box by ~half a line and push the list down (the panel only has ~21px of
+    vertical slack at 390). `line-height: 0` takes the glyph out of line-box
+    sizing, so the heading's height — and any negative margin pulling the next
+    block up — is unchanged and the initial simply overhangs upward. Keep the
+    overhang inside the panel's padding box: `overflow-y: auto` clips it.
+    Prefer `::first-letter` over `<span class="initial">` for this: the DOM text
+    stays `Claimjumpers`, so the prerendered shell, the sitemap and screen readers
+    see the same string, and it is the same glyph — only painted bigger and red.
+
+40. **An empty `<source src="">` makes the audio element fetch the page itself.**
+    An empty `src` resolves against the document URL, so `<audio><source
+    src="" type="audio/mpeg"></audio>` requests `/claimjumpers-back` as media
+    and fails to decode it — a wasted request plus a console error, exactly in
+    the state where the API is already down. Render the tag conditionally
+    (`{url && <source src={url} />}`): with no `<source>` the element stays at
+    `networkState: 0` (EMPTY) and requests nothing.
+    Related, same player: `play()` rejects with `NotAllowedError` when autoplay
+    is blocked and `AbortError` when a `load()` cancels it mid-flight, so derive
+    the play/pause icon from the element's own `onPlay`/`onPause` events instead
+    of the click — a click-local flag shows "Pause" over a paused player.
 
 ## Miscellaneous
 

@@ -1,0 +1,66 @@
+// The Claimjumpers masthead — the band name in Underdove blackletter with the
+// artwork's painted red as an illuminated initial. This is the only place the
+// mark's type recipe lives: the landing page, the back cover and the `/music`
+// link all render `<ClaimjumpersTitle>`.
+//
+// Two things stay under the page's control, because they depend on that page's
+// layout rather than on the mark itself:
+//
+//   --claimjumpers-title-size     font-size. Defaults to 3rem: the word is
+//                                 4.655em wide in Underdove (~5.15em with the
+//                                 versal, measured off the font's `hmtx`), i.e.
+//                                 ~247px here, which fits the 480px landing
+//                                 column without wrapping.
+//   --claimjumpers-title-leading  line-height. `normal` by default — the back
+//                                 cover measures its versal drop against the
+//                                 strut of normal leading, so a page that pins
+//                                 something else has to do it deliberately.
+.claimjumpers-title {
+  font-family: "Underdove", "Quicksand", sans-serif;
+  font-weight: normal;
+  font-size: var(--claimjumpers-title-size, 3rem);
+  line-height: var(--claimjumpers-title-leading, normal);
+  letter-spacing: 0;
+  color: inherit;
+  -webkit-font-smoothing: antialiased; // subtracts weight
+  -moz-osx-font-smoothing: grayscale;
+  filter: blur(0.3px);
+}
+
+// Illuminated initial, borrowing the artwork's painted red (`--art-red` in
+// style/variables.css): the "C" of "Claimjumpers" becomes a versal.
+//
+// `::first-letter` reaches the block's first glyph, so the markup stays a plain
+// heading — nothing for the DOM/prerender pass to disagree about, and the text
+// is unchanged for screen readers and crawlers (it is the same letter, only
+// larger and red).
+//
+// Turn it off with `versal={false}` for copy that does not start with the mark's
+// initial: "The Claimjumpers" would paint a stray glyph, and Underdove ships no
+// uppercase "T" (see the font inventory in App.scss), so that glyph would fall
+// back to Quicksand.
+.claimjumpers-title--versal::first-letter {
+  color: var(--art-red);
+  // 1.8em is a ceiling, not a preference. On the back cover's panel (338 source
+  // px wide) the word already fills 164 of 189 rendered px at 390 wide (301 of
+  // 347 at 1440) and a bigger initial costs ~2px of width per extra 0.1em (the
+  // "C" is 0.614em wide). 1.8em keeps ~6px (~12px at 1440), so the masthead
+  // stays on one line there; it is also what keeps the landing page to a single
+  // line at 3rem.
+  font-size: 1.8em;
+  // Keeps the initial *out* of the line box, so nothing here can change the
+  // heading's height — which is what pays for the drop below.
+  line-height: 0;
+  // Illuminated-manuscript placement: the versal's top sits level with the
+  // ascender line of the lowercase word and her foot hangs below the baseline,
+  // rather than the initial towering above the line. The drop is computed from
+  // ink metrics (canvas `actualBoundingBoxAscent`), not taste: at 1.8em the "C"
+  // rises 46.08px above the baseline, the word's "l" rises 25.79px, so 20.29px
+  // of drop — quoted in em of the *initial's* own 1.8em font, since that is the
+  // font `vertical-align` resolves against (0.31em x 65.47px). Chrome honours
+  // vertical-align on ::first-letter, and with the zero line-height it shifts
+  // only the painted glyph. Verified in pixels: the two ink tops land within
+  // half a pixel of each other at 390 and 1440. Scale-safe because the em
+  // travels with the font-size, unlike a px drop.
+  vertical-align: -0.31em;
+}

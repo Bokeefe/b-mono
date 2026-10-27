@@ -85,6 +85,7 @@ react-fe/src/
 │   ├── faker.api.service.ts # animals
 │   └── socket.service.ts    # singleton io() client (Lunch only; polling-only)
 ├── components/
+│   ├── ClaimjumpersTitle/  # the band masthead: Underdove + red versal (3 pages)
 │   └── Home/ Header/ HelpPopup/ MainLayout/ MobileButton/
 ├── Pages/
 │   ├── About/ Backup/ Claimjumpers/ Lobby/

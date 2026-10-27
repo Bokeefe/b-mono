@@ -142,7 +142,10 @@ async function main() {
   const results = [];
 
   for (const route of ROUTES) {
-    const seo = { ...route, noindex: false };
+    // `noindex` routes still get their own `dist/<route>/index.html` (the URL
+    // has to resolve instead of 404ing) but are tagged noindex and skipped in
+    // the sitemap below.
+    const seo = { ...route, noindex: route.noindex === true };
     let html = template.replace(SEO_BLOCK, headTags(seo, SITE, absoluteUrl));
     let mode = "shell";
 
@@ -186,7 +189,11 @@ async function main() {
 
   await writeFile(
     path.join(dist, "sitemap.xml"),
-    sitemap(ROUTES, absoluteUrl, today),
+    sitemap(
+      ROUTES.filter((route) => !route.noindex),
+      absoluteUrl,
+      today,
+    ),
     "utf8",
   );
 

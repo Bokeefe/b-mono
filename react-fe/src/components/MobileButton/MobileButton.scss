@@ -9,6 +9,9 @@
   cursor: pointer;
   position: relative;
   font-weight: 200;
+  -webkit-font-smoothing: antialiased; // subtracts weight
+  -moz-osx-font-smoothing: grayscale;
+  filter: blur(0.3px);
 
   // Retro 3D effect with thicker bottom/right borders
   border-bottom: 6px solid var(--dark-grey);

@@ -1,12 +1,12 @@
 .claimjumpers-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   padding: 20px;
   font-size: 18px;
 
   ol {
-    text-align: center;
+    text-align: left;
     margin-left: -2rem;
     li {
       margin: 2rem 0;
@@ -19,20 +19,6 @@
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 }
-.claimjumpers-heading {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  font-weight: normal;
-}
-
-.claimjumpers-title {
-  display: block;
-  font-family: "Underdove", "Quicksand", sans-serif;
-  font-size: 3rem;
-  line-height: 0.5;
-  letter-spacing: 0.05em;
-}
 .claimjumpers-image {
   display: block;
   width: 100%;
@@ -44,11 +30,17 @@
   opacity: 1;
 }
 
+// The landing page is now just the masthead + outbound links; the masthead's
+// type recipe lives in `components/ClaimjumpersTitle/ClaimjumpersTitle.scss`
+// (shared with the back cover and `/music`), so there is no `h1` rule here.
+// Keep it that way: a bare `h1 {}` in a page stylesheet is bundled globally and
+// repaints every other page's headings too.
+
 // Page-scoped override of the global `body::before` texture in App.scss.
 // Only present while the Claimjumpers route is mounted (class added in the
 // component's useEffect), so all other pages keep the grex pattern.
 body.claimjumpers-page::before {
-  background-image: url("../../assets/back_w_border.webp");
+  background-image: url("../../assets/front_w_border.webp");
   background-color: #fff7d6; // the artwork's own cream border, fills any crop edge
   background-size: cover;
   background-repeat: no-repeat;

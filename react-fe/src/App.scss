@@ -60,6 +60,8 @@ body {
   align-items: center;
 }
 
+// Full font inventory — every available `@font-face` name and its file — is in
+// the comment above the `assets/fonts/` block at the bottom of this file.
 @font-face {
   font-family: "Caesar";
   src: url("./style/fonts/Caesar_Dressing/CaesarDressing-Regular.woff2")
@@ -100,32 +102,6 @@ body {
 }
 
 @font-face {
-  font-family: "Aesthetic Curves";
-  src: url("./assets/fonts/aesthetic-curves-demo/Aesthetic Curves Demo.woff2")
-    format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-.aesthetic-curves-font {
-  font-family: "Aesthetic Curves", sans-serif;
-}
-
-@font-face {
-  font-family: "Classical Blending";
-  src: url("./assets/fonts/classical-blending-demo/Classical Blending Demo.woff2")
-    format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-.classical-blending-font {
-  font-family: "Classical Blending", sans-serif;
-}
-
-@font-face {
   font-family: "Davys Ribbons";
   src: url("./assets/fonts/darib/DavysRibbons.woff2") format("woff2");
   font-weight: normal;
@@ -159,6 +135,316 @@ body {
 
 .underdove-font {
   font-family: "Underdove", sans-serif;
+}
+
+// ---------------------------------------------------------------------------
+// FONT INVENTORY — every face in `src/assets/fonts/`, by the name CSS uses.
+// These are the `@font-face` names, i.e. the strings to put in a `font-family`
+// list or reach via the matching `.x-font` class. Anything not listed here is
+// NOT available to CSS, no matter what the file is called.
+//
+//   "BONESOUP"            BONESOUP/BONESOUP.otf
+//   "Biokes"              biokes/Biokes.ttf
+//   "Panhead"             panhead/PANHEAD_.ttf
+//   "Lancaster"           LANCAS__.TTF
+//   "Rotunda Pommerania"  Rotunda_Pommerania.ttf
+//   "MK Broken Types"     MKBrokenTypes.ttf
+//   "AEIOU"               _aeiou2U.ttf
+//   "Davys Ribbons"       darib/DavysRibbons.woff2
+//   "Enathica"            enathica/Enathica Demo.woff2
+//   "Underdove"           underdove/Underdove-Regular.woff2
+//   "Roboto"              roboto/Roboto-<face>.ttf   (12 files, see below)
+//   "Roboto Condensed"    roboto/Roboto-<face>.ttf   (4 files, see below)
+//
+// The three .woff2 faces are registered in the block above this one; the two
+// Roboto families at the bottom of the file; Quicksand / Caesar / Oxygen live in
+// `src/style/fonts/`.
+//
+// Roboto is the one family whose descriptors are not taken from the files: all
+// 16 declare the typographic family "Roboto", but their own weight data is
+// unusable (Roboto-Black reports usWeightClass 400, i.e. a duplicate of Regular)
+// and the Condensed cuts are a *subfamily*, not a width axis. Registered as-is,
+// four (weight, style) buckets would each hold 2–3 files and the browser would
+// silently keep whichever came last — so the `font-weight`s are hand-written and
+// Condensed gets its own family name. See .steering/gotchas.md #37, which also
+// has the other name-table traps listed below.
+//
+// Filenames lie, so match on the names above, not the files: `LANCAS__.TTF` is
+// "Lancaster", `_aeiou2U.ttf` is internally "_a e i o u", `DavysRibbons.ttf` is
+// internally "DaRib", `PANHEAD_.ttf` is internally "[PANHEAD]" (brackets
+// included!). The internal names only matter for `local()`; the `@font-face`
+// name wins for everything else.
+//
+// Removed on purpose — the `*-demo` folders, i.e. evaluation cuts with
+// personal-use-only licences (which is why "Enathica" keeps its "Demo" file name
+// but not the folder convention, and is the next one to look at if this ever
+// ships commercially):
+//   aesthetic-curves-demo/   "Aesthetic Curves"    (27.6 MB, mostly specimen PNGs)
+//   classical-blending-demo/ "Classical Blending"
+//   kihre-vintage-demo/      "Kihre Vintage"       (file: KihreVintageDemo-Regular.otf)
+//   whiskey-ranch-demo/      (was never registered)
+//
+// Registration shape, identical for each: `font-display: swap` plus one
+// `.x-font` utility class. `src` points at whatever the folder shipped — `.otf`
+// => format("opentype"), `.ttf` => format("truetype") — rather than at generated
+// .woff2 copies, so dropping in a replacement file is enough. Where a folder
+// ships several formats (darib/enathica/underdove) only the .woff2 is
+// referenced; the .otf/.ttf twins are dead weight.
+//
+// Coverage (measured with fontTools). A missing glyph is not an error — the
+// browser falls back *per character* to the next family in the stack, which is
+// why every stack ends in a complete face ("Quicksand"):
+//   Underdove              no uppercase T, no 0   (so the now-lowercase back-page
+//                          track list dodges it; a drop cap "T" would not)
+//   Biokes                 no apostrophes (neither U+0027 nor U+2019)
+//   BONESOUP               no ( ) & /   (caps only, 77 glyphs total)
+//   Panhead                no /
+//   Roboto, Lancaster, Rotunda Pommerania, MK Broken Types, AEIOU,
+//   Davys Ribbons, Enathica: complete A-Z a-z 0-9
+// ---------------------------------------------------------------------------
+
+@font-face {
+  font-family: "BONESOUP";
+  src: url("./assets/fonts/BONESOUP/BONESOUP.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.bonesoup-font {
+  font-family: "BONESOUP", "Quicksand", sans-serif;
+}
+
+@font-face {
+  font-family: "Biokes";
+  src: url("./assets/fonts/biokes/Biokes.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.biokes-font {
+  font-family: "Biokes", "Quicksand", sans-serif;
+}
+
+// Internal family name is "[PANHEAD]".
+@font-face {
+  font-family: "Panhead";
+  src: url("./assets/fonts/panhead/PANHEAD_.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.panhead-font {
+  font-family: "Panhead", "Quicksand", sans-serif;
+}
+
+@font-face {
+  font-family: "Lancaster";
+  src: url("./assets/fonts/LANCAS__.TTF") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.lancaster-font {
+  font-family: "Lancaster", "Quicksand", sans-serif;
+}
+
+@font-face {
+  font-family: "Rotunda Pommerania";
+  src: url("./assets/fonts/Rotunda_Pommerania.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.rotunda-pommerania-font {
+  font-family: "Rotunda Pommerania", "Quicksand", sans-serif;
+}
+
+@font-face {
+  font-family: "MK Broken Types";
+  src: url("./assets/fonts/MKBrokenTypes.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.mk-broken-types-font {
+  font-family: "MK Broken Types", "Quicksand", sans-serif;
+}
+
+// Internal family name is "_a e i o u" (the file is `_aeiou2U.ttf`) — renamed
+// to something usable in CSS.
+@font-face {
+  font-family: "AEIOU";
+  src: url("./assets/fonts/_aeiou2U.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.aeiou-font {
+  font-family: "AEIOU", "Quicksand", sans-serif;
+}
+
+// ---------------------------------------------------------------------------
+// Roboto — 16 `.ttf` files, no `.woff2`. Registered with hand-written
+// descriptors, because the files' own metadata is unusable: every one declares
+// the typographic family "Roboto" (so they'd all land in one family), but
+// `Roboto-Black.ttf` reports `usWeightClass 400` and the Condensed cuts are a
+// *subfamily* rather than a width axis — so left alone, four (weight, style)
+// buckets would each hold 2–3 files and the browser would silently keep
+// whichever came last. Hence the explicit `font-weight` below, and a separate
+// "Roboto Condensed" family (see .steering/gotchas.md #37).
+//   "Roboto"            100 Thin · 300 Light · 400 Regular · 500 Medium ·
+//                       700 Bold · 900 Black (+ italic of each)
+//   "Roboto Condensed"  400 Condensed · 400 Condensed Italic ·
+//                       700 Bold Condensed · 700 Bold Condensed Italic
+// A face is only fetched when a page actually uses it, but Vite still emits all
+// 16 (~2.7 MB) into `dist/assets/`. Fallback is a grotesque, not Quicksand —
+// swapping a geometric rounded face for Roboto would be a bigger change than
+// falling back to the system sans.
+// ---------------------------------------------------------------------------
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-ThinItalic.ttf") format("truetype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-MediumItalic.ttf") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/roboto/Roboto-BlackItalic.ttf") format("truetype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+.roboto-font {
+  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+}
+
+@font-face {
+  font-family: "Roboto Condensed";
+  src: url("./assets/fonts/roboto/Roboto-Condensed.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto Condensed";
+  src: url("./assets/fonts/roboto/Roboto-CondensedItalic.ttf")
+    format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto Condensed";
+  src: url("./assets/fonts/roboto/Roboto-BoldCondensed.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto Condensed";
+  src: url("./assets/fonts/roboto/Roboto-BoldCondensedItalic.ttf")
+    format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+.roboto-condensed-font {
+  font-family: "Roboto Condensed", "Roboto", "Helvetica Neue", Arial, sans-serif;
 }
 
 // Visually hidden, still present: the element stays in the DOM, in the
