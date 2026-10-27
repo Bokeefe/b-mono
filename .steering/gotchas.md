@@ -270,6 +270,26 @@ Read this before debugging. These are the non-obvious traps in this repo.
     the play/pause icon from the element's own `onPlay`/`onPause` events instead
     of the click — a click-local flag shows "Pause" over a paused player.
 
+41. **A filename's case is a production-only bug.** Vite resolves `url()` /
+    `@import` paths through the local filesystem, so a reference that differs
+    only in case from the real file builds fine on macOS (APFS is
+    case-insensitive) and then breaks on the Linux build that produces the
+    container. An *unresolvable* CSS `url()` is not even a warning: Vite leaves
+    it relative, so `Pages/Claimjumpers/Claimjumpers.scss`'s
+    `url("../../assets/front_w_border.webp")` — the file was
+    `Front_w_border.webp` — shipped verbatim, the browser resolved it against
+    the stylesheet's own directory, `GET /assets/front_w_border.webp` was a
+    404, and the page painted nothing but `background-color: #fff7d6` (cream).
+    Symptoms: the image is missing **only** on the deployed site (the back
+    cover, whose filename matched exactly, was fine); `npm run dev`, `vite
+    build` and `vite preview` locally all look correct. Fast check: grep the
+    built CSS for `url(../` — production output should contain only
+    `/assets/<name>-<hash>.<ext>` and absolute `public/` paths like
+    `/grex.webp`. Verify with case-sensitive `os.listdir` lookups, not
+    `os.path.exists`/`test -f`, or you reproduce the same blind spot. Fix by
+    making the spelling match exactly (`git mv` the file if the *reference* is
+    the sensible spelling).
+
 ## Miscellaneous
 
 22. **Root `package.json` `dependencies` is bloated** (hundreds of transitive

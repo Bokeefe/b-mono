@@ -18,7 +18,7 @@ const links = [
   { route: "lunch", label: "lunch\napp" },
   { route: "text-corpse", label: "text\ncorpse" },
   { route: "resume", label: "résumé" },
-  { route: "about", label: "About" },
+  { route: "about", label: "about" },
 ];
 
 const Home = () => {

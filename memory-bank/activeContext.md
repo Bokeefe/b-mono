@@ -3,6 +3,33 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-27 — front-cover background 404'd only in prod
+
+- **Ask:** "`background-image: url("../../assets/front_w_border.webp")` doesn't
+  load on the deployed mobile site; the back cover's background works."
+- **Cause: filename case, not CSS.** The file was tracked as
+  `assets/Front_w_border.webp` (capital `F`) but `Claimjumpers.scss` referenced
+  `front_w_border.webp`. macOS is case-insensitive, so Vite resolved it locally
+  and rewrote it to `/assets/Front_w_border-<hash>.webp`; **Linux (Docker) could
+  not**, and Vite silently leaves an unresolvable `url()` relative — the
+  deployed bundle therefore contained
+  `url(../../assets/front_w_border.webp)`, which the browser resolves against
+  `/assets/` → `GET /assets/front_w_border.webp` → **404** (confirmed on the
+  live site) → only `background-color: #fff7d6` painted. `back_w_border.webp`
+  matched its file exactly, so it was rewritten to
+  `/assets/back_w_border-BZ3bD5lN.webp` (200) and worked.
+- **Fix:** `git mv react-fe/src/assets/Front_w_border.webp
+  react-fe/src/assets/front_w_border.webp` (the SCSS spelling was the sensible
+  one; nothing else referenced the file). Rebuilt: the bundle now carries
+  `url(/assets/front_w_border-_COr8XEB.webp)` and that file is emitted, so the
+  next deploy serves it.
+- **Swept the tree for siblings:** a case-sensitive walk of every `url()` /
+  `from "…asset"` in `react-fe/src` (36 refs) now finds no mismatches; the only
+  "unresolved" hits were `/grex.webp` (a `public/` absolute path) and two
+  template-literal `url(${…})` strings in `SloMo.component.tsx`.
+- Recorded as gotcha #41 in `.steering/gotchas.md` (check the built CSS for
+  `url(../` — prod output must only contain `/assets/...`).
+
 ## Session snapshot — 2026-10-27 — masthead extracted to `ClaimjumpersTitle`
 
 - **Ask:** the band-title styling was copy-pasted across pages; make it one
