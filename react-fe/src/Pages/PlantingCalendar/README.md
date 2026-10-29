@@ -25,7 +25,8 @@ renders the events it is given                       all-day VCALENDAR, 75-octet
 
 **The backend expands the dates; this page never parses a cell.** `buildEvents`
 (`nest-server/src/planting-calendar/planting-calendar.events.ts`) turns every
-dated cell into one `PlantingEvent` plus two frost markers, so the calendar,
+dated cell into one `PlantingEvent`, adds two frost markers and one **harvest
+window per crop** (planting date + the days that crop needs), so the calendar,
 the JSON API and the `.ics` feed are guaranteed to agree.
 
 **The calendar is perennial.** The Almanac's windows are month/day ranges keyed
@@ -68,12 +69,33 @@ backend's `planting-calendar.types.ts`); the API call is
 - **A window occupies every day between `start` and `end`**, so a `May 22-29`
   transplant shows up seven times in the month grid and reads as
   "day 4 of 8" in the day agenda.
-- **The legend is also the filter.** Five chore families (`TASK_KINDS`) map to
+- **The legend is also the filter.** Six chore families (`TASK_KINDS`) map to
   dataset columns; `eventKind()` is the single place a colour is decided, and the
   legend swatches share the `--pc-*-soft` variables with the chips, so the key
   cannot drift from what it explains. Tapping a family hides it — the count line
-  then says `showing 118 of 233 · 2 types hidden` — and an empty selection says so
+  then says `showing 118 of 321 · 2 types hidden` — and an empty selection says so
   instead of silently showing everything.
+- **Harvest windows are the one derived family.** `buildEvents` adds the crop's
+  days-to-maturity to its transplant (or sowing) date; the row says whether that
+  number is the Almanac's or a seed-packet average, and only the average is
+  drawn as an approximation — a `~` on the chip and `about 65 days from
+  transplant` in the agenda. Three crops whose harvest lands after New Year
+  (garlic, ginger, turmeric) get no window at all; the dataset still records
+  their days, the footer just does not pretend a year-scoped calendar can draw
+  them.
+- **Two windows end on the frost, not on a count.** Tobacco and cannabis are
+  killed by the first frost, so their rows carry `until: 'firstFallFrost'` and
+  the event ends on `season.firstFallFrost` instead of `days` after planting:
+  `about 90 days from transplant, until the first frost`. Everything else keeps
+  the fixed offset, so `harvestNote()` only adds the second clause when
+  `harvest.untilLabel` is set.
+- **Tobacco and cannabis are locally added.** Neither row exists in the Almanac's
+  tables, so they come from `tools/planting-calendar/local-crops.mjs`, carry
+  `origin: "local"` and `derivedFrom: "Tomatoes"`, and the footer says so in one
+  sentence (`localNote()`): *"Cannabis and Tobacco are local additions, not the
+  almanac's: the windows mirror Tomatoes, and picking runs to the first frost."*
+  Their chips, agenda rows and `.ics` entries are ordinary events — the only
+  difference is that the provenance line names the mirror instead of the Almanac.
 - **The old spring/fall/everything chips are gone.** With one location's two
   tables and a month view that already navigates by date, "season" filtered
   almost nothing and read as a second, unexplained set of controls.
@@ -130,10 +152,17 @@ Three routes out, none of which needs OAuth:
    it stays current. Browsing a past or future season keeps the year, since that
    is not the default.
 
-The feed is verified with a real parser (python `icalendar`): 233 all-day
-VEVENTs unfiltered (66 for direct sowing, 1 for a single frost marker), unique
-UIDs, `DTEND > DTSTART` everywhere, CRLF, ≤75 octets per line, em dashes and
-escaped commas decoding back to the Almanac's wording.
+The feed is verified with a real parser (python `icalendar`): 329 all-day
+VEVENTs unfiltered — 237 drawable planting windows (the Almanac's 231 plus the 6
+copied onto the two local rows), 2 frost markers and 90 harvest windows — out of
+332 unique UIDs (the 3 that cannot be drawn are Kohlrabi's two backwards ranges
+and the harvest built on one of them). `DTEND > DTSTART` everywhere, nothing
+dated outside the season, CRLF, ≤75 octets per line, em dashes and escaped
+commas decoding back to the Almanac's wording. Harvest entries replace the
+"Almanac window" line with `Days to harvest: 75 from transplant (seed-packet
+average)` — `…, until the first frost …` for the local rows — and carry
+`CATEGORIES:…,Harvest`. A locally-added row appends `Locally added: the windows
+mirror Tomatoes`, so a downloaded file never claims the Almanac said it.
 
 ## Refreshing the data
 
@@ -148,10 +177,12 @@ because the year changed.
 
 ## Checks
 
-- Backend: `cd nest-server && npx jest src/planting-calendar` (37 tests: event
-  expansion, year re-dating, ICS folding/escaping, feed scoping by table and by
-  column, the committed dataset).
-- Scraper: `cd tools/planting-calendar && node --test` (13 tests).
+- Backend: `cd nest-server && npx jest src/planting-calendar` (51 tests: event
+  expansion, harvest arithmetic and the frost-capped windows, locally-added rows
+  and their provenance, year re-dating, ICS folding/escaping, feed scoping by
+  table and by column, the committed dataset).
+- Scraper: `cd tools/planting-calendar && node --test` (21 tests, including the
+  local-row merge).
 - Frontend: `npm run build` (tsc + vite + prerender). The pure helpers are
   verified by bundling `planting-calendar.utils.ts` / `planting-calendar.export.ts`
   with `npx esbuild … --bundle --format=esm --platform=node --outdir /tmp/pc-utils`
@@ -162,4 +193,15 @@ because the year changed.
   started before February — so December hands off with `jump to february 2027`,
   which lands on 46 February chips), the footer reads `season 2027 … re-dated
   from 2026`, only two API calls fire (`?year=2026` then `?year=2027`), and no
-  console errors.
+  console errors. The harvest family was checked the same way: six legend
+  entries with `harvesting 88`, 20 harvest chips in August (some prefixed `~`),
+  `Harvest · about 75 days from transplant · Jul 22 – Aug 19 · day 22 of 29` in
+  the day agenda, `search “harvest” → showing 88 of 321`, hiding the family
+  drops those chips and removes `harvest` from the `.ics` link, and the footer
+  explains the 92 rows / 43+49 split. The locally-added rows were checked by the
+  same helper script against the real payload (`~Tobacco` / `~Cannabis` chips,
+  `about 90 days from transplant, until the first frost` in the agenda, one footer
+  sentence naming both crops, the Google details carrying the same clause, and
+  `filterEvents({ query: "tobacco" })` finding its window), and the feed was
+  re-parsed for the new entries: 332 VEVENTs, 329 drawable, 332 unique UIDs, the
+  tobacco harvest DESCRIPTION carrying both new lines.

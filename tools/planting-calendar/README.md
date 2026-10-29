@@ -51,7 +51,7 @@ nothing; `--no-cache` refetches.
 
 ```jsonc
 {
-  "schemaVersion": 3,
+  "schemaVersion": 5,
   "source":   { "site": "The Old Farmer's Almanac", "url": "...", "fetchedAt": "2026-10-29T17:46:49Z", "scraper": "tools/planting-calendar/scrape.mjs" },
   "location": { "label": "Englewood, CO", "city": "Englewood", "state": "CO", "path": "/gardening/planting-calendar/CO/Englewood", "title": "Planting Calendar & Schedule for Englewood, CO" },
   "season":   { "year": 2026, "station": "MARSTON FLTR PLT, CO", "elevationFt": 5610,
@@ -69,6 +69,7 @@ nothing; `--no-cache` refetches.
           "slug": "arugula",
           "url": "https://www.almanac.com/plant/arugula",
           "hidden": false,
+          "harvest": { "days": 40, "basis": "transplantOutdoors", "source": "almanac" },
           "dates": {
             "startIndoors": {
               "label": "Mar 13-27",
@@ -79,13 +80,28 @@ nothing; `--no-cache` refetches.
             "directSow": { "na": true },
             "lastPlanting": { "label": "Sep 7", "start": "2026-09-07", "end": "2026-09-07" }
           }
+        },
+        {
+          // Not the page's row: see "Local rows" below.
+          "name": "Tobacco",
+          "slug": "tobacco",
+          "url": null,
+          "hidden": false,
+          "origin": "local",
+          "derivedFrom": "Tomatoes",
+          // The same cells Tomatoes carries, copied — and picked to the frost.
+          "harvest": { "days": 90, "basis": "transplantOutdoors", "source": "estimate",
+                       "until": "firstFallFrost" },
+          "dates": { … }
         }
       ]
     },
     "fall": { "columns": [ … "daysToMaturity", "frostTolerance" … ], "crops": [ … ] }
   },
-  "stats":    { "crops": { "spring": 73, "fall": 22 }, "dateCells": 233, "naCells": 81,
-                "invertedRanges": 2, "hiddenRows": 1 },
+  "stats":    { "crops": { "spring": 75, "fall": 22 }, "dateCells": 239, "naCells": 83,
+                "invertedRanges": 2, "hiddenRows": 1,
+                "harvest": { "crops": 94, "estimated": 51, "sourced": 43, "none": 2, "unknown": 0 },
+                "local": { "crops": 2, "slugs": ["cannabis", "tobacco"] } },
   "excluded": [ { "table": "spring", "name": "Obedient Plant", "slug": "obedient-plant",
                   "reason": "ornamental (Physostegia virginiana), not edible; ..." } ],
   "warnings": [ { "table": "fall", "crop": "Kohlrabi", "column": "startSeedsOutdoors",
@@ -112,6 +128,82 @@ Stable and derived from the header text, so they are safe to switch on:
 
 `startIndoors`, `transplantOutdoors`, `directSow`, `lastPlanting` (spring) and
 `startSeedsOutdoors`, `transplant`, `daysToMaturity`, `frostTolerance` (fall).
+
+## Harvest windows
+
+The calendar knows *when to plant* because the page says so. It knows *when to
+pick* only because of one column — and only half the year has it:
+
+| Where the number comes from | Rows (Englewood) | `source` |
+|---|---|---|
+| The autumn table's **Average Days to Maturity**, used by that row | 22 | `almanac` |
+| The same crop's autumn figure, borrowed by its spring row | 21 | `almanac` |
+| `DAYS_TO_HARVEST` in `harvest-days.mjs` — seed-packet averages | 49 | `estimate` |
+| `local-crops.mjs` — the two rows the page never prints | 2 | `estimate` |
+| Nothing to pick in the first season (asparagus, comfrey) | 2 | — |
+| No planting date in that table, so nothing to count from (spring Garlic) | 1 | — |
+
+The spring table has no days-to-maturity column, and the per-crop growing guides
+give no figure a parser can trust (they say "harvest in stages"; variety
+day-counts appear as prose), so `harvest-days.mjs` holds the numbers a seed
+packet would print, rounded to five days — the precision a calendar can honestly
+claim. A slug mapped to `null` there means "no first-season harvest"; a slug
+*missing* from it is undecided and produces a `harvest-unknown` warning plus
+`stats.harvest.unknown`, so a new crop cannot slip in without a decision.
+
+Three rules make the numbers comparable:
+
+- **`basis`** is the planting action the days count from: transplanting if the
+  crop is transplanted, sowing if it is direct-sown (`transplantOutdoors` →
+  `transplant` → `directSow` → `startSeedsOutdoors`).
+- **No dates are stored.** The scrape records the number and the column; the
+  backend adds them to the planting cell per request, so a re-dated plan
+  re-derives its harvest too.
+- **Out-of-year is dropped, not clamped.** Autumn garlic (Oct 19 + 120) and
+  ginger/turmeric (May 22 + 240/250) mature after New Year; the calendar serves
+  one year at a time, so `buildEvents` leaves those three windows out. The
+  numbers stay in the JSON — nothing is hidden, there is just nowhere to draw it.
+- **`until` ends a window on a season marker instead of an offset.** Picking
+  normally stops `days` after planting; a row that names a marker keeps going
+  until it — `until: "firstFallFrost"` means the window closes on
+  `season.firstFallFrost`, so it follows the frost into any year. Only the local
+  rows use it (both plants are killed by the first frost); if a crop cannot ripen
+  in time the window collapses to that one day rather than running backwards.
+
+## Local rows
+
+Two crops here are wanted and not printed: **tobacco** and **cannabis** appear in
+neither of the Almanac's tables, for any location. They live in
+[`local-crops.mjs`](./local-crops.mjs) and `mergeLocalCrops()` adds them after
+parsing — never by hand-editing the JSON, which the next run would overwrite.
+
+A local entry names a **donor** row (`like: 'tomatoes'`) and the table to add to,
+and copies that row's cells verbatim: same windows, same labels, same
+`hidden` flag. Nothing in the file is a date, so "start tobacco when you start
+tomatoes" stays true the next time the Almanac shifts a tomato window.
+
+The harvest window is the one thing the entry decides, because no cell carries
+it: `harvest: { days: 90, until: 'firstFallFrost' }` reads "the first real
+picking is about 90 days after transplanting, and picking continues to the first
+frost".
+
+Three rules keep a local row honest:
+
+- **It says it is local.** `origin: "local"` plus `derivedFrom: "Tomatoes"` on the
+  row and on every event it produces; `stats.local` counts it; the page, the
+  `.ics` description and the Google Calendar hand-off all say "locally added —
+  windows mirror Tomatoes" instead of "from The Old Farmer's Almanac".
+- **It is counted like a parsed row.** The merge runs before the tally, so a
+  copied cell lands in `stats.dateCells`/`naCells` and its number in
+  `stats.harvest` — the backend's event count still reconciles with `stats`.
+- **It fails soft.** A missing table (`local-table-missing`), a missing donor row
+  (`local-donor-missing`), a donor with no planting date to count from
+  (`local-basis-missing`), or a slug the page has started printing itself
+  (`local-duplicate`, whose detail suggests dropping the declaration) is a
+  `warnings[]` entry and no row — one stale declaration never blanks the output.
+
+`--no-local` leaves the local rows out entirely, which is the way to check that a
+regenerated dataset differs from the previous one only by this file.
 
 ### Warnings
 
@@ -143,6 +235,7 @@ for one run without editing the list.
 | `--url <url>` | scrape an exact calendar URL, overrides `--state`/`--city` |
 | `--out <file>` | JSON destination (default `nest-server/src/planting-calendar/data/<state>-<city>.json`) |
 | `--keep <slug>` | keep a crop that `EXCLUDED_CROPS` drops (repeatable) |
+| `--no-local` | leave out the rows declared in `local-crops.mjs` |
 | `--no-cache` | ignore `out/` and refetch |
 | `--stdout` | print the JSON instead of writing a file |
 | `-h`, `--help` | usage |
@@ -183,11 +276,16 @@ for one run without editing the list.
 node --test tools/planting-calendar/scrape.test.mjs
 ```
 
-13 tests, no network: a hand-written slice of the real markup drives the parser
-(including the ornamental row it must drop, and `--keep` putting it back), and
-`nest-server/src/planting-calendar/data/co-englewood.json` is validated for shape
-(every dated cell has ISO start/end, every warning points at a real cell, and
-nothing in `excluded[]` is still in the tables).
+21 tests, no network: a hand-written slice of the real markup drives the parser
+(including the ornamental row it must drop, and `--keep` putting it back), the
+harvest rules are exercised on their own (`plantingBasis`, `harvestDays`), the
+local-row merge is exercised on a hand-built table (copying, ordering, and the
+two ways it can decline: a missing donor and a page that prints the crop itself),
+and `nest-server/src/planting-calendar/data/co-englewood.json` is validated for
+shape (every dated cell has ISO start/end, every warning points at a real cell,
+every row with a planting date has a harvest decision, the two local rows mirror
+Tomatoes and end on the frost, and nothing in `excluded[]` is still in the
+tables).
 
 ## Where the JSON goes
 

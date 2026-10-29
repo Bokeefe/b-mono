@@ -6,7 +6,13 @@ export type CalendarView = "month" | "week" | "day";
  * The chore families the legend names, and the source columns each one covers.
  * One colour per family, in the order the legend lists them.
  */
-export type TaskKind = "indoor" | "transplant" | "sow" | "last" | "frost";
+export type TaskKind =
+  | "indoor"
+  | "transplant"
+  | "sow"
+  | "last"
+  | "harvest"
+  | "frost";
 
 export interface TaskKindInfo {
   kind: TaskKind;
@@ -44,6 +50,12 @@ export const TASK_KINDS: TaskKindInfo[] = [
     columns: ["lastPlanting"],
   },
   {
+    kind: "harvest",
+    label: "harvesting",
+    hint: "when a sowing or transplant should be ready to pick — a fuzzier promise than the rest",
+    columns: ["harvest"],
+  },
+  {
     kind: "frost",
     label: "frost dates",
     hint: "the average last spring and first fall frost",
@@ -67,6 +79,64 @@ export const kindColumns = (kinds: TaskKind[]): string[] =>
   TASK_KINDS.filter((info) => kinds.includes(info.kind)).flatMap(
     (info) => info.columns,
   );
+
+/** True when the window is arithmetic on a seed-packet average, not the Almanac. */
+export const isEstimate = (event: PlantingEvent): boolean =>
+  event.harvest?.estimated === true;
+
+/**
+ * Month-view chip text. Only a handful of characters fit, so an estimated
+ * harvest is the one thing that gets flagged: "~Tomatoes" reads as "somewhere
+ * around then", which is exactly what the number is worth.
+ */
+export const chipLabel = (event: PlantingEvent): string =>
+  isEstimate(event) ? `~${event.crop}` : event.crop;
+
+/**
+ * The wait behind a harvest window, for the agenda line: "about 75 days from
+ * transplant". A crop that is picked until the frost keeps going after the first
+ * ripe day, so the note says where the window stops as well as where it starts.
+ * Empty for every other kind of event, so callers can just append.
+ */
+export const harvestNote = (event: PlantingEvent): string => {
+  const harvest = event.harvest;
+  if (!harvest) return "";
+  const wait = `${harvest.estimated ? "about " : ""}${harvest.days} days from ${
+    harvest.fromLabel
+  }`;
+  return harvest.untilLabel ? `${wait}, until ${harvest.untilLabel}` : wait;
+};
+
+/**
+ * One sentence about the rows the almanac's table never printed (tobacco,
+ * cannabis): which row they copy their windows from and where picking stops.
+ * Empty when every row on screen came from the page, so the footer can append it
+ * without checking `stats`.
+ */
+export const localNote = (events: PlantingEvent[]): string => {
+  const local = events.filter((event) => event.origin === "local");
+  if (local.length === 0) return "";
+
+  const unique = (values: (string | null | undefined)[]): string[] => [
+    ...new Set(values.filter((value): value is string => Boolean(value))),
+  ];
+  const list = (items: string[]): string =>
+    items.length <= 1
+      ? items.join("")
+      : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+
+  const names = unique(local.map((event) => event.crop));
+  const donors = unique(local.map((event) => event.derivedFrom));
+  const frosts = unique(local.map((event) => event.harvest?.untilLabel));
+
+  const verb =
+    names.length === 1 ? "is a local addition" : "are local additions";
+  const frost = frosts.length ? `, and picking runs to ${list(frosts)}` : "";
+
+  return `${list(names)} ${verb}, not the almanac’s: the windows mirror ${list(
+    donors,
+  )}${frost}.`;
+};
 
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const WEEK_STARTS_ON = 0;

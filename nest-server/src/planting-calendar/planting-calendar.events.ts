@@ -1,4 +1,5 @@
 import {
+  PlantingCrop,
   PlantingDataset,
   PlantingEvent,
   PlantingTableName,
@@ -57,10 +58,37 @@ const TASKS: Record<string, string> = {
   lastPlanting: 'Last planting date',
   startSeedsOutdoors: 'Start seeds outdoors',
   transplant: 'Transplant',
+  harvest: 'Harvest',
 };
 
 export const taskFor = (column: string, fallbackLabel: string): string =>
   TASKS[column] ?? fallbackLabel;
+
+/**
+ * How to phrase the wait behind a harvest window. Mirrors `HARVEST_FROM` in
+ * `tools/planting-calendar/harvest-days.mjs`, which is where the column is
+ * chosen; this side only turns the key into words.
+ */
+const HARVEST_FROM: Record<string, string> = {
+  transplantOutdoors: 'transplant',
+  transplant: 'transplant',
+  directSow: 'sowing',
+  startSeedsOutdoors: 'sowing',
+};
+
+export const harvestFromLabel = (column: string): string =>
+  HARVEST_FROM[column] ?? column;
+
+/**
+ * Wording for `harvest.until`: the season marker a window closes on. Only the
+ * frost is used today — a crop that dies with the first frost is picked *to* it.
+ */
+const HARVEST_UNTIL: Record<string, string> = {
+  firstFallFrost: 'the first frost',
+};
+
+export const harvestUntilLabel = (marker: string): string =>
+  HARVEST_UNTIL[marker] ?? marker;
 
 export const locationSlug = (dataset: PlantingDataset): string =>
   `${dataset.location.state}-${dataset.location.city}`
@@ -85,6 +113,9 @@ export interface BuildEventsOptions {
  * API, the ICS feed and the page can never disagree about a given day. Events
  * are re-dated into `options.year` (the dataset's own year by default), which
  * is what lets one scrape serve every season.
+ *
+ * Two of the events are not cells at all: the season's frost markers, and one
+ * harvest window per crop (see `harvestEvent`).
  */
 export const buildEvents = (
   dataset: PlantingDataset,
@@ -97,6 +128,83 @@ export const buildEvents = (
   const events: PlantingEvent[] = [];
   const tables: PlantingTableName[] =
     table === 'all' ? ['spring', 'fall'] : [table];
+
+  /**
+   * The one window no cell prints: the row says how many days the crop needs and
+   * which planting date to count from, and this turns that into dates.
+   *
+   * Derived per request rather than per scrape, so re-dating the plan into
+   * another year re-derives the harvest too — and so a long-season crop's
+   * harvest cannot land in a year the payload is not about. Windows that would
+   * fall after New Year are dropped for the same reason: the calendar serves one
+   * year at a time, so a January date would belong to a payload nobody asks for
+   * (in Denver that is autumn garlic, ginger and turmeric).
+   */
+  const harvestEvent = (
+    crop: PlantingCrop,
+    tableName: PlantingTableName,
+  ): PlantingEvent | null => {
+    const harvest = crop.harvest;
+    if (!harvest || !harvest.basis || !Number.isFinite(harvest.days))
+      return null;
+
+    const anchor = crop.dates?.[harvest.basis];
+    if (!anchor || anchor.na) return null;
+    if (!isIsoDate(anchor.start) || !isIsoDate(anchor.end)) return null;
+
+    let start = addDays(project(anchor.start), harvest.days);
+    let end = addDays(project(anchor.end), harvest.days);
+
+    // Picking normally stops a fixed number of days after planting. A row may
+    // name a season marker instead (`until: 'firstFallFrost'`): tobacco and
+    // cannabis are killed by the frost, so the last pickable day *is* the frost
+    // date, whichever year this payload is dated for. A crop that would not
+    // ripen before the frost gets that one day, never a backwards window.
+    const frostEnd = isIsoDate(dataset.season?.firstFallFrost)
+      ? project(dataset.season.firstFallFrost)
+      : null;
+    const until = harvest.until && frostEnd ? harvest.until : null;
+    if (until) {
+      end = frostEnd as string;
+      if (daysBetween(start, end) < 0) start = end;
+    }
+
+    if (end.slice(0, 4) !== String(year)) return null;
+
+    const fromLabel = harvestFromLabel(harvest.basis);
+    const untilLabel = until ? harvestUntilLabel(until) : null;
+
+    return {
+      id: `${slug}:${year}:${tableName}:${crop.slug}:harvest`,
+      crop: crop.name,
+      slug: crop.slug,
+      guideUrl: crop.url ?? null,
+      origin: crop.origin,
+      derivedFrom: crop.derivedFrom ?? null,
+      table: tableName,
+      column: 'harvest',
+      columnLabel: 'Harvest',
+      task: taskFor('harvest', 'Harvest'),
+      title: `${crop.name} — Harvest`,
+      start,
+      end,
+      label: untilLabel
+        ? `about ${harvest.days} days from ${fromLabel}, until ${untilLabel}`
+        : `about ${harvest.days} days from ${fromLabel}`,
+      kind: start === end ? 'day' : 'window',
+      days: harvest.days,
+      harvest: {
+        days: harvest.days,
+        from: harvest.basis,
+        fromLabel,
+        estimated: harvest.source === 'estimate',
+        until,
+        untilLabel,
+      },
+      inverted: daysBetween(start, end) < 0,
+      hidden: crop.hidden === true,
+    };
+  };
 
   for (const tableName of tables) {
     const seasonTable = dataset.tables?.[tableName];
@@ -120,6 +228,8 @@ export const buildEvents = (
           crop: crop.name,
           slug: crop.slug,
           guideUrl: crop.url ?? null,
+          origin: crop.origin,
+          derivedFrom: crop.derivedFrom ?? null,
           table: tableName,
           column,
           columnLabel,
@@ -136,6 +246,9 @@ export const buildEvents = (
 
         events.push(event);
       }
+
+      const harvest = harvestEvent(crop, tableName);
+      if (harvest) events.push(harvest);
     }
   }
 

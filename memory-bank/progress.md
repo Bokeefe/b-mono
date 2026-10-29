@@ -25,7 +25,7 @@ areas are automated deployment reliability and test coverage.
 | Claimjumpers back (`/claimjumpers-back`) | 🧪 Scratch page for the author: works (200 + shell), unlinked and `noindex` (kept out of the sitemap). The back-cover art (`back_w_border.webp`) is now the full-bleed page background with a text panel positioned over the art's blank centre panel |
 | Backup (`/backup`) | ⛔ Route commented out in `App.tsx` |
 | Faker API | ✅ `nest-server/src/faker` |
-| Planting calendar (`tools/planting-calendar`) | ✅ Scraped (Englewood, CO JSON committed) **and** served: `/api/planting-calendar` + `/calendar.ics` (legend-aware `?columns=`, `?year=` re-dating), "Denver planting calendar" page at `/planting-calendar` with a colour-coded task legend that doubles as the filter, linked from Home. **Perennial:** frost-based month/day windows are re-dated to the current year on every request, and the page re-fetches `?year=` as you page into other years (with an empty-month hand-off), so no moon data and no annual re-scrape |
+| Planting calendar (`tools/planting-calendar`) | ✅ Scraped (Englewood, CO JSON committed) **and** served: `/api/planting-calendar` + `/calendar.ics` (legend-aware `?columns=`, `?year=` re-dating), "Denver planting calendar" page at `/planting-calendar` with a colour-coded task legend that doubles as the filter, linked from Home. **Perennial:** frost-based month/day windows are re-dated to the current year on every request, and the page re-fetches `?year=` as you page into other years (with an empty-month hand-off), so no moon data and no annual re-scrape. **Harvest windows** are derived (planting date + days to maturity) and tagged with their provenance: 43 rows use the Almanac's own "Average Days to Maturity" column, 51 use a seed-packet table, and only the second kind is drawn as an estimate (`~`). **Tobacco and Cannabis** are local additions (not in the Almanac): their windows are copied from Tomatoes and picking runs to `season.firstFallFrost`, with `origin`/`derivedFrom` carried into the page footer, the `.ics` description and the Google hand-off |
 | Examples (`/fetch`,`/axios`,`/sandbox`) | ⛔ Page files removed; not routed |
 | SEO / crawlability | ✅ Per-route metadata, prerendered HTML, robots.txt, sitemap.xml, real 404s, WebP/WOFF2 assets |
 | Accessibility / Lighthouse | ⚠️ Lighthouse CI wired (`.github/workflows/lighthouse.yml`) but never executed — needs a CI run |
@@ -145,14 +145,23 @@ areas are automated deployment reliability and test coverage.
   elevation. The `planting-moon` span is **deliberately skipped** (schema v2):
   it follows one year's lunar phases and can never be reused, while the
   frost-based windows are month/day ranges the backend re-dates with
-  `projectYear`. Englewood, CO = **73 spring + 22 fall crops (95), 233 dated
-  windows**, 81 N/A cells, 2 inverted ranges, 1 hidden row — the 74th spring row,
-  *Obedient Plant*, is an ornamental and is dropped on purpose (schema v3,
-  `EXCLUDED_CROPS` → `excluded[]`, `--keep <slug>` restores it); **all 384 cells
-  verified cell-by-cell against the cached HTML**. 13 `node --test` cases, no
-  network (two assert the moon span is ignored, three cover the exclusion).
-  Source quirks (Kohlrabi's backwards fall ranges, the hidden Garlic row) are
-  preserved and surfaced in `warnings[]` rather than "fixed".
+  `projectYear`. Englewood, CO = **75 spring (73 printed + 2 local) + 22 fall crops,
+  239 dated windows**, 83 N/A cells, 2 inverted ranges, 1 hidden row — the 74th
+  spring row, *Obedient Plant*, is an ornamental and is dropped on purpose (schema
+  v3, `EXCLUDED_CROPS` → `excluded[]`, `--keep <slug>` restores it); **all 384
+  printed cells verified cell-by-cell against the cached HTML**. Schema v4 adds
+  **days to harvest** per row (`{days, basis, source}`, from the autumn column or
+  `harvest-days.mjs`, never a date — the backend adds them to the planting cell)
+  and `stats.harvest`; 94 of 97 rows have a window, 2 perennials deliberately do
+  not, and 3 land after New Year. Schema v5 adds **local rows** declared in
+  `local-crops.mjs` (Cannabis, Tobacco: `like: 'tomatoes'`, `origin: 'local'`,
+  `derivedFrom`, `harvest.until: 'firstFallFrost'`), merged by `mergeLocalCrops()`
+  *before* the stats tally so the counts still reconcile; `--no-local` builds the
+  page's own dataset and a soft-failing row is a warning, never a crash. 21
+  `node --test` cases, no network (two assert the moon span is ignored, three cover
+  the exclusion, five cover the harvest rules, four the local merge and its
+  refusals). Source quirks (Kohlrabi's backwards fall ranges, the hidden Garlic
+  row) are preserved and surfaced in `warnings[]` rather than "fixed".
 - `tools/soulseek-dl/` — `sync.py` turns the playlist JSON export into
   `sockseek-tracks.csv` (`Artist,Title,Album,Length`) and drives **Sockseek**
   (formerly sldl/slsk-batchdl) to download matches; `--dry-run` uses
@@ -237,7 +246,11 @@ areas are automated deployment reliability and test coverage.
 | Oct 2026 | A second scrape year is **re-dated**, not re-scraped (`projectYear`, `?year=`) | Every Almanac window is a month/day range derived from *average* frost dates, so keeping month+day and swapping the year is faithful **and** keeps the printed labels ("May 22-29") literally true; a frost-offset projection would drift a day across leap boundaries and falsify them. Default year = the current one, so the page and any subscription URL roll over on their own |
 | Oct 2026 | Event ids are **year-scoped** (`…:2027:spring:…`) and the payload carries `season.sourceYear` | The id becomes the ICS UID; without the year, importing next season's file would collide with (and overwrite) the current one. `sourceYear` lets the footer say `re-dated from 2026` only when that is actually happening |
 | Oct 2026 | The page **follows the cursor's year** (`cursorYear` → `?year=`) instead of fetching "the current year" once | The API could already serve 2027; the page held a single season, so paging past December drew 2026 events into 2027 cells and read as empty. Deriving the request key from the cursor — with a per-year `Map` cache and a `season` guard so a stale payload is never drawn — needs no year picker and keeps working for every year, not just the next one |
+| Oct 2026 | Harvest numbers: the Almanac's own column where it prints one, else a **curated seed-packet table in the tool** (`harvest-days.mjs`) | The spring table has no days-to-maturity column and no second source is scrapeable (the growing guides state it as prose, and the autumn table's template is the only one that has the column). Putting the estimates next to `EXCLUDED_CROPS` keeps them reviewable and unit-testable, `source` travels per row so the page can say "about 75 days", and a crop with no decision is a warning rather than a silent gap |
+| Oct 2026 | Harvest **dates** are derived per request; windows that land after New Year are dropped, not clamped | Storing dates at scrape time would break the invariant that makes the calendar perennial — ginger's 240 days from a May transplant is January, i.e. a year this payload is not about — and clamping would print a lie. Dropping (garlic, ginger, turmeric in Denver) keeps the number in the JSON while refusing to draw it in the wrong year |
 | Oct 2026 | Download `.ics` pins the year on screen; the **subscribe URL drops it when it is the current year** | A download must match the calendar you were looking at (2030 view → 2030 file). A subscription is the opposite promise: with no `year`, the API default keeps it current, so subscribing once never needs re-doing |
+| Oct 2026 | Tobacco and Cannabis are **declared in the tool and copied from Tomatoes**, not typed into the JSON | Neither crop is in the Almanac and the table template is fixed, so there is nothing to parse. Copying the donor row's cells means the dates cannot disagree with the page they came from (and move if Tomatoes moves), while a hand-written date would be unverifiable forever |
+| Oct 2026 | A harvest window can end on the **frost** (`harvest.until: 'firstFallFrost'`) instead of a day count | "Picked until the first fall frost" is what these two crops actually do, and the frost is re-dated per request like every other frost-based window — so the end follows the season rather than a 120-day offset that would land after it. A window that would run backwards collapses to one day instead of becoming `inverted` |
 
 ## How to keep this file honest
 

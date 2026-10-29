@@ -26,7 +26,37 @@ export interface PlantingCrop {
   url: string | null;
   /** Row is `display: none` on the Almanac page (kept, not dropped). */
   hidden?: boolean;
+  /**
+   * `local` = a row the page never printed, declared in
+   * `tools/planting-calendar/local-crops.mjs` (tobacco, cannabis). Its windows
+   * are a copy of `derivedFrom`'s, so it must never be quoted back as the
+   * Almanac's.
+   */
+  origin?: 'local';
+  /** Name of the row a `local` crop copies its windows from ("Tomatoes"). */
+  derivedFrom?: string | null;
+  /**
+   * Days to the first picking and where that number came from, so the calendar
+   * can date a harvest window. Absent for a plant with no first-season harvest
+   * (asparagus, comfrey) and for a row with nothing to count from.
+   */
+  harvest?: PlantingHarvest | null;
   dates: Record<string, PlantingCell | null | undefined>;
+}
+
+export interface PlantingHarvest {
+  /** Days from `basis` to the first harvest. */
+  days: number;
+  /** Dataset column the days are counted from ("transplantOutdoors"). */
+  basis: string;
+  /** `almanac` = the page printed it; `estimate` = a seed-packet average. */
+  source: 'almanac' | 'estimate';
+  /**
+   * Picking does not stop `days` after planting but at a season marker — both
+   * local crops are killed by the frost, so the window runs *to* that date. The
+   * backend reads the same field off `season`, which is why no date is stored.
+   */
+  until?: 'firstFallFrost';
 }
 
 export interface PlantingColumn {
@@ -74,6 +104,23 @@ export interface PlantingStats {
   naCells: number;
   invertedRanges: number;
   hiddenRows: number;
+  /**
+   * How many rows carry a harvest window, and how much of it is the Almanac's
+   * own days-to-maturity rather than a seed-packet average. `none` counts rows
+   * that deliberately have no first-season harvest.
+   */
+  harvest?: {
+    crops: number;
+    estimated: number;
+    sourced: number;
+    none: number;
+    unknown: number;
+  };
+  /** Rows added from `local-crops.mjs` — the crops the page never printed. */
+  local?: {
+    crops: number;
+    slugs: string[];
+  };
 }
 
 export interface PlantingWarning {
@@ -110,6 +157,28 @@ export interface PlantingDataset {
 /** `window` = multi-day range, `day` = single date, `frost` = season marker. */
 export type PlantingEventKind = 'window' | 'day' | 'frost';
 
+/**
+ * The wait behind a harvest window, carried on the event so the page and the
+ * feed can both say "about 75 days from transplant" without re-deriving it.
+ */
+export interface PlantingEventHarvest {
+  /** Days between the planting date and the first picking. */
+  days: number;
+  /** Dataset column key the wait is counted from ("transplantOutdoors"). */
+  from: string;
+  /** Wording for `from`: "transplant" or "sowing". */
+  fromLabel: string;
+  /** True when `days` is a seed-packet average rather than the Almanac's. */
+  estimated: boolean;
+  /**
+   * The season marker the window closes on instead of a fixed offset
+   * ("firstFallFrost"), and its wording for prose ("the first frost"). Null for
+   * every crop counted the ordinary way.
+   */
+  until?: string | null;
+  untilLabel?: string | null;
+}
+
 export interface PlantingEvent {
   /**
    * Stable across scrapes of the same location/season and year-scoped (the
@@ -135,6 +204,14 @@ export interface PlantingEvent {
   label: string;
   kind: PlantingEventKind;
   days: number | null;
+  /** Harvest windows only: the wait that produced them, and its provenance. */
+  harvest?: PlantingEventHarvest | null;
+  /**
+   * Carried down from the row so the feed, the hand-off and the page can all say
+   * "locally added" instead of "from the Almanac" without looking the crop up.
+   */
+  origin?: 'local';
+  derivedFrom?: string | null;
   /** Source range runs backwards; the UI lists these instead of placing them. */
   inverted: boolean;
   hidden: boolean;

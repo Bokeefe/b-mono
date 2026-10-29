@@ -14,6 +14,19 @@
 // backend re-dates them). No browser and no third-party parser is needed, so
 // this runs on node alone (>= 22 for fetch).
 //
+// Harvest is the one number the page does not print for spring: the autumn table
+// has an "Average Days to Maturity" column, the spring table has none and the
+// growing guides state no figure a parser can trust. So each row records how
+// many days it needs and where that came from — the Almanac's own column, or a
+// seed-packet average from ./harvest-days.mjs — and the backend adds those days
+// to the planting date to draw a harvest window.
+//
+// Two rows are not the page's at all: tobacco and cannabis are declared in
+// ./local-crops.mjs (they copy a donor row's windows and are picked to the first
+// frost) and merged in by `mergeLocalCrops()` after parsing. They carry
+// `origin: 'local'` so nothing downstream can quote them back as the Almanac's;
+// `--no-local` leaves them out.
+//
 // Output is written to nest-server/src/planting-calendar/data/<state>-<city>.json
 // (the backend ships it to the browser); the raw HTML is cached in out/
 // (git-ignored) so re-parsing is free. See ./README.md for the schema.
@@ -21,6 +34,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { harvestDays, plantingBasis } from './harvest-days.mjs';
+import { LOCAL_CROPS, LOCAL_ORIGIN } from './local-crops.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // The JSON is consumed at runtime by the backend, so it is written *into* the
@@ -403,6 +419,182 @@ const SEASON_KEYS = [
 ];
 
 /**
+ * Give one row its days-to-harvest, so the backend can date a harvest window.
+ *
+ * The row itself only records the *number and its provenance*
+ * (`{ days, basis, source }`) — never a date, because a date computed at scrape
+ * time would go stale the moment the backend re-dates the plan into another
+ * year, and a long-season crop could land in a different calendar year than the
+ * window it was counted from. `basis` is the planting action the days are
+ * counted from; the backend adds them to that cell.
+ *
+ * Three ways a row can end up without a number, and only one of them is a
+ * problem worth a warning.
+ */
+function attachHarvest(crop, tableName, sourceDays, stats, warnings) {
+  // A local row (./local-crops.mjs) already carries the decision the entry made,
+  // and `mergeLocalCrops` counted it.
+  if (crop.harvest) return;
+
+  // A row with no planting date in *this* table has nothing to count from (the
+  // spring table's Garlic row is all N/A): no window to date, and nothing to
+  // decide. Its autumn row still gets one.
+  const basis = plantingBasis(crop.dates);
+  if (!basis) return;
+
+  const known = harvestDays(
+    crop.slug,
+    crop.dates?.daysToMaturity?.days,
+    sourceDays.get(crop.slug)
+  );
+
+  if (known === undefined) {
+    stats.harvest.unknown += 1;
+    warnings.push({
+      table: tableName,
+      crop: crop.name,
+      column: 'harvest',
+      issue: 'harvest-unknown',
+      detail: `${crop.slug ?? crop.name} has no days to maturity, in the page or in harvest-days.mjs`,
+    });
+    return;
+  }
+
+  // Asparagus and comfrey: nothing to pick in their first season.
+  if (known === null) {
+    stats.harvest.none += 1;
+    return;
+  }
+
+  crop.harvest = { days: known.days, basis, source: known.source };
+  stats.harvest.crops += 1;
+  if (known.source === 'estimate') stats.harvest.estimated += 1;
+  else stats.harvest.sourced += 1;
+}
+
+/**
+ * Add the locally-declared crops (./local-crops.mjs) to the table they mirror.
+ *
+ * A local row is a *copy* of a donor row the page prints, marked `origin:
+ * 'local'` and `derivedFrom`, with a harvest window the entry decides instead of
+ * `harvest-days.mjs` — `until: 'firstFallFrost'` is what makes tobacco and
+ * cannabis run to the frost rather than for a fixed span. Both are the page's
+ * own answer to "when do I start this?", so the copy carries over every dated
+ * cell, labels included: "Mar 13-27" stays true because it *is* the tomato
+ * window.
+ *
+ * Runs after the exclusions and before the stats tally, so a copied cell counts
+ * exactly like a parsed one (`stats.dateCells` has to keep matching the events
+ * the backend expands) and a local row is subject to the same warnings.
+ *
+ * A missing donor, or a slug the page has started printing itself, is a warning
+ * and not an exception: the source may change, and one stale declaration should
+ * not blank the calendar.
+ */
+export function mergeLocalCrops(
+  tables,
+  entries = LOCAL_CROPS,
+  stats,
+  warnings = []
+) {
+  const added = [];
+
+  for (const entry of entries) {
+    const table = tables[entry.table];
+    if (!table) {
+      warnings.push({
+        table: entry.table,
+        crop: entry.name,
+        column: 'origin',
+        issue: 'local-table-missing',
+        detail: `no ${entry.table} table to add ${entry.slug} to`,
+      });
+      continue;
+    }
+
+    if (table.crops.some((crop) => crop.slug === entry.slug)) {
+      warnings.push({
+        table: entry.table,
+        crop: entry.name,
+        column: 'origin',
+        issue: 'local-duplicate',
+        detail: `the page prints ${entry.slug} itself now, so local-crops.mjs can drop it`,
+      });
+      continue;
+    }
+
+    const donor = table.crops.find((crop) => crop.slug === entry.like);
+    if (!donor) {
+      warnings.push({
+        table: entry.table,
+        crop: entry.name,
+        column: 'origin',
+        issue: 'local-donor-missing',
+        detail: `${entry.slug} copies ${entry.like}, which is not in the ${entry.table} table`,
+      });
+      continue;
+    }
+
+    const crop = {
+      name: entry.name,
+      slug: entry.slug,
+      url: entry.url ?? null,
+      hidden: false,
+      origin: LOCAL_ORIGIN,
+      derivedFrom: donor.name,
+      dates: Object.fromEntries(
+        Object.entries(donor.dates).map(([column, cell]) => [
+          column,
+          cell ? { ...cell } : cell,
+        ])
+      ),
+    };
+
+    if (entry.harvest) {
+      const basis = entry.harvest.basis ?? plantingBasis(crop.dates);
+      if (!basis) {
+        warnings.push({
+          table: entry.table,
+          crop: entry.name,
+          column: 'harvest',
+          issue: 'local-basis-missing',
+          detail: `${entry.like} has no planting date to count ${entry.slug} from`,
+        });
+      } else {
+        crop.harvest = {
+          days: entry.harvest.days,
+          basis,
+          // A seed-packet figure, never the Almanac's: it is not in a table at
+          // all. `origin: 'local'` carries the stronger claim.
+          source: 'estimate',
+          ...(entry.harvest.until ? { until: entry.harvest.until } : {}),
+        };
+        if (stats) {
+          stats.harvest.crops += 1;
+          stats.harvest.estimated += 1;
+        }
+      }
+    }
+
+    // Insert where the name belongs instead of re-sorting: the source prints its
+    // rows alphabetically, and a full sort would churn the committed JSON.
+    const index = table.crops.findIndex(
+      (candidate) => candidate.name.localeCompare(entry.name) > 0
+    );
+    if (index === -1) table.crops.push(crop);
+    else table.crops.splice(index, 0, crop);
+
+    if (stats) {
+      stats.local.crops += 1;
+      stats.local.slugs.push(entry.slug);
+    }
+    added.push(crop);
+  }
+
+  return added;
+}
+
+/**
  * Whole page -> the JSON document described in ./README.md.
  * `meta.url` is the only input that is not read out of the HTML.
  */
@@ -419,7 +611,18 @@ export function parseCalendar(html, meta = {}) {
     naCells: 0,
     invertedRanges: 0,
     hiddenRows: 0,
+    // How many rows ended up with a harvest window, and how much of it is the
+    // Almanac's own number rather than a seed-packet average.
+    harvest: { crops: 0, estimated: 0, sourced: 0, none: 0, unknown: 0 },
+    // Rows the page never printed (./local-crops.mjs), so the JSON says which
+    // entries cannot be checked against the source.
+    local: { crops: 0, slugs: [] },
   };
+
+  // Days to maturity is printed in the autumn table only, and a spring row
+  // borrows the same crop's autumn figure — so every table is parsed before any
+  // row can be given a harvest window.
+  const sourceDays = new Map();
 
   for (const season of SEASON_KEYS) {
     const table = rawTables.find((candidate) => candidate.id === season.id);
@@ -438,10 +641,32 @@ export function parseCalendar(html, meta = {}) {
     }
 
     tables[season.key] = parsed;
+
+    for (const crop of parsed.crops) {
+      const days = crop.dates?.daysToMaturity?.days;
+      if (crop.slug && Number.isFinite(days) && !sourceDays.has(crop.slug)) {
+        sourceDays.set(crop.slug, days);
+      }
+    }
+  }
+
+  // Rows the page does not print at all (./local-crops.mjs), merged *before* the
+  // tally below so a copied cell counts like a parsed one and a stale
+  // declaration lands in `warnings[]` next to the rest.
+  if (meta.local !== false) {
+    mergeLocalCrops(tables, LOCAL_CROPS, stats, warnings);
+  }
+
+  for (const season of SEASON_KEYS) {
+    const parsed = tables[season.key];
+    if (!parsed) continue;
+
     stats.crops[season.key] = parsed.crops.length;
 
     for (const crop of parsed.crops) {
       if (crop.hidden) stats.hiddenRows += 1;
+      attachHarvest(crop, season.key, sourceDays, stats, warnings);
+
       for (const [columnKey, cell] of Object.entries(crop.dates)) {
         if (!cell) continue;
         const where = { table: season.key, crop: crop.name, column: columnKey };
@@ -483,7 +708,7 @@ export function parseCalendar(html, meta = {}) {
   }
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 5,
     source: {
       site: "The Old Farmer's Almanac",
       url: meta.url ?? null,
@@ -512,6 +737,7 @@ Pull The Old Farmer's Almanac planting calendar into JSON.
   --out <file>          JSON destination (default
                         nest-server/src/planting-calendar/data/<state>-<city>.json)
   --keep <slug>         keep a crop that EXCLUDED_CROPS drops (repeatable)
+  --no-local            leave out the rows declared in local-crops.mjs
   --no-cache            ignore the cached HTML in out/ and refetch
   --stdout              print the JSON instead of writing a file
   -h, --help            this text
@@ -524,6 +750,7 @@ function parseArgs(argv) {
     url: null,
     out: null,
     keep: [],
+    local: true,
     cache: true,
     stdout: false,
   };
@@ -540,6 +767,7 @@ function parseArgs(argv) {
     else if (arg === '--url') options.url = need(++i, arg);
     else if (arg === '--out' || arg === '-o') options.out = need(++i, arg);
     else if (arg === '--keep') options.keep.push(need(++i, arg));
+    else if (arg === '--no-local') options.local = false;
     else if (arg === '--no-cache') options.cache = false;
     else if (arg === '--stdout') options.stdout = true;
     else if (arg === '--help' || arg === '-h') {
@@ -584,7 +812,11 @@ async function main() {
     log('cached', cacheFile.replace(HERE + '/', ''), `${(html.length / 1024).toFixed(0)}kB`);
   }
 
-  const calendar = parseCalendar(html, { url, keep: options.keep });
+  const calendar = parseCalendar(html, {
+    url,
+    keep: options.keep,
+    local: options.local,
+  });
 
   if (calendar.location.city === null && options.url === null) {
     calendar.location.city = options.city;
@@ -611,6 +843,13 @@ async function main() {
     stats.naCells + ' N/A,',
     stats.invertedRanges + ' inverted'
   );
+  log(
+    'harvest',
+    `${stats.harvest.crops} rows (${stats.harvest.sourced} from the almanac,`,
+    `${stats.harvest.estimated} seed-packet averages,`,
+    `${stats.harvest.none} with nothing to pick,`,
+    `${stats.harvest.unknown} undecided)`
+  );
   if (calendar.season.lastSpringFrost) {
     log(
       'season',
@@ -620,6 +859,16 @@ async function main() {
       '| first fall frost',
       calendar.season.firstFallFrost,
       calendar.season.station ? `| ${calendar.season.station}` : ''
+    );
+  }
+  if (calendar.stats.local.crops) {
+    // Loud on purpose: these rows are the only place the JSON says something the
+    // page does not, so the run names them every time.
+    log(
+      'local',
+      `${calendar.stats.local.crops} rows added (${calendar.stats.local.slugs.join(
+        ', '
+      )}) — windows copied from the page, see local-crops.mjs`
     );
   }
   if (calendar.excluded.length) {

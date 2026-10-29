@@ -19,6 +19,7 @@ import {
   WEEKDAY_LABELS,
   addDays,
   addMonths,
+  chipLabel,
   clampYear,
   eventKind,
   eventsInRange,
@@ -32,6 +33,8 @@ import {
   formatShortDay,
   formatWeekHeading,
   fromIso,
+  harvestNote,
+  localNote,
   monthGrid,
   nextEventFrom,
   seasonOpening,
@@ -178,6 +181,13 @@ const PlantingCalendar = () => {
 
   /** The last payload we have, for the year-agnostic chrome (location, stats). */
   const shown = season ?? payload;
+
+  /**
+   * What to say about the rows the almanac never printed. Derived from the
+   * events on screen, so it names whichever crops this calendar actually added
+   * and stays silent for a location that has none.
+   */
+  const localCopy = localNote(shown?.events ?? []);
 
   return (
     <div className="planting-calendar">
@@ -419,11 +429,23 @@ const PlantingCalendar = () => {
                     .join(", ")}
                 </p>
               )}
+              {shown.stats.harvest && (
+                <p>
+                  {shown.stats.harvest.crops} rows carry a harvest window:{" "}
+                  {shown.stats.harvest.sourced} from the almanac&rsquo;s own days
+                  to maturity, {shown.stats.harvest.estimated} from seed-packet
+                  averages, which the chips mark with a tilde. The second kind is
+                  a fortnight, not a date.
+                </p>
+              )}
+              {localCopy && <p>{localCopy}</p>}
               <p>
-                Dates from The Old Farmer&rsquo;s Almanac, keyed to average
-                frost dates. The windows keep their month and day every year, so
-                this calendar never expires. Growth is not guaranteed; the
-                weather has opinions.
+                {localCopy
+                  ? "Everything else comes from The Old Farmer’s Almanac"
+                  : "Dates from The Old Farmer’s Almanac"}
+                , keyed to average frost dates. The windows keep their month and
+                day every year, so this calendar never expires. Growth is not
+                guaranteed; the weather has opinions.
               </p>
             </footer>
           )}
@@ -517,7 +539,7 @@ const MonthView = ({ cursor, today, events, onOpenDay }: CalendarViewProps) => {
                       key={event.id}
                       className={`pc-chip pc-chip--${eventKind(event)}`}
                     >
-                      {event.crop}
+                      {chipLabel(event)}
                     </span>
                   ))}
                   {dayEvents.length > 2 && (
@@ -614,6 +636,7 @@ interface EventRowProps {
 
 const EventRow = ({ event, detail, locationLabel }: EventRowProps) => {
   const progress = detail ? windowProgress(event, detail) : null;
+  const note = harvestNote(event);
   const kind = eventKind(event);
 
   return (
@@ -622,7 +645,8 @@ const EventRow = ({ event, detail, locationLabel }: EventRowProps) => {
       <div className="pc-event-body">
         <p className="pc-event-title">{event.crop}</p>
         <p className="pc-event-task">
-          {event.task} · {formatEventRange(event)}
+          {event.task}
+          {note ? ` · ${note}` : ""} · {formatEventRange(event)}
           {progress ? ` · ${progress}` : ""}
         </p>
       </div>

@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 5,
   "source": {
     "site": "The Old Farmer's Almanac",
     "url": "https://www.almanac.com/gardening/planting-calendar/CO/Englewood",
-    "fetchedAt": "2026-10-29T21:18:05Z",
+    "fetchedAt": "2026-10-29T22:21:24Z",
     "scraper": "tools/planting-calendar/scrape.mjs"
   },
   "location": {
@@ -72,6 +72,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -100,6 +105,11 @@
               "start": "2026-09-07",
               "end": "2026-09-07"
             }
+          },
+          "harvest": {
+            "days": 40,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -152,6 +162,11 @@
               "start": "2026-08-24",
               "end": "2026-08-24"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -178,6 +193,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -204,6 +224,11 @@
               "start": "2026-07-13",
               "end": "2026-07-13"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -232,6 +257,11 @@
               "start": "2026-06-19",
               "end": "2026-06-19"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -256,6 +286,11 @@
               "end": "2026-05-22"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -282,6 +317,11 @@
               "start": "2026-08-03",
               "end": "2026-08-03"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -308,6 +348,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -334,6 +379,45 @@
               "start": "2026-05-15",
               "end": "2026-05-15"
             }
+          },
+          "harvest": {
+            "days": 90,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
+          }
+        },
+        {
+          "name": "Cannabis",
+          "slug": "cannabis",
+          "url": null,
+          "hidden": false,
+          "origin": "local",
+          "derivedFrom": "Tomatoes",
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 6",
+              "start": "2026-07-06",
+              "end": "2026-07-06"
+            }
+          },
+          "harvest": {
+            "days": 120,
+            "basis": "transplantOutdoors",
+            "source": "estimate",
+            "until": "firstFallFrost"
           }
         },
         {
@@ -362,6 +446,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -386,6 +475,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "directSow",
+            "source": "almanac"
           }
         },
         {
@@ -412,6 +506,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -440,6 +539,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 90,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -464,6 +568,11 @@
               "end": "2026-05-29"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -484,6 +593,11 @@
               "end": "2026-04-24"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 65,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -512,6 +626,11 @@
               "start": "2026-08-10",
               "end": "2026-08-10"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -536,6 +655,11 @@
               "start": "2026-05-29",
               "end": "2026-05-29"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -562,6 +686,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -612,6 +741,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -636,6 +770,11 @@
               "start": "2026-08-10",
               "end": "2026-08-10"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -660,6 +799,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 95,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -686,6 +830,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -710,6 +859,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -738,6 +892,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -780,6 +939,11 @@
               "end": "2026-06-05"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 240,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -804,6 +968,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "directSow",
+            "source": "almanac"
           }
         },
         {
@@ -832,6 +1001,11 @@
               "start": "2026-07-06",
               "end": "2026-07-06"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -854,6 +1028,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -882,6 +1061,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -908,6 +1092,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 45,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -930,6 +1119,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -956,6 +1150,11 @@
               "start": "2026-06-22",
               "end": "2026-06-22"
             }
+          },
+          "harvest": {
+            "days": 110,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -980,6 +1179,11 @@
               "end": "2026-05-22"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1000,6 +1204,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 90,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1028,6 +1237,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1052,6 +1266,11 @@
               "end": "2026-05-22"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 85,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1074,6 +1293,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1096,6 +1320,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1120,6 +1349,11 @@
               "end": "2026-05-22"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1144,6 +1378,11 @@
               "end": "2026-04-24"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 45,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1172,6 +1411,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1200,6 +1444,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 110,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1226,6 +1475,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1254,6 +1508,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1278,6 +1537,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 110,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -1298,6 +1562,11 @@
               "end": "2026-06-12"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 130,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -1322,6 +1591,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "directSow",
+            "source": "almanac"
           }
         },
         {
@@ -1346,6 +1620,11 @@
               "start": "2026-07-27",
               "end": "2026-07-27"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -1374,6 +1653,11 @@
               "start": "2026-06-22",
               "end": "2026-06-22"
             }
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1398,6 +1682,11 @@
               "start": "2026-08-10",
               "end": "2026-08-10"
             }
+          },
+          "harvest": {
+            "days": 25,
+            "basis": "directSow",
+            "source": "almanac"
           }
         },
         {
@@ -1424,6 +1713,11 @@
               "start": "2026-08-10",
               "end": "2026-08-10"
             }
+          },
+          "harvest": {
+            "days": 85,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1450,6 +1744,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1474,6 +1773,11 @@
               "end": "2026-06-05"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1498,6 +1802,11 @@
               "start": "2026-06-29",
               "end": "2026-06-29"
             }
+          },
+          "harvest": {
+            "days": 120,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -1520,6 +1829,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 65,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1548,6 +1862,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 30,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1572,6 +1891,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "directSow",
+            "source": "estimate"
           }
         },
         {
@@ -1596,6 +1920,11 @@
               "start": "2026-06-22",
               "end": "2026-06-22"
             }
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1624,6 +1953,11 @@
               "start": "2026-05-22",
               "end": "2026-05-22"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplantOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1646,6 +1980,11 @@
               "na": true
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1672,6 +2011,45 @@
               "start": "2026-07-13",
               "end": "2026-07-13"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
+          }
+        },
+        {
+          "name": "Tobacco",
+          "slug": "tobacco",
+          "url": null,
+          "hidden": false,
+          "origin": "local",
+          "derivedFrom": "Tomatoes",
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 6",
+              "start": "2026-07-06",
+              "end": "2026-07-06"
+            }
+          },
+          "harvest": {
+            "days": 90,
+            "basis": "transplantOutdoors",
+            "source": "estimate",
+            "until": "firstFallFrost"
           }
         },
         {
@@ -1698,6 +2076,11 @@
               "start": "2026-07-20",
               "end": "2026-07-20"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1724,6 +2107,11 @@
               "start": "2026-07-06",
               "end": "2026-07-06"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1748,6 +2136,11 @@
               "end": "2026-06-05"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 250,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1772,6 +2165,11 @@
               "start": "2026-09-07",
               "end": "2026-09-07"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "directSow",
+            "source": "almanac"
           }
         },
         {
@@ -1796,6 +2194,11 @@
               "end": "2026-05-22"
             },
             "lastPlanting": null
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1824,6 +2227,11 @@
               "start": "2026-07-06",
               "end": "2026-07-06"
             }
+          },
+          "harvest": {
+            "days": 85,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1852,6 +2260,11 @@
               "start": "2026-06-15",
               "end": "2026-06-15"
             }
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         },
         {
@@ -1880,6 +2293,11 @@
               "start": "2026-08-03",
               "end": "2026-08-03"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "transplantOutdoors",
+            "source": "estimate"
           }
         }
       ]
@@ -1936,6 +2354,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 40,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1959,6 +2382,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -1982,6 +2410,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2007,6 +2440,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "transplant",
+            "source": "almanac"
           }
         },
         {
@@ -2030,6 +2468,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 100,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2053,6 +2496,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 90,
+            "basis": "transplant",
+            "source": "almanac"
           }
         },
         {
@@ -2076,6 +2524,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2101,6 +2554,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplant",
+            "source": "almanac"
           }
         },
         {
@@ -2124,6 +2582,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 70,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2149,6 +2612,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 75,
+            "basis": "transplant",
+            "source": "almanac"
           }
         },
         {
@@ -2172,6 +2640,11 @@
             "frostTolerance": {
               "label": "Tender"
             }
+          },
+          "harvest": {
+            "days": 80,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2195,6 +2668,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 120,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2218,6 +2696,11 @@
             "frostTolerance": {
               "label": "Tender"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2241,6 +2724,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2268,6 +2756,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 45,
+            "basis": "transplant",
+            "source": "almanac"
           }
         },
         {
@@ -2291,6 +2784,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2314,6 +2812,11 @@
             "frostTolerance": {
               "label": "Tender"
             }
+          },
+          "harvest": {
+            "days": 45,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2337,6 +2840,11 @@
             "frostTolerance": {
               "label": "Tender"
             }
+          },
+          "harvest": {
+            "days": 55,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2360,6 +2868,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 25,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2383,6 +2896,11 @@
             "frostTolerance": {
               "label": "Frost-hardy"
             }
+          },
+          "harvest": {
+            "days": 30,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2406,6 +2924,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 60,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         },
         {
@@ -2429,6 +2952,11 @@
             "frostTolerance": {
               "label": "Frost-tolerant"
             }
+          },
+          "harvest": {
+            "days": 50,
+            "basis": "startSeedsOutdoors",
+            "source": "almanac"
           }
         }
       ]
@@ -2436,13 +2964,27 @@
   },
   "stats": {
     "crops": {
-      "spring": 73,
+      "spring": 75,
       "fall": 22
     },
-    "dateCells": 233,
-    "naCells": 81,
+    "dateCells": 239,
+    "naCells": 83,
     "invertedRanges": 2,
-    "hiddenRows": 1
+    "hiddenRows": 1,
+    "harvest": {
+      "crops": 94,
+      "estimated": 51,
+      "sourced": 43,
+      "none": 2,
+      "unknown": 0
+    },
+    "local": {
+      "crops": 2,
+      "slugs": [
+        "cannabis",
+        "tobacco"
+      ]
+    }
   },
   "excluded": [
     {

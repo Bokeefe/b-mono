@@ -77,6 +77,24 @@ const eventDescription = (
     lines[0] = `${event.task}${options.locationLabel ? ` · ${options.locationLabel}` : ''}`;
     lines.splice(1, 1, 'Average frost date from the Old Farmer’s Almanac.');
   }
+  // A harvest window is arithmetic on a planting date, not a sentence the
+  // Almanac printed, so say whose number produced it — and, when the row says so,
+  // that picking runs on to the first frost.
+  if (event.harvest) {
+    const until = event.harvest.untilLabel
+      ? `, until ${event.harvest.untilLabel}`
+      : '';
+    lines[1] = `Days to harvest: ${event.harvest.days} from ${event.harvest.fromLabel}${until} (${
+      event.harvest.estimated ? 'seed-packet average' : 'Old Farmer’s Almanac'
+    })`;
+  }
+  // A locally-added row is not on the page at all: the feed says so, or it would
+  // be read as the Almanac's advice.
+  if (event.origin === 'local') {
+    lines.push(
+      `Locally added: the windows mirror ${event.derivedFrom ?? 'a page row'}`,
+    );
+  }
   if (options.seasonYear) lines.push(`Season: ${options.seasonYear}`);
   if (event.guideUrl) lines.push(`Growing guide: ${event.guideUrl}`);
   return lines.join('\n');
@@ -94,6 +112,7 @@ export const eventToVeventLines = (
     categories.push(event.table === 'spring' ? 'Spring' : 'Fall');
   }
   if (event.kind === 'frost') categories.push('Frost date');
+  if (event.harvest) categories.push('Harvest');
 
   return [
     'BEGIN:VEVENT',

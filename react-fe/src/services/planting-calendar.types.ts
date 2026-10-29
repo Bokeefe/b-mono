@@ -10,6 +10,26 @@
 export type PlantingTableName = "spring" | "fall";
 export type PlantingEventKind = "window" | "day" | "frost";
 
+/**
+ * The wait behind a harvest window: how many days the crop needed, counted from
+ * which planting action, and whether the number is the Almanac's or an estimate.
+ */
+export interface PlantingEventHarvest {
+  days: number;
+  /** Dataset column the days are counted from ("transplantOutdoors"). */
+  from: string;
+  /** Wording for `from`: "transplant" or "sowing". */
+  fromLabel: string;
+  /** True when the number is a seed-packet average, not the Almanac's. */
+  estimated: boolean;
+  /**
+   * The season marker the window closes on ("firstFallFrost") and its wording
+   * ("the first frost") — set for a crop picked until the frost, null otherwise.
+   */
+  until?: string | null;
+  untilLabel?: string | null;
+}
+
 export interface PlantingEvent {
   id: string;
   crop: string;
@@ -28,6 +48,11 @@ export interface PlantingEvent {
   label: string;
   kind: PlantingEventKind;
   days: number | null;
+  /** Present on harvest windows only. */
+  harvest?: PlantingEventHarvest | null;
+  /** `local` = added from local-crops.mjs, mirroring `derivedFrom`'s windows. */
+  origin?: "local";
+  derivedFrom?: string | null;
   inverted: boolean;
   hidden: boolean;
 }
@@ -57,6 +82,19 @@ export interface PlantingStats {
   naCells: number;
   invertedRanges: number;
   hiddenRows: number;
+  /** How many rows carry a harvest window, and how much of it is an estimate. */
+  harvest?: {
+    crops: number;
+    estimated: number;
+    sourced: number;
+    none: number;
+    unknown: number;
+  };
+  /** Rows added from the tool's local-crops.mjs — the crops the page omits. */
+  local?: {
+    crops: number;
+    slugs: string[];
+  };
 }
 
 export interface PlantingWarning {

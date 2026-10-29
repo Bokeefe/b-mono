@@ -11,7 +11,11 @@ import {
   projectYear,
   taskFor,
 } from './planting-calendar.events';
-import { PlantingDataset, PlantingEvent } from './planting-calendar.types';
+import {
+  PlantingDataset,
+  PlantingEvent,
+  PlantingHarvest,
+} from './planting-calendar.types';
 
 const DATASET_FILE = [
   join(__dirname, 'data', 'co-englewood.json'),
@@ -217,26 +221,354 @@ describe('buildEvents (synthetic dataset)', () => {
   });
 });
 
+/** `sample` with a harvest window bolted onto its Tomatoes row. */
+const withHarvest = (
+  harvest: PlantingHarvest | null,
+  dates = sample.tables.spring.crops[0].dates,
+): PlantingDataset => ({
+  ...sample,
+  tables: {
+    ...sample.tables,
+    spring: {
+      ...sample.tables.spring,
+      crops: [{ ...sample.tables.spring.crops[0], harvest, dates }],
+    },
+    fall: { ...sample.tables.fall, crops: [] },
+  },
+});
+
+describe('harvest windows', () => {
+  it('adds the days to the planting date they are counted from', () => {
+    const events = buildEvents(
+      withHarvest({
+        days: 75,
+        basis: 'transplantOutdoors',
+        source: 'estimate',
+      }),
+    );
+    const harvest = events.find((event) => event.column === 'harvest')!;
+
+    // Transplant May 22-29 plus 75 days.
+    expect(harvest.start).toBe('2026-08-05');
+    expect(harvest.end).toBe('2026-08-12');
+    expect(harvest.kind).toBe('window');
+    expect(harvest.days).toBe(75);
+    expect(harvest.task).toBe('Harvest');
+    expect(harvest.columnLabel).toBe('Harvest');
+    expect(harvest.title).toBe('Tomatoes — Harvest');
+    expect(harvest.label).toBe('about 75 days from transplant');
+    expect(harvest.id).toBe('co-testville:2026:spring:tomatoes:harvest');
+    expect(harvest.harvest).toEqual({
+      days: 75,
+      from: 'transplantOutdoors',
+      fromLabel: 'transplant',
+      estimated: true,
+      until: null,
+      untilLabel: null,
+    });
+  });
+
+  it('runs the window to the first frost when the row names that marker', () => {
+    const events = buildEvents(
+      withHarvest({
+        days: 90,
+        basis: 'transplantOutdoors',
+        source: 'estimate',
+        until: 'firstFallFrost',
+      }),
+    );
+    const harvest = events.find((event) => event.column === 'harvest')!;
+
+    // Transplant May 22 onwards + 90 days, then picking continues to the date the
+    // plant dies on: the season's own first-fall-frost marker, not an offset.
+    expect(harvest.start).toBe('2026-08-20');
+    expect(harvest.end).toBe('2026-10-05');
+    expect(harvest.kind).toBe('window');
+    expect(harvest.label).toBe(
+      'about 90 days from transplant, until the first frost',
+    );
+    expect(harvest.harvest).toEqual({
+      days: 90,
+      from: 'transplantOutdoors',
+      fromLabel: 'transplant',
+      estimated: true,
+      until: 'firstFallFrost',
+      untilLabel: 'the first frost',
+    });
+  });
+
+  it('gives a crop that cannot ripen before the frost the frost day alone', () => {
+    // 200 days from late May is December: the window would run backwards.
+    const harvest = buildEvents(
+      withHarvest({
+        days: 200,
+        basis: 'transplantOutdoors',
+        source: 'estimate',
+        until: 'firstFallFrost',
+      }),
+    ).find((event) => event.column === 'harvest')!;
+
+    expect(harvest.start).toBe('2026-10-05');
+    expect(harvest.end).toBe('2026-10-05');
+    expect(harvest.kind).toBe('day');
+    expect(harvest.inverted).toBe(false);
+  });
+
+  it('says whose number it used', () => {
+    const almanac = buildEvents(
+      withHarvest({ days: 60, basis: 'transplantOutdoors', source: 'almanac' }),
+    ).find((event) => event.column === 'harvest')!;
+
+    expect(almanac.harvest?.estimated).toBe(false);
+  });
+
+  it('words a direct-sown harvest “from sowing”', () => {
+    const sown = buildEvents(
+      withHarvest(
+        { days: 70, basis: 'directSow', source: 'almanac' },
+        {
+          directSow: {
+            label: 'Apr 10-17',
+            start: '2026-04-10',
+            end: '2026-04-17',
+          },
+        },
+      ),
+    ).find((event) => event.column === 'harvest')!;
+
+    expect(sown.harvest?.fromLabel).toBe('sowing');
+    expect(sown.start).toBe('2026-06-19');
+    expect(sown.end).toBe('2026-06-26');
+  });
+
+  it('drops a window that would land in the next season', () => {
+    // 300 days from May is March 2027 — a date this payload cannot own.
+    const events = buildEvents(
+      withHarvest({
+        days: 300,
+        basis: 'transplantOutdoors',
+        source: 'estimate',
+      }),
+    );
+
+    expect(events.filter((event) => event.column === 'harvest')).toHaveLength(
+      0,
+    );
+  });
+
+  it('ignores a harvest with no planting date to count from', () => {
+    const missing = buildEvents(
+      withHarvest({ days: 70, basis: 'directSow', source: 'almanac' }),
+    );
+    const none = buildEvents(withHarvest(null));
+
+    expect(missing.filter((event) => event.column === 'harvest')).toHaveLength(
+      0,
+    );
+    expect(none.filter((event) => event.column === 'harvest')).toHaveLength(0);
+  });
+
+  it('re-dates the harvest window along with the rest of the plan', () => {
+    const dataset = withHarvest({
+      days: 75,
+      basis: 'transplantOutdoors',
+      source: 'estimate',
+    });
+    const redated = buildEvents(dataset, { year: 2027 }).find(
+      (event) => event.column === 'harvest',
+    )!;
+
+    expect(redated.start).toBe('2027-08-05');
+    expect(redated.end).toBe('2027-08-12');
+    expect(redated.id).toBe('co-testville:2027:spring:tomatoes:harvest');
+  });
+});
+
+describe('locally-added rows', () => {
+  const local = (): PlantingDataset => ({
+    ...sample,
+    tables: {
+      spring: {
+        ...sample.tables.spring,
+        crops: [
+          {
+            ...sample.tables.spring.crops[0],
+            name: 'Cannabis',
+            slug: 'cannabis',
+            url: null,
+            origin: 'local',
+            derivedFrom: 'Tomatoes',
+            harvest: {
+              days: 120,
+              basis: 'transplantOutdoors',
+              source: 'estimate',
+              until: 'firstFallFrost',
+            },
+          },
+        ],
+      },
+      fall: { ...sample.tables.fall, crops: [] },
+    },
+  });
+
+  it('carries the origin down to every event, so the feed need not look it up', () => {
+    const events = buildEvents(local()).filter(
+      (event) => event.kind !== 'frost',
+    );
+
+    expect(events.length).toBeGreaterThan(1);
+    for (const event of events) {
+      expect(event.origin).toBe('local');
+      expect(event.derivedFrom).toBe('Tomatoes');
+    }
+  });
+
+  it('leaves the page’s own rows unmarked', () => {
+    const events = buildEvents(
+      withHarvest({
+        days: 75,
+        basis: 'transplantOutdoors',
+        source: 'estimate',
+      }),
+    );
+
+    for (const event of events) expect(event.origin).toBeUndefined();
+  });
+});
+
 describe('buildEvents (committed Englewood dataset)', () => {
   const events = buildEvents(dataset);
 
-  it('produces one event per dated cell plus the two frost markers', () => {
+  it('produces one event per dated cell, one harvest window per crop, plus the two frost markers', () => {
     const dated = Object.values(dataset.tables)
       .flatMap((table) => table.crops)
       .flatMap((crop) => Object.values(crop.dates))
       .filter((cell) => cell && !cell.na && cell.start && cell.end);
+    const harvests = events.filter((event) => event.column === 'harvest');
 
     expect(dataset.location.label).toBe('Englewood, CO');
-    expect(events).toHaveLength(dated.length + 2);
+    // 94 rows carry a number — the page's own 92 plus the two locally-added
+    // crops; three of them mature after New Year (below).
+    expect(dataset.stats.harvest).toEqual({
+      crops: 94,
+      estimated: 51,
+      sourced: 43,
+      none: 2,
+      unknown: 0,
+    });
+    expect(harvests).toHaveLength(91);
+    expect(events).toHaveLength(dated.length + 2 + harvests.length);
     expect(events.filter((event) => event.kind === 'frost')).toHaveLength(2);
   });
 
-  it('only the two Kohlrabi fall ranges are inverted', () => {
+  it('dates a real harvest window from the transplant date plus the days', () => {
+    const tomatoes = events.find(
+      (event) => event.slug === 'tomatoes' && event.column === 'harvest',
+    )!;
+
+    // Transplant May 22-29 + 75 days, from the seed-packet table.
+    expect(tomatoes.start).toBe('2026-08-05');
+    expect(tomatoes.end).toBe('2026-08-12');
+    expect(tomatoes.harvest).toEqual({
+      days: 75,
+      from: 'transplantOutdoors',
+      fromLabel: 'transplant',
+      estimated: true,
+      until: null,
+      untilLabel: null,
+    });
+
+    // Carrots are direct-sown and their 70 days are the Almanac's own number.
+    const carrots = events.find(
+      (event) => event.slug === 'carrots' && event.column === 'harvest',
+    )!;
+    expect(carrots.harvest).toEqual({
+      days: 70,
+      from: 'directSow',
+      fromLabel: 'sowing',
+      estimated: false,
+      until: null,
+      untilLabel: null,
+    });
+  });
+
+  it('leaves out the three crops that mature after New Year, without hiding the number', () => {
+    const drawn = events
+      .filter((event) => event.column === 'harvest')
+      .map((event) => event.crop);
+
+    for (const crop of ['Garlic', 'Ginger', 'Turmeric']) {
+      expect(drawn).not.toContain(crop);
+    }
+
+    // The dataset still says how long they need, so nothing is quietly lost.
+    expect(
+      dataset.tables.fall.crops.find((crop) => crop.slug === 'garlic')!.harvest,
+    ).toEqual({ days: 120, basis: 'startSeedsOutdoors', source: 'almanac' });
+    expect(
+      dataset.tables.spring.crops.find((crop) => crop.slug === 'ginger')!
+        .harvest,
+    ).toEqual({ days: 240, basis: 'transplantOutdoors', source: 'estimate' });
+  });
+
+  it('adds tobacco and cannabis, which the page never prints, picked to the frost', () => {
+    // Neither row exists in either table for any location: they come from
+    // `tools/planting-calendar/local-crops.mjs` and must say so.
+    for (const slug of ['cannabis', 'tobacco']) {
+      const crop = dataset.tables.spring.crops.find(
+        (row) => row.slug === slug,
+      )!;
+      expect(crop.origin).toBe('local');
+      expect(crop.derivedFrom).toBe('Tomatoes');
+      expect(crop.url).toBeNull();
+    }
+    expect(dataset.stats.local).toEqual({
+      crops: 2,
+      slugs: ['cannabis', 'tobacco'],
+    });
+
+    // Shared start dates are literal: the tomato cells were copied, not re-typed.
+    const tomatoes = dataset.tables.spring.crops.find(
+      (row) => row.slug === 'tomatoes',
+    )!;
+    for (const slug of ['cannabis', 'tobacco']) {
+      const crop = dataset.tables.spring.crops.find(
+        (row) => row.slug === slug,
+      )!;
+      expect(crop.dates).toEqual(tomatoes.dates);
+    }
+
+    // Both are killed by the first frost, so both windows end on it.
+    const transplantStart = tomatoes.dates.transplantOutdoors!.start!;
+    for (const slug of ['cannabis', 'tobacco']) {
+      const harvest = events.find(
+        (event) => event.slug === slug && event.column === 'harvest',
+      )!;
+      expect(harvest.origin).toBe('local');
+      expect(harvest.start).toBe(
+        addDays(transplantStart, slug === 'tobacco' ? 90 : 120),
+      );
+      expect(harvest.end).toBe(dataset.season.firstFallFrost);
+      expect(harvest.harvest?.until).toBe('firstFallFrost');
+      expect(harvest.harvest?.untilLabel).toBe('the first frost');
+    }
+  });
+
+  it('only the two Kohlrabi fall ranges are inverted, plus the harvest that inherits them', () => {
     const inverted = events.filter((event) => event.inverted);
-    expect(inverted).toHaveLength(dataset.stats.invertedRanges);
+
     expect(
       inverted.map((event) => `${event.crop}/${event.column}`).sort(),
-    ).toEqual(['Kohlrabi/startSeedsOutdoors', 'Kohlrabi/transplant']);
+    ).toEqual([
+      'Kohlrabi/harvest',
+      'Kohlrabi/startSeedsOutdoors',
+      'Kohlrabi/transplant',
+    ]);
+    // `invertedRanges` counts source cells; the harvest window is arithmetic on
+    // one of them, so it goes backwards for the same reason they do.
+    expect(inverted.filter((event) => event.column !== 'harvest')).toHaveLength(
+      dataset.stats.invertedRanges,
+    );
   });
 
   it('every drawable event has start <= end and lands inside its season year', () => {

@@ -11,11 +11,20 @@ import { fileURLToPath } from 'node:url';
 
 import {
   EXCLUDED_CROPS,
+  mergeLocalCrops,
   parseCalendar,
   parseWindows,
   partitionCrops,
   plainText,
 } from './scrape.mjs';
+import {
+  DAYS_TO_HARVEST,
+  HARVEST_BASIS,
+  HARVEST_FROM,
+  harvestDays,
+  plantingBasis,
+} from './harvest-days.mjs';
+import { LOCAL_CROPS } from './local-crops.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -67,9 +76,13 @@ const FIXTURE = `
 </div>
 `;
 
+// The fixture prints no Tomatoes row, so it cannot host the local crops (their
+// donor is missing): every assertion below is about the page's own rows. The
+// merge has its own tests, and the committed dataset covers it end to end.
 const calendar = parseCalendar(FIXTURE, {
   url: 'https://www.almanac.com/gardening/planting-calendar/CO/Englewood',
   fetchedAt: '2026-10-29T00:00:00Z',
+  local: false,
 });
 
 // The reason the exclusion list gives, so a reworded reason is a deliberate test
@@ -188,7 +201,94 @@ test('stats count what was parsed', () => {
     naCells: 6,
     invertedRanges: 1,
     hiddenRows: 1,
+    harvest: { crops: 3, estimated: 0, sourced: 3, none: 0, unknown: 0 },
+    local: { crops: 0, slugs: [] },
   });
+});
+
+test('days to harvest come from the almanac when it prints them', () => {
+  // The autumn table has the column; the spring table does not, so a spring row
+  // borrows the same crop's autumn figure rather than a seed-packet average.
+  assert.deepEqual(calendar.tables.spring.crops[0].harvest, {
+    days: 40,
+    basis: 'transplantOutdoors',
+    source: 'almanac',
+  });
+  assert.deepEqual(calendar.tables.fall.crops[0].harvest, {
+    days: 40,
+    basis: 'startSeedsOutdoors',
+    source: 'almanac',
+  });
+  // A backwards range still carries a number; the backend inherits the flip.
+  assert.deepEqual(calendar.tables.fall.crops[1].harvest, {
+    days: 45,
+    basis: 'startSeedsOutdoors',
+    source: 'almanac',
+  });
+  // Garlic's spring row is all N/A: no planting date, so no window to date.
+  assert.equal('harvest' in calendar.tables.spring.crops[1], false);
+});
+
+test('plantingBasis takes the latest action the row has a date for', () => {
+  const days = (over) => ({
+    label: 'x',
+    start: '2026-05-22',
+    end: '2026-05-29',
+    ...over,
+  });
+
+  // Transplanting wins over sowing, because that is what a packet's number is
+  // measured from.
+  assert.equal(
+    plantingBasis({ startIndoors: days(), transplantOutdoors: days(), directSow: days() }),
+    'transplantOutdoors'
+  );
+  assert.equal(
+    plantingBasis({ startSeedsOutdoors: days() }),
+    'startSeedsOutdoors'
+  );
+  assert.equal(plantingBasis({ directSow: days() }), 'directSow');
+  assert.equal(plantingBasis({ transplantOutdoors: { na: true }, directSow: days() }), 'directSow');
+  assert.equal(plantingBasis({ transplantOutdoors: null, directSow: { na: true } }), null);
+  assert.equal(plantingBasis({}), null);
+  // Every rung of the ladder has wording, or the calendar would print a key.
+  for (const column of HARVEST_BASIS) assert.ok(HARVEST_FROM[column], column);
+});
+
+test('harvestDays prefers the page, then the table, and only then an estimate', () => {
+  // The row's own cell (autumn).
+  assert.deepEqual(harvestDays('tomatoes', 80, undefined), {
+    days: 80,
+    source: 'almanac',
+  });
+  // The same crop from the other table.
+  assert.deepEqual(harvestDays('arugula', undefined, 40), {
+    days: 40,
+    source: 'almanac',
+  });
+  // Seed-packet average.
+  assert.deepEqual(harvestDays('tomatoes', undefined, undefined), {
+    days: 75,
+    source: 'estimate',
+  });
+  // Deliberately nothing to pick, and a slug nobody has decided about.
+  assert.equal(harvestDays('asparagus', undefined, undefined), null);
+  assert.equal(harvestDays('mystery-crop', undefined, undefined), undefined);
+});
+
+test('every row with a planting window ends up with a decision', () => {
+  for (const season of ['spring', 'fall']) {
+    for (const crop of calendar.tables[season].crops) {
+      if (!plantingBasis(crop.dates)) continue;
+      assert.ok(
+        crop.harvest || DAYS_TO_HARVEST.get(crop.slug) === null,
+        `${crop.slug} has a harvest window, or says why it has none`
+      );
+    }
+  }
+  // The two perennials are the only deliberate blanks, and they say so.
+  assert.equal(DAYS_TO_HARVEST.get('asparagus'), null);
+  assert.equal(DAYS_TO_HARVEST.get('comfrey-plant'), null);
 });
 
 test('non-edible crops are dropped before they reach the tables or the stats', () => {
@@ -219,6 +319,149 @@ test('--keep puts an excluded crop back without editing the list', () => {
   assert.equal(kept.tables.spring.crops[2].name, 'Obedient Plant');
   assert.deepEqual(kept.excluded, []);
   assert.equal(kept.stats.dateCells, 7);
+});
+
+/** Minimal `tables` shape for the merge tests, with a Tomatoes donor row. */
+const donorTables = () => ({
+  spring: {
+    columns: [],
+    crops: [
+      {
+        name: 'Garlic',
+        slug: 'garlic',
+        url: null,
+        hidden: false,
+        dates: { transplantOutdoors: { na: true } },
+      },
+      {
+        name: 'Tomatoes',
+        slug: 'tomatoes',
+        url: 'https://www.almanac.com/plant/tomatoes',
+        hidden: false,
+        dates: {
+          startIndoors: { label: 'Mar 13-27', start: '2026-03-13', end: '2026-03-27' },
+          transplantOutdoors: { label: 'May 22-29', start: '2026-05-22', end: '2026-05-29' },
+          lastPlanting: { label: 'Jun 19', start: '2026-06-19', end: '2026-06-19' },
+        },
+      },
+    ],
+  },
+});
+
+const emptyStats = () => ({
+  harvest: { crops: 0, estimated: 0, sourced: 0, none: 0, unknown: 0 },
+  local: { crops: 0, slugs: [] },
+});
+
+test('local rows copy a donor row instead of inventing dates', () => {
+  const tables = donorTables();
+  const stats = emptyStats();
+  const warnings = [];
+
+  const added = mergeLocalCrops(tables, LOCAL_CROPS, stats, warnings);
+
+  assert.deepEqual(
+    added.map((crop) => crop.slug),
+    ['cannabis', 'tobacco']
+  );
+  // Inserted where the name belongs, so the table keeps the source's order.
+  assert.deepEqual(
+    tables.spring.crops.map((crop) => crop.name),
+    ['Cannabis', 'Garlic', 'Tobacco', 'Tomatoes']
+  );
+
+  const tobacco = tables.spring.crops.find((crop) => crop.slug === 'tobacco');
+  const tomatoes = tables.spring.crops.find((crop) => crop.slug === 'tomatoes');
+  assert.deepEqual(tobacco.dates, tomatoes.dates);
+  assert.notEqual(tobacco.dates.transplantOutdoors, tomatoes.dates.transplantOutdoors);
+  // Nothing is attributed to a guide or a page row that does not exist.
+  assert.equal(tobacco.url, null);
+  assert.equal(tobacco.origin, 'local');
+  assert.equal(tobacco.derivedFrom, 'Tomatoes');
+  assert.equal(tobacco.hidden, false);
+
+  // Picking runs to the frost, which is the one number the entry decides.
+  assert.deepEqual(tobacco.harvest, {
+    days: 90,
+    basis: 'transplantOutdoors',
+    source: 'estimate',
+    until: 'firstFallFrost',
+  });
+
+  assert.deepEqual(stats.harvest, {
+    crops: 2,
+    estimated: 2,
+    sourced: 0,
+    none: 0,
+    unknown: 0,
+  });
+  assert.deepEqual(stats.local, { crops: 2, slugs: ['cannabis', 'tobacco'] });
+  assert.deepEqual(warnings, []);
+});
+
+test('a local row with no donor is a warning, never a crash', () => {
+  const tables = donorTables();
+  tables.spring.crops = tables.spring.crops.filter((crop) => crop.slug !== 'tomatoes');
+  const warnings = [];
+
+  const added = mergeLocalCrops(tables, LOCAL_CROPS, emptyStats(), warnings);
+
+  assert.deepEqual(added, []);
+  assert.deepEqual(
+    warnings.map((warning) => [warning.crop, warning.issue]),
+    [
+      ['Cannabis', 'local-donor-missing'],
+      ['Tobacco', 'local-donor-missing'],
+    ]
+  );
+  assert.deepEqual(
+    tables.spring.crops.map((crop) => crop.name),
+    ['Garlic']
+  );
+});
+
+test('a local row the page starts printing is skipped, not duplicated', () => {
+  const tables = donorTables();
+  tables.spring.crops.push({
+    name: 'Tobacco',
+    slug: 'tobacco',
+    url: 'https://www.almanac.com/plant/tobacco',
+    hidden: false,
+    dates: {},
+  });
+  const warnings = [];
+
+  const added = mergeLocalCrops(tables, LOCAL_CROPS, emptyStats(), warnings);
+
+  // Cannabis still goes in; tobacco is already there, so the declaration can go.
+  assert.deepEqual(
+    added.map((crop) => crop.slug),
+    ['cannabis']
+  );
+  assert.deepEqual(
+    tables.spring.crops.filter((crop) => crop.slug === 'tobacco').map((crop) => crop.url),
+    ['https://www.almanac.com/plant/tobacco']
+  );
+  assert.deepEqual(
+    warnings.map((warning) => [warning.crop, warning.issue]),
+    [['Tobacco', 'local-duplicate']]
+  );
+});
+
+test('the fixture has no donor row, so parsing leaves the tables alone and says why', () => {
+  const merged = parseCalendar(FIXTURE);
+
+  assert.deepEqual(
+    merged.tables.spring.crops.map((crop) => crop.name),
+    ['Arugula', 'Garlic']
+  );
+  assert.deepEqual(merged.stats.local, { crops: 0, slugs: [] });
+  assert.deepEqual(
+    merged.warnings
+      .filter((warning) => warning.issue === 'local-donor-missing')
+      .map((warning) => warning.crop),
+    ['Cannabis', 'Tobacco']
+  );
 });
 
 test('partitionCrops only drops known slugs and keeps rows that have none', () => {
@@ -256,12 +499,31 @@ test('committed Englewood dataset is complete and internally consistent', () => 
     )
   );
 
-  assert.equal(dataset.schemaVersion, 3);
+  assert.equal(dataset.schemaVersion, 5);
   assert.equal(dataset.location.label, 'Englewood, CO');
   assert.ok(dataset.tables.spring.crops.length > 60, 'spring crop count');
   assert.ok(dataset.tables.fall.crops.length > 15, 'fall crop count');
-  assert.equal(dataset.stats.dateCells, 233);
-  assert.equal(dataset.stats.naCells, 81);
+  assert.equal(dataset.stats.dateCells, 239);
+  assert.equal(dataset.stats.naCells, 83);
+  // 94 of the 97 rows can be given a harvest window: 43 from the Almanac's own
+  // days-to-maturity column, 51 from the seed-packet table (the two local rows
+  // included). Asparagus and comfrey are deliberately blank, and nothing is
+  // undecided.
+  assert.deepEqual(dataset.stats.harvest, {
+    crops: 94,
+    estimated: 51,
+    sourced: 43,
+    none: 2,
+    unknown: 0,
+  });
+  assert.deepEqual(
+    ['spring', 'fall'].flatMap((season) =>
+      dataset.tables[season].crops
+        .filter((crop) => !crop.harvest)
+        .map((crop) => crop.slug)
+    ),
+    ['asparagus', 'comfrey-plant', 'garlic']
+  );
 
   for (const season of ['spring', 'fall']) {
     for (const crop of dataset.tables[season].crops) {
@@ -290,8 +552,52 @@ test('committed Englewood dataset is complete and internally consistent', () => 
 
   // Every warning must point at a real cell, so the app can highlight it.
   for (const warning of dataset.warnings) {
+    // A harvest warning is about a missing *number*, not a missing cell.
+    if (warning.issue === 'harvest-unknown') continue;
     const crop = dataset.tables[warning.table].crops.find((row) => row.name === warning.crop);
     assert.ok(crop, `${warning.crop} exists in ${warning.table}`);
     assert.ok(crop.dates[warning.column], `${warning.crop}/${warning.column} exists`);
   }
+  // Harvest provenance is recorded per row, so the page can mark an estimate.
+  for (const season of ['spring', 'fall']) {
+    for (const crop of dataset.tables[season].crops) {
+      if (!crop.harvest) continue;
+      assert.equal(typeof crop.harvest.days, 'number', crop.slug);
+      assert.ok(['almanac', 'estimate'].includes(crop.harvest.source), crop.slug);
+      const anchor = crop.dates[crop.harvest.basis];
+      assert.ok(anchor && anchor.start, `${crop.slug} counts from a real cell`);
+    }
+  }
+
+  // The two rows the page never printed: declared in local-crops.mjs, merged in
+  // by the scraper, and marked so nothing downstream can pass them off as the
+  // Almanac's.
+  assert.deepEqual(dataset.stats.local, {
+    crops: 2,
+    slugs: ['cannabis', 'tobacco'],
+  });
+  const tomatoes = dataset.tables.spring.crops.find(
+    (crop) => crop.slug === 'tomatoes'
+  );
+  for (const slug of ['cannabis', 'tobacco']) {
+    const crop = dataset.tables.spring.crops.find((row) => row.slug === slug);
+    assert.ok(crop, `${slug} is in the spring table`);
+    assert.equal(crop.origin, 'local');
+    assert.equal(crop.derivedFrom, 'Tomatoes');
+    assert.equal(crop.url, null, `${slug} has no guide page to link to`);
+    // Start dates that "match tomatoes" are the tomato cells, not a copy of the
+    // digits: if the source moves them, these move too.
+    assert.deepEqual(crop.dates, tomatoes.dates);
+    assert.equal(crop.harvest.until, 'firstFallFrost');
+    assert.equal(crop.harvest.basis, 'transplantOutdoors');
+  }
+  // ...and every row declares itself, so the merge cannot silently leave a
+  // half-marked row behind.
+  const localised = ['spring', 'fall'].flatMap((season) =>
+    dataset.tables[season].crops.filter((crop) => crop.origin === 'local')
+  );
+  assert.deepEqual(
+    localised.map((crop) => crop.slug),
+    ['cannabis', 'tobacco']
+  );
 });

@@ -13,6 +13,10 @@
   --pc-transplant: var(--green);
   --pc-sow: var(--olive);
   --pc-last: var(--pink);
+  // Harvest is the one family the page works out rather than reads, so it gets
+  // a colour of its own instead of borrowing one: a ripe gold, warm enough to
+  // read as "ready" next to the cooler sowing olive.
+  --pc-harvest: rgb(210, 160, 60);
   --pc-frost: var(--blue);
 
   // Soft fills, defined once: chips and legend swatches share them so the key
@@ -21,6 +25,7 @@
   --pc-transplant-soft: color-mix(in srgb, var(--pc-transplant) 55%, white);
   --pc-sow-soft: color-mix(in srgb, var(--pc-sow) 45%, white);
   --pc-last-soft: color-mix(in srgb, var(--pc-last) 55%, white);
+  --pc-harvest-soft: color-mix(in srgb, var(--pc-harvest) 45%, white);
   --pc-frost-soft: color-mix(in srgb, var(--pc-frost) 55%, white);
 
   box-sizing: border-box;
@@ -272,6 +277,10 @@
   background: var(--pc-last-soft);
 }
 
+.pc-legend-swatch--harvest {
+  background: var(--pc-harvest-soft);
+}
+
 .pc-legend-swatch--frost {
   background: var(--pc-frost-soft);
 }
@@ -404,6 +413,13 @@
   background: var(--pc-last-soft);
 }
 
+.pc-chip--harvest {
+  background: var(--pc-harvest-soft);
+  // The tilde prefix means "worked out, not printed", so the chip reads as an
+  // approximation even at 0.56rem.
+  font-style: italic;
+}
+
 .pc-chip--frost {
   background: var(--pc-frost-soft);
   font-weight: bold;
@@ -516,6 +532,10 @@
 
 .pc-dot--last {
   background: var(--pc-last);
+}
+
+.pc-dot--harvest {
+  background: var(--pc-harvest);
 }
 
 .pc-dot--frost {

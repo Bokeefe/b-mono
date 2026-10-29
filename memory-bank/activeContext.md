@@ -3,6 +3,123 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-29 (h) — tobacco and cannabis, without inventing a single date
+
+- **Ask:** "add tobacco and cannabis to the planting calendar: both share Tomato
+  start dates and are picked until the first fall frost."
+- **Neither crop is in the source.** The Almanac prints 74 spring rows (73 kept
+  after the ornamental drop) and tobacco/cannabis are not among them (and the page
+  template is fixed, so there is nothing to parse). Rather than hand-typing dates,
+  the rows are *declared* in `tools/planting-calendar/local-crops.mjs` with
+  `like: 'tomatoes'` and the scraper copies the donor row's cells verbatim — an
+  invented date is exactly the kind of thing that would be wrong forever, while a
+  copied one is wrong only if Tomatoes is.
+- **`until: 'firstFallFrost'` instead of a day count.** A harvest window is
+  normally `planting + days`; these two are picked *until the frost*, so the row
+  carries `harvest.until = 'firstFallFrost'` and `buildEvents` ends the window on
+  `season.firstFallFrost` for whatever year is on screen. A window that would run
+  backwards collapses to its first day instead of becoming `inverted`.
+- **Provenance travels.** Rows, events, the payload, the `.ics` feed and the Google
+  hand-off all carry `origin: 'local'` + `derivedFrom: 'Tomatoes'`. The page adds
+  one footer sentence (`localNote`) and the feed adds
+  `Locally added: the windows mirror Tomatoes` plus
+  `Dates: locally added, not from The Old Farmer's Almanac` — a downloaded file
+  must never claim the Almanac printed this.
+- **`mergeLocalCrops()` runs before the stats tally** so `stats.dateCells` /
+  `stats.harvest` still reconcile with the backend's expanded event count.
+  `schemaVersion` 4 → 5, `stats.local {crops, slugs}`, `--no-local` to build the
+  page's own dataset. Failure is soft — a missing donor, a missing table, a missing
+  planting basis or a slug the page has started printing each produce a warning
+  (`local-donor-missing` / `local-table-missing` / `local-basis-missing` /
+  `local-duplicate`) and skip the row rather than emit a half-row.
+- **New numbers (Englewood 2026):** 74 printed spring rows + 2 local = **75**, 97
+  rows total, **239 date cells** (233 printed + 6 copied), 83 N/A, 94 crops with a
+  harvest window (43 sourced, 51 estimated, 2 none, 0 undecided). Events 324 →
+  **332** (329 drawable), harvest windows 89 → **91** (90 drawable).
+  Tobacco: Mar 13-27 start, May 22-29 transplant, Jul 6 last planting, harvest
+  Aug 20 → **Oct 5**. Cannabis: same plantings, harvest Sep 19 → **Oct 5**.
+- **Page:** chips read `~Tobacco` / `~Cannabis`; the agenda line grows the second
+  clause (`about 90 days from transplant, until the first frost`) via
+  `harvestNote()` when `harvest.untilLabel` is set; the footer's attribution only
+  says "Everything else comes from the Almanac" when a local row is actually on
+  screen.
+- **Verified:** 21/21 scraper tests (merge, missing donor, page-starts-printing-it,
+  and a fixture with `local: false` because its slice has no Tomatoes row), 51/51
+  backend jest (frost-capped window, cannot-ripen collapse, provenance on every
+  event, feed counts 75/91), `tsc --noEmit` in both packages, eslint+prettier
+  clean, `npm run build` green (prerender included), the real payload inspected
+  through the bundled FE helpers (chips, agenda, footer sentence, Google details,
+  search), and the `.ics` re-parsed: 329 drawable VEVENTs of 332, 332 unique UIDs,
+  tobacco's DESCRIPTION carrying both new lines.
+- **Traps:** the scraper's own fixture table has no Tomatoes row, so its
+  `parseCalendar` call must pass `local: false` — otherwise the merge warns about a
+  donor that the real page does have; and `filterEvents` order is the dataset's,
+  so the footer sentence reads "Cannabis and Tobacco" (alphabetical), not the order
+  they were declared in.
+- **Next:** commit; a 360/1280 browser pass for the new chips and footer sentence;
+  `marigold` / `comfrey-plant` still sit in `EXCLUDED_CROPS` as non-edibles.
+
+## Session snapshot — 2026-10-29 (g) — harvest windows: "when would these be ready to pick?"
+
+- **Ask:** "figure out about when these crops would be ready for harvesting… the
+  average days to harvest on a seed package description. The harvest or picking
+  event could be added to each plant and to the calendar."
+- **What the source actually has.** The **autumn** table already prints `Average
+  Days to Maturity` — scraped since the first version and ignored, because
+  `buildEvents` skipped any cell without dates. The **spring** table has no such
+  column, and the per-crop growing guides have no parseable number (checked
+  anise-hyssop, tomatoes, lettuce, beans, carrots, basil, and a second location's
+  calendar: the two table templates are fixed). So the rule is: **the page's own
+  number where it prints one, a seed-packet table where it does not** — and the
+  provenance travels with the value.
+- **`tools/planting-calendar/harvest-days.mjs` (new).** `HARVEST_BASIS` is the
+  anchor ladder (`transplantOutdoors` → `transplant` → `directSow` →
+  `startSeedsOutdoors`: transplanting wins, because that is what a packet's
+  number measures). `DAYS_TO_HARVEST` holds 49 seed-packet averages rounded to
+  five days, plus `null` for the two perennials with no first-season harvest
+  (asparagus, comfrey). `harvestDays(slug, ownCell, otherTableCell)` returns
+  `almanac` / `estimate` / `null` / **`undefined` for "nobody has decided"**, and
+  the scraper turns that last case into a `harvest-unknown` warning +
+  `stats.harvest.unknown`, so a new crop cannot slip in without a decision.
+- **The scrape stores a number, never a date.** Each row gets
+  `harvest: {days, basis, source}`; `buildEvents` adds the days to the anchor
+  cell *per request*, which is what keeps re-dating free (and stops ginger's
+  240 days from landing in a January the payload is not about). `schemaVersion`
+  3 → 4, `stats.harvest {crops, estimated, sourced, none, unknown}`.
+- **New numbers (Englewood 2026):** 92 of 95 rows carry a window — 43 from the
+  Almanac's column (22 autumn rows + 21 spring rows borrowing the same crop's
+  autumn figure), 49 estimates, 2 deliberate blanks (asparagus, comfrey), 0
+  undecided; spring Garlic is N/A everywhere, so it has nothing to count from.
+  **89 windows**, of which 88 are drawable — Kohlrabi's autumn one inherits the
+  source's backwards `Aug 31-17` transplant range and stays `inverted`. Autumn
+  garlic (Oct 19 + 120) and ginger/turmeric (May 22 + 240/250) mature after New
+  Year and are **left out, not clamped**: the calendar serves one year at a time,
+  and the numbers stay in the JSON so nothing is hidden. Events 235 → **324**;
+  VEVENTs 233 → **321**.
+- **Page:** sixth legend family `harvesting` (own amber `--pc-harvest`, not a
+  borrowed theme colour), estimate chips prefixed `~`, agenda lines read
+  `Harvest · about 75 days from transplant · Jul 22 – Aug 19 · day 22 of 29`,
+  footer explains the 43/49 split, `harvest` joins the `?columns=` export scope,
+  and both the `.ics` description and the Google deep link swap "Almanac window:"
+  for `Days to harvest: 75 from transplant (seed-packet average)` — a derived
+  window must not claim to be a printed one.
+- **Verified:** 17/17 scraper tests (`harvestDays`, `plantingBasis`, per-row
+  provenance, "every row with a planting window has a decision"), 46/46 backend
+  jest (harvest arithmetic, next-year drop, missing anchor, re-dating, ICS
+  description/category), FE `tsc` + eslint + `npm run build`, and a live browser
+  pass at 360/1280 (legend `harvesting 88`, 20 harvest chips in August,
+  `search "harvest" → showing 88 of 321`, hiding the family drops the chips and
+  the `?columns=` value, no console errors, no overflow). Feed re-parsed with
+  python `icalendar`: 321 VEVENTs, 321 unique UIDs, `DTEND > DTSTART` everywhere,
+  nothing dated outside 2026, ≤75 octets, CRLF.
+- **Traps:** the harvest of an inverted source range is inverted too (same
+  reason, no special case); spring Garlic must not produce a warning just because
+  it has no dates; and `nest build` is still what copies `data/*.json` into
+  `dist` before a spare-port server will show it.
+- **Next:** commit; `marigold` / `comfrey-plant` are still in the dataset as
+  non-edibles (one line each in `EXCLUDED_CROPS`); `Cache-Control` on the JSON
+  endpoint; `?location=` multi-city.
+
 ## Session snapshot — 2026-10-29 (f) — Obedient Plant removed at the source, not from the JSON
 
 - **Ask:** "I could remove the 'obedient plant' from this entire thing … it isn't
@@ -827,6 +944,11 @@
 3. **Static asset serving correctness.** `main.ts` now skips SPA fallback for
    `/api`, `/audio`, `/assets`, `/socket.io`, `/backup` so missing JS chunks 404
    instead of returning `index.html`.
+4. **Planting calendar.** Newest and most active: dataset scraped from the
+   Almanac, events expanded server-side, page at `/planting-calendar`, ICS feed.
+   Latest layer is **harvest windows** — derived per request from days to
+   maturity, marked `~` when the number is a seed-packet average rather than the
+   Almanac's own (see snapshot (g)).
 
 ## Active decisions & considerations
 
@@ -869,6 +991,10 @@
    least documenting the divergence.
 5. Add a minimal test for `LunchGateway` room lifecycle (retention/grace), since
    that logic is the most time-sensitive and currently untested.
+6. Planting calendar follow-ups: `Cache-Control` on `GET /api/planting-calendar`,
+   `?location=` multi-city (the scraper already takes `--state/--city`), and
+   decide whether `marigold` / `comfrey-plant` join `EXCLUDED_CROPS` (both are
+   non-edibles the Almanac files with the vegetables).
 
 ## Session log
 

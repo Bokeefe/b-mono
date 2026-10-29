@@ -9,14 +9,21 @@ describe('planting calendar dataset + feed', () => {
   it('loads the committed Englewood dataset from the package', () => {
     expect(dataset.location.label).toBe('Englewood, CO');
     expect(dataset.season.year).toBe(2026);
-    expect(dataset.tables.spring.crops).toHaveLength(73);
+    // 73 rows the Almanac prints, plus the two added from local-crops.mjs.
+    expect(dataset.tables.spring.crops).toHaveLength(75);
     expect(dataset.tables.fall.crops).toHaveLength(22);
+    expect(dataset.stats.local).toEqual({
+      crops: 2,
+      slugs: ['cannabis', 'tobacco'],
+    });
   });
 
   it('serves the SPA the dataset with expanded events', () => {
     const payload = buildPayload(dataset);
 
-    expect(payload.events).toHaveLength(dataset.stats.dateCells + 2);
+    // One event per dated cell (the local rows' copied cells included), the two
+    // frost markers, and 91 harvest windows.
+    expect(payload.events).toHaveLength(dataset.stats.dateCells + 2 + 91);
     expect(payload.events).toEqual(buildEvents(dataset));
     expect(payload.tables.spring.columns.map((column) => column.key)).toEqual([
       'crop',

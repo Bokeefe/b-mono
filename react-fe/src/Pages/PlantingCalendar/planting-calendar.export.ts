@@ -29,9 +29,23 @@ export const eventDetails = (
 ): string =>
   [
     `${event.columnLabel} · ${locationLabel}`,
-    `Almanac window: ${event.label}`,
+    // A harvest window is arithmetic on a planting date, not a sentence the
+    // Almanac printed, so say whose number produced it — and whether picking
+    // runs on to the first frost.
+    event.harvest
+      ? `Days to harvest: ${event.harvest.days} from ${event.harvest.fromLabel}${
+          event.harvest.untilLabel ? `, until ${event.harvest.untilLabel}` : ""
+        } (${event.harvest.estimated ? "seed-packet average" : "Old Farmer’s Almanac"})`
+      : `Almanac window: ${event.label}`,
+    // A local row is not on the page at all, so neither the mirroring nor the
+    // provenance can be left implicit.
+    event.origin === "local"
+      ? `Locally added: the windows mirror ${event.derivedFrom ?? "a page row"}`
+      : "",
     event.guideUrl ? `Growing guide: ${event.guideUrl}` : "",
-    "Dates: The Old Farmer's Almanac planting calendar",
+    event.origin === "local"
+      ? "Dates: locally added, not from The Old Farmer's Almanac"
+      : "Dates: The Old Farmer's Almanac planting calendar",
   ]
     .filter(Boolean)
     .join("\n");

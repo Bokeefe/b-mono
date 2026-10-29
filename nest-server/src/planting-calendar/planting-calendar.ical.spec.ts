@@ -132,6 +132,38 @@ describe('buildIcs', () => {
     expect(body).not.toContain('UID:planting-kohlrabi');
   });
 
+  it('describes a harvest window by the days behind it, and tags it', () => {
+    const body = buildIcs(
+      [
+        event({
+          column: 'harvest',
+          columnLabel: 'Harvest',
+          task: 'Harvest',
+          title: 'Tomatoes — Harvest',
+          label: 'about 75 days from transplant',
+          days: 75,
+          harvest: {
+            days: 75,
+            from: 'transplantOutdoors',
+            fromLabel: 'transplant',
+            estimated: true,
+          },
+        }),
+      ],
+      options,
+    );
+    // Folded continuation lines must be unfolded before inspecting the block.
+    const text = body.replace(/\r\n[ \t]/g, '');
+
+    expect(text).toContain('SUMMARY:Tomatoes — Harvest');
+    expect(text).toContain(
+      'Days to harvest: 75 from transplant (seed-packet average)',
+    );
+    // Not a window the Almanac printed, so it must not claim to be one.
+    expect(text).not.toContain('Almanac window');
+    expect(text).toContain('CATEGORIES:Planting,Spring,Harvest');
+  });
+
   it('is byte-identical for the same input and stamp', () => {
     const events = buildEvents(dataset);
     expect(buildIcs(events, options)).toBe(buildIcs(events, options));
