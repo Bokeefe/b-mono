@@ -1,4 +1,5 @@
 import { baseUrl } from "../environment";
+import type { PlantingCalendarPayload } from "./planting-calendar.types";
 
 class ApiService {
   async healthCheck() {
@@ -63,6 +64,28 @@ class ApiService {
       return await response.url; // Adjust depending on how your backend serves the file
     } catch (error) {
       console.error(`Failed to fetch track ${name}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Planting calendar dataset plus its expanded, ready-to-draw events.
+   *
+   * `year` re-dates the whole plan (see `projectYear` on the backend); the API
+   * dates it in the current year when the parameter is omitted.
+   */
+  async getPlantingCalendar(year?: number): Promise<PlantingCalendarPayload> {
+    try {
+      const query = year ? `?year=${year}` : "";
+      const response = await fetch(
+        `${baseUrl}/api/planting-calendar${query}`,
+      );
+      if (!response.ok) {
+        throw new Error(`Planting calendar request failed (${response.status})`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Failed to fetch the planting calendar:", error);
       throw error;
     }
   }

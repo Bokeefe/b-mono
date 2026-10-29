@@ -12,11 +12,22 @@ import "./Home.scss";
  * get a real `h1` and screen readers get a description of the site, but they are
  * clipped to 1px instead of painted — the landing page stays just the buttons.
  */
-const links = [
+interface HomeLink {
+  route: string;
+  label: string;
+  /**
+   * A third line of text ("denver / planting / calendar") needs a smaller step
+   * to stay inside the 64px square — see `.is-small` in `Home.scss`.
+   */
+  small?: boolean;
+}
+
+const links: HomeLink[] = [
   { route: "music", label: "music" },
   { route: "slomo", label: "slomo\nworld" },
   { route: "lunch", label: "lunch\napp" },
   { route: "text-corpse", label: "text\ncorpse" },
+  { route: "planting-calendar", label: "denver\nplanting\ncalendar", small: true },
   { route: "resume", label: "résumé" },
   { route: "about", label: "about" },
 ];
@@ -37,7 +48,7 @@ const Home = () => {
           <Link
             key={link.route}
             to={`/${link.route}`}
-            className="mobile-btn animate-in"
+            className={`mobile-btn animate-in${link.small ? " is-small" : ""}`}
           >
             <span className="mobile-btn-content">{link.label}</span>
           </Link>

@@ -1,0 +1,670 @@
+// Planting calendar page.
+//
+// Every selector is `pc-`-prefixed (or scoped under one) and there are no bare
+// element rules: Vite bundles page CSS globally, so a stray `h1 { … }` here
+// would repaint the whole site — the Claimjumpers masthead incident in
+// memory-bank/activeContext.md is the cautionary tale.
+
+.planting-calendar {
+  --pc-card: var(--light-beige);
+  --pc-ink: var(--dark-grey);
+  --pc-line: rgba(51, 51, 51, 0.14);
+  --pc-indoor: var(--lavender);
+  --pc-transplant: var(--green);
+  --pc-sow: var(--olive);
+  --pc-last: var(--pink);
+  --pc-frost: var(--blue);
+
+  // Soft fills, defined once: chips and legend swatches share them so the key
+  // can never drift from the thing it explains.
+  --pc-indoor-soft: color-mix(in srgb, var(--pc-indoor) 60%, white);
+  --pc-transplant-soft: color-mix(in srgb, var(--pc-transplant) 55%, white);
+  --pc-sow-soft: color-mix(in srgb, var(--pc-sow) 45%, white);
+  --pc-last-soft: color-mix(in srgb, var(--pc-last) 55%, white);
+  --pc-frost-soft: color-mix(in srgb, var(--pc-frost) 55%, white);
+
+  box-sizing: border-box;
+  max-width: 1040px;
+  margin: 0.75rem auto 3rem;
+  padding: 1.1rem 0.85rem 1.6rem;
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  font-family: "Quicksand", sans-serif;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  // `:where()` keeps this at zero specificity. A plain `a { color: inherit }`
+  // out-ranks single-class rules (0,1,1 beats 0,1,0), which painted the
+  // "take it with you" buttons dark-on-dark until hover rescued them.
+  :where(a) {
+    color: inherit;
+  }
+}
+
+.pc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.pc-head {
+  text-align: center;
+  padding-bottom: 0.4rem;
+
+  h1 {
+    margin: 0;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    font-weight: normal;
+    letter-spacing: 0.02em;
+  }
+}
+
+.pc-sub,
+.pc-count,
+.pc-note,
+.pc-warn {
+  font-family: "Oxygen", monospace;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  opacity: 0.75;
+  margin: 0.3rem 0;
+}
+
+.pc-note {
+  text-align: center;
+  padding: 1.2rem 0.5rem;
+  opacity: 0.9;
+
+  // The "no matches this month — jump to…" line sits between the controls and
+  // the grid, so it needs less air than a full-size empty state.
+  &--search {
+    padding: 0.4rem 0.5rem 0.7rem;
+  }
+
+  &--error {
+    color: var(--art-red);
+    opacity: 1;
+  }
+}
+
+.pc-warn {
+  color: var(--art-red);
+  opacity: 1;
+}
+
+.pc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+
+.pc-views {
+  display: inline-flex;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pc-view-btn,
+.pc-nav-btn,
+.pc-filter-btn {
+  font-family: "Oxygen", monospace;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  min-height: 44px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--pc-ink);
+    color: var(--pc-card);
+  }
+}
+
+.pc-nav {
+  display: inline-flex;
+  gap: 0.25rem;
+
+  .pc-nav-btn {
+    border: 1px solid var(--pc-line);
+    border-radius: 999px;
+  }
+}
+
+.pc-filter-btn {
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+}
+
+.pc-heading {
+  flex-basis: 100%;
+  margin: 0.35rem 0 0;
+  text-align: center;
+  font-family: "Quicksand", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.pc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0.6rem 0 0.2rem;
+}
+
+.pc-search-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+
+  &:focus-within {
+    border-color: var(--pc-ink);
+  }
+}
+
+.pc-search-label {
+  font-family: "Oxygen", monospace;
+  font-size: 0.72rem;
+  opacity: 0.55;
+}
+
+.pc-search {
+  font-family: "Oxygen", monospace;
+  font-size: 0.82rem;
+  padding: 0.55rem 0;
+  min-height: 44px;
+  min-width: 180px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  outline: none;
+
+  &::placeholder {
+    color: inherit;
+    opacity: 0.5;
+  }
+}
+
+// --- legend ---------------------------------------------------------------
+
+// Colour key *and* the task-type filter: one tap hides a family of chores.
+.pc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0.55rem 0 0.15rem;
+}
+
+.pc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: inherit;
+  font-family: "Oxygen", monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  &.is-off {
+    opacity: 0.45;
+
+    .pc-legend-label {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.pc-legend-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 1px solid rgba(51, 51, 51, 0.18);
+  flex: none;
+}
+
+.pc-legend-swatch--indoor {
+  background: var(--pc-indoor-soft);
+}
+
+.pc-legend-swatch--transplant {
+  background: var(--pc-transplant-soft);
+}
+
+.pc-legend-swatch--sow {
+  background: var(--pc-sow-soft);
+}
+
+.pc-legend-swatch--last {
+  background: var(--pc-last-soft);
+}
+
+.pc-legend-swatch--frost {
+  background: var(--pc-frost-soft);
+}
+
+.pc-legend-count {
+  font-size: 0.62rem;
+  opacity: 0.55;
+}
+
+.pc-count {
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+
+.pc-jump {
+  padding: 0.15rem 0.45rem;
+  margin-left: 0.15rem;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: inherit;
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pc-ink);
+    color: var(--pc-card);
+  }
+}
+
+// --- month ---------------------------------------------------------------
+
+.pc-month {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pc-month-head,
+.pc-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.pc-month-head span {
+  text-align: center;
+  font-family: "Oxygen", monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  opacity: 0.6;
+  padding-bottom: 2px;
+}
+
+.pc-day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 74px;
+  padding: 3px;
+  border: 1px solid var(--pc-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.45);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  &.is-outside {
+    opacity: 0.42;
+  }
+
+  &.is-today {
+    border-color: var(--pc-ink);
+    box-shadow: inset 0 0 0 1px var(--pc-ink);
+  }
+}
+
+.pc-day-num {
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+.pc-day-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+}
+
+.pc-chip {
+  font-size: 0.56rem;
+  line-height: 1.25;
+  padding: 1px 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pc-ink);
+  background: rgba(51, 51, 51, 0.08);
+}
+
+.pc-more {
+  font-family: "Oxygen", monospace;
+  font-size: 0.56rem;
+  opacity: 0.65;
+}
+
+.pc-chip--indoor {
+  background: var(--pc-indoor-soft);
+}
+
+.pc-chip--transplant {
+  background: var(--pc-transplant-soft);
+}
+
+.pc-chip--sow {
+  background: var(--pc-sow-soft);
+}
+
+.pc-chip--last {
+  background: var(--pc-last-soft);
+}
+
+.pc-chip--frost {
+  background: var(--pc-frost-soft);
+  font-weight: bold;
+}
+
+// --- week ----------------------------------------------------------------
+
+.pc-week {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+
+  @media (min-width: 820px) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.pc-week-day {
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.4);
+  min-height: 90px;
+
+  &.is-today {
+    border-color: var(--pc-ink);
+  }
+}
+
+.pc-week-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.3rem;
+  padding: 0.15rem 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: "Oxygen", monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.pc-week-count {
+  min-width: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(51, 51, 51, 0.12);
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.pc-week-list,
+.pc-agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pc-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+// --- day agenda -----------------------------------------------------------
+
+.pc-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.pc-agenda-item {
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.pc-event {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: start;
+  padding: 0.4rem 0.45rem;
+}
+
+.pc-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+  background: rgba(51, 51, 51, 0.3);
+}
+
+.pc-dot--indoor {
+  background: var(--pc-indoor);
+}
+
+.pc-dot--transplant {
+  background: var(--pc-transplant);
+}
+
+.pc-dot--sow {
+  background: var(--pc-sow);
+}
+
+.pc-dot--last {
+  background: var(--pc-last);
+}
+
+.pc-dot--frost {
+  background: var(--pc-frost);
+}
+
+.pc-event-body {
+  min-width: 0;
+}
+
+.pc-event-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pc-event-task {
+  margin: 0.1rem 0 0;
+  font-family: "Oxygen", monospace;
+  font-size: 0.66rem;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+// On the agenda the links get their own row; in the week columns the row is too
+// narrow for them, so they only appear at the larger breakpoint.
+.pc-event-links {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  font-family: "Oxygen", monospace;
+  font-size: 0.66rem;
+
+  a {
+    padding: 0.2rem 0.1rem;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    opacity: 0.75;
+    min-height: 24px;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.pc-week-list .pc-event-links {
+  display: none;
+
+  @media (min-width: 820px) {
+    display: flex;
+  }
+}
+
+// --- export ---------------------------------------------------------------
+
+.pc-export {
+  margin: 1.4rem auto 0;
+  max-width: 720px;
+  border-top: 1px solid var(--pc-line);
+  padding-top: 0.9rem;
+
+  h2 {
+    margin: 0 0 0.5rem;
+    text-align: center;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: 1.15rem;
+    font-weight: normal;
+  }
+}
+
+.pc-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pc-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: var(--pc-card);
+  font-family: "Oxygen", monospace;
+  font-size: 0.76rem;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--art-red);
+    color: white;
+  }
+}
+
+.pc-export-note {
+  margin: 0.45rem 0 0;
+  text-align: center;
+  font-family: "Oxygen", monospace;
+  font-size: 0.66rem;
+  opacity: 0.7;
+}
+
+.pc-export-help {
+  margin-top: 0.7rem;
+  font-family: "Oxygen", monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+
+  summary {
+    cursor: pointer;
+    text-align: center;
+    opacity: 0.75;
+    padding: 0.35rem 0;
+  }
+
+  ol {
+    margin: 0.4rem 0;
+    padding-left: 1.2rem;
+  }
+
+  code {
+    display: block;
+    margin-top: 0.3rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 0.64rem;
+    word-break: break-all;
+  }
+}
+
+// --- footer ---------------------------------------------------------------
+
+.pc-foot {
+  margin-top: 1.1rem;
+  border-top: 1px solid var(--pc-line);
+  padding-top: 0.7rem;
+
+  p {
+    margin: 0.25rem 0;
+    font-family: "Oxygen", monospace;
+    font-size: 0.66rem;
+    line-height: 1.55;
+    opacity: 0.7;
+  }
+}

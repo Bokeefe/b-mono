@@ -32,8 +32,16 @@ dist-ssr
 # Persistent production data (outside git-tracked files)
 /usr/src/app/data/
 data/
+# ...but the planting calendar's scraped JSON is source, not runtime state: the
+# backend reads it from src (and dist) and jest asserts against it.
+!nest-server/src/planting-calendar/data/
+!nest-server/src/planting-calendar/data/*.json
 
 # Python tooling (tools/)
 __pycache__/
 *.pyc
 tools/spotify-playlist/out/
+
+# planting-calendar raw HTML cache (the scraped JSON lives in
+# nest-server/src/planting-calendar/data/ and is committed)
+tools/planting-calendar/out/

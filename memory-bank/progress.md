@@ -25,6 +25,7 @@ areas are automated deployment reliability and test coverage.
 | Claimjumpers back (`/claimjumpers-back`) | 🧪 Scratch page for the author: works (200 + shell), unlinked and `noindex` (kept out of the sitemap). The back-cover art (`back_w_border.webp`) is now the full-bleed page background with a text panel positioned over the art's blank centre panel |
 | Backup (`/backup`) | ⛔ Route commented out in `App.tsx` |
 | Faker API | ✅ `nest-server/src/faker` |
+| Planting calendar (`tools/planting-calendar`) | ✅ Scraped (Englewood, CO JSON committed) **and** served: `/api/planting-calendar` + `/calendar.ics` (legend-aware `?columns=`, `?year=` re-dating), "Denver planting calendar" page at `/planting-calendar` with a colour-coded task legend that doubles as the filter, linked from Home. **Perennial:** frost-based month/day windows are re-dated to the current year on every request, and the page re-fetches `?year=` as you page into other years (with an empty-month hand-off), so no moon data and no annual re-scrape |
 | Examples (`/fetch`,`/axios`,`/sandbox`) | ⛔ Page files removed; not routed |
 | SEO / crawlability | ✅ Per-route metadata, prerendered HTML, robots.txt, sitemap.xml, real 404s, WebP/WOFF2 assets |
 | Accessibility / Lighthouse | ⚠️ Lighthouse CI wired (`.github/workflows/lighthouse.yml`) but never executed — needs a CI run |
@@ -134,6 +135,24 @@ areas are automated deployment reliability and test coverage.
 - Playwright's Chromium lives in `~/Library/Caches/ms-playwright` (~200 MB);
   `browser/node_modules` is git-ignored. Note `open.spotify.com/api/token` is now
   blocked with an explicit Developer-Terms message, so no anonymous API exists.
+- `tools/planting-calendar/` (added 2026-10-29) — dependency-free Node ESM
+  scraper for The Old Farmer's Almanac planting calendar
+  (`node tools/planting-calendar/scrape.mjs [--state CO --city Englewood]`).
+  Writes `nest-server/src/planting-calendar/data/<state>-<city>.json`; raw HTML
+  is cached in git-ignored `out/`. Captures both tables (spring: start indoors /
+  transplant / direct sow / last planting — fall: start outdoors / transplant /
+  days to maturity / frost tolerance) plus the frost dates, climate station and
+  elevation. The `planting-moon` span is **deliberately skipped** (schema v2):
+  it follows one year's lunar phases and can never be reused, while the
+  frost-based windows are month/day ranges the backend re-dates with
+  `projectYear`. Englewood, CO = **73 spring + 22 fall crops (95), 233 dated
+  windows**, 81 N/A cells, 2 inverted ranges, 1 hidden row — the 74th spring row,
+  *Obedient Plant*, is an ornamental and is dropped on purpose (schema v3,
+  `EXCLUDED_CROPS` → `excluded[]`, `--keep <slug>` restores it); **all 384 cells
+  verified cell-by-cell against the cached HTML**. 13 `node --test` cases, no
+  network (two assert the moon span is ignored, three cover the exclusion).
+  Source quirks (Kohlrabi's backwards fall ranges, the hidden Garlic row) are
+  preserved and surfaced in `warnings[]` rather than "fixed".
 - `tools/soulseek-dl/` — `sync.py` turns the playlist JSON export into
   `sockseek-tracks.csv` (`Artist,Title,Album,Length`) and drives **Sockseek**
   (formerly sldl/slsk-batchdl) to download matches; `--dry-run` uses
@@ -205,6 +224,20 @@ areas are automated deployment reliability and test coverage.
 | Oct 2026 | `createRoot` retained (no `hydrateRoot`) | Avoids hydration mismatches on live pages; prerendered DOM is for crawlers/social bots, then discarded |
 | Oct 2026 | `seo:start`/`seo:end` **meta** markers instead of HTML comments | Vite's production HTML minifier strips comments |
 | Oct 2026 | Canonical host `antigogglin.org`; `www` + `http` 301 to it | One host avoids split ranking signals; Cloudflare + nginx previously served both |
+| Oct 2026 | Planting calendar is parsed from the `data-date-start/end` **attributes**, not the printed labels | The labels are lossy ("Aug 31-17", "May") and some rows are `display:none`; the ISO attributes are the only machine-readable source, and label/attribute disagreements are surfaced as `warnings[]` instead of being silently reconciled |
+| Oct 2026 | Planting calendar **dataset moved into `nest-server/src/planting-calendar/data/`** | `tools/` is never copied into the runtime Docker image, while `nest-cli.json` copies every `src/**/*.json` into `dist`; the scraper's default `--out` follows, so `npm run planting:data` refreshes what actually ships |
+| Oct 2026 | Dates are **expanded to events in the backend**, not in React | One expansion (`buildEvents`) feeds the JSON API, the ICS feed and the page, so the calendar and the export can never disagree; the page only formats |
+| Oct 2026 | Export is **`.ics` + Google `action=TEMPLATE` links**, no OAuth/API | Both work with zero credentials and no server-side Google integration; the feed is RFC 5545 verified (unique UIDs, exclusive DTEND, CRLF, ≤75 octets) |
+| Oct 2026 | `/planting-calendar` uses `render: "shell"` | The page fetches its data on mount, so a prerender would only bake a loading state — same call as `/slomo` and `/lunch` |
+| Oct 2026 | Planting calendar legend **is** the filter; the spring/fall chips were removed | "spring / fall / everything" only re-cut the two source tables that the month view already navigates, so it read as a second set of unexplained controls; one colour per chore family (`TASK_KINDS`) explains the chips *and* narrows the list with the same tap |
+| Oct 2026 | `.ics` accepts `?columns=` alongside `?table=` | Export must match what is on screen: hiding a legend family narrows the download to those dataset columns instead of shipping the whole plan |
+| Oct 2026 | Page-scoped `a { color: inherit }` written as `:where(a)` | A descendant `a` rule is (0,1,1) and silently beat single-class rules like `.pc-export-btn` (0,1,0) — the export buttons rendered dark-on-dark until `:hover`. `:where()` is zero specificity, so component colours win in either state |
+| Oct 2026 | Page titled **Denver** planting calendar, data still Englewood | The city is what people search for; the subtitle names Englewood, CO (the nearest Almanac station), so the title is honest rather than approximate |
+| Oct 2026 | Moon-favourable windows **dropped from the scraper, dataset, API and page** | They are the Almanac's "gardening by the Moon" dates: real, but tied to one year's lunar phases, so they are the only part of the table that can never be reused — keeping them meant a dataset that silently expired every January or a legend/filter that could not be honest about them |
+| Oct 2026 | A second scrape year is **re-dated**, not re-scraped (`projectYear`, `?year=`) | Every Almanac window is a month/day range derived from *average* frost dates, so keeping month+day and swapping the year is faithful **and** keeps the printed labels ("May 22-29") literally true; a frost-offset projection would drift a day across leap boundaries and falsify them. Default year = the current one, so the page and any subscription URL roll over on their own |
+| Oct 2026 | Event ids are **year-scoped** (`…:2027:spring:…`) and the payload carries `season.sourceYear` | The id becomes the ICS UID; without the year, importing next season's file would collide with (and overwrite) the current one. `sourceYear` lets the footer say `re-dated from 2026` only when that is actually happening |
+| Oct 2026 | The page **follows the cursor's year** (`cursorYear` → `?year=`) instead of fetching "the current year" once | The API could already serve 2027; the page held a single season, so paging past December drew 2026 events into 2027 cells and read as empty. Deriving the request key from the cursor — with a per-year `Map` cache and a `season` guard so a stale payload is never drawn — needs no year picker and keeps working for every year, not just the next one |
+| Oct 2026 | Download `.ics` pins the year on screen; the **subscribe URL drops it when it is the current year** | A download must match the calendar you were looking at (2030 view → 2030 file). A subscription is the opposite promise: with no `year`, the API default keeps it current, so subscribing once never needs re-doing |
 
 ## How to keep this file honest
 

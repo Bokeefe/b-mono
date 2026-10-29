@@ -92,6 +92,15 @@ export const ROUTES: RouteSeo[] = [
     noindex: true,
   },
   {
+    path: "/planting-calendar",
+    title: "Denver Planting Calendar — start seeds, transplant, direct sow",
+    description:
+      "A month, week and day view of when to start seeds indoors, transplant, direct sow and make the last planting date for the Denver area (Englewood, Colorado) — colour-coded by chore, with one-tap export to Google Calendar.",
+    render: "shell",
+    changefreq: "weekly",
+    priority: "0.7",
+  },
+  {
     path: "/slomo",
     title: "Slo Mo World — chopped and screwed playlist generator",
     description:

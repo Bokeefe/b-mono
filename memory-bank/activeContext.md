@@ -3,7 +3,322 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
-## Session snapshot — 2026-10-27 — front-cover background 404'd only in prod
+## Session snapshot — 2026-10-29 (f) — Obedient Plant removed at the source, not from the JSON
+
+- **Ask:** "I could remove the 'obedient plant' from this entire thing … it isn't
+  an edible plant. It takes up too much of the calendar." Both halves were true:
+  it is an ornamental (*Physostegia virginiana*), and its `Jan 15 – Feb 12`
+  indoor window was **23 of the 23 chips in the January grid** — the whole month,
+  from one crop.
+- **Cut it at the scraper, not in the JSON.** Editing `co-englewood.json` alone
+  would have been undone by the next `node scrape.mjs`. `EXCLUDED_CROPS`
+  (slug → reason) in `tools/planting-calendar/scrape.mjs` now drops rows inside
+  `parseCalendar`, keyed by the slug in the guide URL so a re-spelled name cannot
+  resurrect it; `--keep <slug>` restores one for a run without editing the list.
+  `parseRows`/`parseTable` stay faithful parsers — the policy lives in the
+  assembly step, which is `partitionCrops()` (exported, unit-tested).
+- **Excluded rows are dropped *before* `stats` is tallied**, so
+  `stats.dateCells` still equals the events the backend expands (the feed spec
+  asserts that sum). New top-level `excluded[]` records `{table, name, slug,
+  reason}`, and `schemaVersion` went 2 → 3, so the JSON explains why it holds 73
+  crops where the page prints 74. The CLI log prints each dropped row.
+- **Diff discipline:** the scraper was first re-run against the cached HTML and
+  diffed against the committed JSON — identical apart from `fetchedAt` — so the
+  regenerated file's diff is *only* the removed crop, the recounted stats and the
+  new `excluded[]`.
+- **New numbers (Englewood 2026):** 73 spring + 22 fall crops = 95, 233 dated
+  windows, 81 N/A, 2 inverted, 1 hidden; 235 events (233 + 2 frost), 233 VEVENTs
+  unfiltered (66 for direct seeding, unchanged).
+- **Removal exposed a copy bug, fixed with it.** December's hand-off said
+  "2027's windows open in January" / `jump to january 2027` — hard-coded, and now
+  a dead end (Denver starts nothing before Feb 12). `seasonOpening()` derives the
+  month from the earliest window on screen (safe by the re-dating invariant:
+  windows keep month and day every year) and `formatMonthName()` names it, so the
+  button now reads `jump to february 2027` and lands on 46 chips.
+- **Verified:** 13/13 scraper tests (`dateCells 233`, v3, exclusion + `--keep` +
+  `partitionCrops`), 37/37 backend jest, FE `tsc` + eslint + `npm run build`
+  green; live browser pass (360 + 1280) Oct 2026 14 chips → Nov 1 → Dec 0 with
+  "open in February" → jump → **February 2027, 46 chips**, footer
+  `95 crops · 233 dated windows`, two API calls, no console errors. (The 360 px
+  "Obse…" truncation noted in (e) is moot: the crop is gone.)
+- **Note:** the trap that cost time — the dev watch server serves
+  `dist/planting-calendar/data`, and `nest build` is what copies JSON into
+  `dist`; a stale server reports the *old* dataset. Rebuild, or boot
+  `dist` on a spare port, before believing an API response.
+- **Next:** `git status` review and commit (still untracked); `Cache-Control` on
+  the JSON endpoint; `?location=` multi-city. Marigolds is the other ornamental
+  still in the dataset — one line in `EXCLUDED_CROPS` if wanted.
+
+## Session snapshot — 2026-10-29 (e) — the page can now reach 2027 (it never asked)
+
+- **Ask:** "okay, sounds good but why don't I see anything into 2027? I want this
+  to be usable forever onward." The API had been serving `?year=2027` since
+  snapshot (d) — the **page** never asked for it.
+- **Root cause (frontend, not data).** `apiService.getPlantingCalendar()` hit
+  `/api/planting-calendar` once, with no `?year=` and no dependency array, so the
+  component held exactly one season (the current year, from the server default).
+  The month grid happily paged into 2027 and drew that stale 2026 array, so
+  every month after December looked empty. Nothing was broken in the dataset,
+  the projection or the feed; there was simply no second request.
+- **Fix: follow the cursor's year.** `cursorYear = Number(cursor.slice(0, 4))`,
+  the fetch effect depends on it, and payloads are kept in a
+  `useRef(new Map<number, PlantingCalendarPayload>())` so stepping back a year is
+  instant (verified: only `?year=2026` and `?year=2027` fire across a full
+  round-trip). No year picker — walking the grid forward *is* the control, which
+  is what makes it work forever rather than one year further.
+- **Stale-payload guard.** `season = payload?.season.year === cursorYear ? payload : null`.
+  Everything drawn from events (chips, agenda, counts, export link) reads
+  `season`; the year-agnostic chrome (location, legend, search) keeps using the
+  last payload so the page does not flash. While a year is in flight the count
+  line says `reading 2027 in the almanac…` instead of painting 2026 chips into
+  2027 cells.
+- **Empty months explain themselves.** `Nothing scheduled this month` + next
+  window, and past the last one a hand-off button `jump to january 2027`
+  (`openMonth`, so it lands on the month view and triggers the next fetch). This
+  is the affordance a first-time visitor needs in November: the plan is not
+  missing, it is next door.
+- **Two follow-ups found while checking the edges.** `counts` (the per-family
+  legend numbers) is tallied from the last `payload` instead of `season`, since
+  the counts are identical in every year and reading them off the season flashed
+  the legend to zero mid-load; and `clampYear()` in `planting-calendar.utils.ts`
+  pins the cursor to the API's 1900–2200 range — past 2200 the API falls back to
+  the current year, which would have left the page on `reading 2201…` forever.
+  Asserted against the esbuild bundle (`Dec 2200 + 12 months -> 2200-12-31`,
+  `Jun 1899 - 12 months -> 1900-01-01`); `lifetime` reach confirmed live at
+  `?year=2035`, `2100`, `2200`, with `2201` correctly falling back to 2026.
+- **Exports follow the screen.** `icsHref(kinds, year)` / `ExportPanel({ year })`
+  always pin the year being viewed (2030 view → 2030 file). The *subscription*
+  URL does the opposite on purpose: `icsPublicHref` drops `?year=` when it equals
+  the current year, because the API already defaults to it — subscribe once and
+  it stays current. The panel spells that out.
+- **Verified in a real browser** (Playwright from
+  `tools/spotify-playlist/browser/node_modules`, production `dist` served with a
+  20-line static+`/api` proxy on :4321, 360×800 and 1280×900): Oct 2026 14
+  chips → Nov 1 → **Dec 0 with the hand-off note** → **Jan 2027 23 chips**,
+  footer `96 crops · 235 dated windows · season 2027 (MARSTON FLTR PLT, CO) ·
+  re-dated from 2026`, `ics href …?year=2027`, subscribe URL year-less on the
+  2026 view and `?year=2027` on the 2027 view, zero console errors / failed
+  requests. FE `tsc` + eslint + `npm run build` green.
+- **Supersedes:** the "browser pass at 360px + desktop" next-step from (d) —
+  done. (The chips in a 360 px month cell truncate long crop names, e.g.
+  "Obedient Plant" → "Obse…"; pre-existing, full name in day view, not touched.)
+- **Next:** `git status` review and commit (whole feature is still untracked);
+  `Cache-Control` on the JSON endpoint (per-year payloads are now fetched on
+  demand, so caching pays); `?location=` multi-city.
+
+## Session snapshot — 2026-10-29 (d) — moon dates dropped; the calendar is now perennial
+
+- **Ask:** "to make this work more perennially we could drop the moon dates and
+  just use frost dates and this calendar can be used in perpetuity."
+- **Agreed with the premise, added the missing half.** Moon-favourable windows
+  are real but pinned to one year's lunar phases, so they were the only part of
+  the Almanac table that could never be reused — dropped everywhere. But the
+  dates themselves were still hard **2026** ISO strings, so in 2027 the grid
+  would simply be empty; dropping moon alone does not buy perpetuity.
+- **Re-dating, not re-scraping.** `projectYear(iso, year)` in
+  `planting-calendar.events.ts` keeps the month and day and swaps the year
+  (Feb 29 clamps to Feb 28). Every window in the dataset is a *month/day* range
+  derived from **average** frost dates, so this is faithful, and it is what
+  keeps the Almanac's own labels ("May 22-29", "Jan 15-Feb 12") literally true —
+  a day-offset-from-frost projection would drift a day across leap boundaries
+  and silently falsify those labels.
+- **Default year = current year** (`calendarYear()` in the controller, `?year=`
+  to override, range 1900–2200). Pure functions (`buildEvents`, `buildFeed`,
+  `buildPayload`) default to the *dataset* year so unit tests stay deterministic;
+  only the controller reaches for `new Date()`. A `?year=`-less page and a
+  `?year=`-less subscription URL therefore keep working each January.
+- **IDs are year-scoped** (`co-englewood:2027:spring:tomatoes:transplantOutdoors`)
+  so importing 2027 over 2026 in Google Calendar does not collide on UID.
+  Frozen payload carries `season.year` (what you see) + `season.sourceYear`
+  (the almanac it came from); the footer only says `· re-dated from 2026` when
+  they differ.
+- **Removed end to end:** scraper (`planting-moon` parsing, `stats.moonCells`,
+  `moon-window-unparsed` warnings, summary line — the span is still in the HTML
+  and is now covered by a test asserting it is *ignored*), dataset cells (180
+  stripped, `schemaVersion` 1 → 2, `moonCells` gone), `PlantingEvent.moon`,
+  `?moon=1`/`includeMoon`, the ICS `Moon-favourable:` description line, the
+  page's dim caption, its `.pc-event-moon` CSS rule, the Google-Calendar
+  details line, and the FE types. `TASK_KINDS`/`filterEvents` never had a moon
+  entry, so no legend or filter behaviour moved.
+- **Verified:** backend prettier + `tsc --noEmit` green; **37** jest tests (2
+  moon cases replaced by 5 re-dating cases: `projectYear` including leap clamp,
+  synthetic 2027 re-date, default-year no-op, whole-plan shape equality, feed
+  filename/CALNAME/`DTSTART`, payload `season`/`sourceYear`); scraper 10/10 with
+  the ignore-the-moon-span assertions; FE `tsc` + eslint + `npm run build` green
+  (no `moon` left in `dist`); live restarted `nest --watch` → `GET
+  /api/planting-calendar` = 237 events, 0 moon keys, ids `:2026:`, `?year=2027`
+  = 237 events all 2027 with labels untouched, `calendar.ics?year=2027` = 235
+  VEVENTs, `UID:planting-co-englewood-2027-…`,
+  `filename="planting-calendar-co-englewood-2027-spring.ics"`, 0 `Moon` lines.
+- **Supersedes:** the "moon dates are metadata / `.ics?moon=1`" decisions in
+  snapshots (b) and (c) above; the schema row in
+  `tools/planting-calendar/README.md` now documents `schemaVersion: 2` and no
+  `moon`/`moonCells`.
+- **Known trade-off:** month/day projection is exact for the Almanac's own
+  windows but does not re-derive days-to-maturity against *this* year's actual
+  frost; a strict frost-offset projection is the alternative if that ever
+  matters. Feb 29 sources would clamp.
+- **Next:** browser pass at 360px + desktop; `git status` review and commit;
+  `Cache-Control` on the JSON endpoint; `?location=` multi-city.
+
+## Session snapshot — 2026-10-29 (c) — planting calendar polish: legend, search, Denver name
+
+- **Ask (five notes after the MVP shipped):** a colour-coded legend by task type;
+  "not sure how useful spring/fall/everything is, if it even is a filter"; "what
+  does the search do?"; call it *Denver* Planting Calendar on the button + page;
+  the "take it with you" buttons are black until hover.
+- **Legend = the filter.** `TASK_KINDS` in `planting-calendar.utils.ts` defines
+  five chore families (`indoor` 54, `transplant` 62, `sow` 66, `last` 51,
+  `frost` 2 events for Englewood) with the dataset columns each owns;
+  `eventKind()` is now the single place a colour is decided (it used to be a
+  `chipKind` helper inside the component). The `Legend` component renders a
+  swatch + label + count per family and toggles it on/off (`aria-pressed`), and
+  the count line reads `showing 118 of 235 · 2 types hidden`. Chips and swatches
+  share `--pc-*-soft` variables (`color-mix(… , white)`) so the key cannot drift.
+- **Season chips deleted.** "spring / fall / everything" only re-cut a table pair
+  the month view already navigates; the state, the `SeasonFilter` type and the
+  `season` branch in `filterEvents` are gone. `filterEvents(events, { kinds, query })`
+  now filters `kinds.includes(eventKind(event))`.
+- **Search is now self-explanatory.** A visible `find` label + placeholder
+  ("a crop or a chore — tomato, transplant"), a `clear` button, a count line, and
+  when the visible month/week has no match: `No matches this month. Next:
+  Tomatoes — Start seeds indoors, Feb 12. [jump to Feb 12]` (helpers
+  `viewRange`, `eventsInRange`, `nextEventFrom`). An empty crop query says
+  "Nothing in the plan matches".
+- **Export follows the legend.** The `.ics` button links the plain URL when all
+  five families are on, and `?columns=directSow,startSeedsOutdoors` when not —
+  a new `columns` option in `FeedOptions` + `@Query('columns')` in the
+  controller (`asColumns` splits/trims). Verified live: 235 / 66 / 2 VEVENTs for
+  all / sow / frost, and page ↔ feed counts agree kind for kind.
+- **Renamed to Denver.** Page `<h1>` "denver planting calendar", subtitle
+  "Englewood, CO, in the Denver metro · frost dates", Home button
+  `denver\nplanting\ncalendar` (needs `.is-small` in `Home.scss`: three lines do
+  not fit the 64px square at 16px), `seo/routes.ts` title/description retitled
+  (metro search term, Englewood kept for accuracy), page README retitled.
+- **Black-on-black bug:** `.planting-calendar a { color: inherit }` is
+  specificity (0,1,1) and out-ranked `.pc-export-btn` (0,1,0), so the button
+  label inherited `--pc-ink` on a `--pc-ink` background; only `:hover` (0,2,0)
+  set `color: white`. Fixed by writing the blanket rule as `:where(a)` (zero
+  specificity), which keeps `.pc-export-btn`'s own colours both at rest and on
+  hover, and adding `:focus-visible` to the hover styles.
+- **Verified:** backend prettier + `tsc --noEmit` + **32** jest tests green (two
+  new feed cases: column scoping, empty `columns` = plain feed); FE `tsc`,
+  eslint and `npm run build` green (prerender + sitemap ok); `dist` CSS contains
+  the legend rules and `:where(a){color:inherit}` *before* `.pc-export-btn`;
+  live `node dist/main` + curl for the three column filters; python `icalendar`
+  re-parse of each (unique UIDs, `DTEND > DTSTART`, CRLF, ≤75 octets); FE logic
+  re-asserted via `esbuild --bundle` into `/tmp/pc-utils` + `check.mjs`
+  (kinds, `kindColumns`, `viewRange`, `eventsInRange`, `nextEventFrom`, ics URLs)
+  and `/tmp/pc-live.mjs` (live page/feed agreement).
+- **Next:** browser pass at 360px + desktop, `Cache-Control` on the JSON
+  endpoint, `?location=` for more cities, "this week" digest on Home.
+
+## Session snapshot — 2026-10-29 (b) — planting calendar UI: month/week/day + Google export
+
+- **Ask:** "calendar view … by month, week or day … could incorporate google
+  calendars … export to their personal google calendar."
+- **Shipped end to end** — dataset → Nest module → SPA page → calendar export:
+  - `nest-server/src/planting-calendar/`: `types` / `dataset` (fail-soft loader)
+    / `events` (expansion) / `ical` (RFC 5545 writer) / `feed` (payload + feed
+    builders) / `service` (thin Nest cache) / `controller` / `module`, registered
+    in `app.module.ts`. **`buildEvents` is the single source of truth**: it turns
+    each dated cell into one `PlantingEvent` plus two frost markers, so the API,
+    the `.ics` feed and the page can never disagree.
+  - `GET /api/planting-calendar` → dataset + `events[]` (237 for Englewood:
+    235 dated cells + 2 frost dates).
+  - `GET /api/planting-calendar/calendar.ics?table=all|spring|fall&moon=1` →
+    `text/calendar`, attachment `planting-calendar-co-englewood-2026[-season].ics`.
+    All-day `VALUE=DATE` events, `DTEND` exclusive (+1 day), CRLF, 75-octet
+    folding, unique UIDs, `DTSTAMP` pinned to the dataset's `fetchedAt` so
+    responses are byte-identical (cacheable).
+  - `react-fe/src/Pages/PlantingCalendar/` → `PlantingCalendar.component.tsx`
+    (month grid / week columns / day agenda, prev-next-today, season chips,
+    crop search, per-task "+ google" link, export panel), `planting-calendar.utils.ts`
+    (local-date math, `monthGrid`, `weekOf`, filtering, `windowProgress`),
+    `planting-calendar.export.ts` (Google template link + `.ics` URLs),
+    `PlantingCalendar.scss` (all `pc-`-prefixed), and a README.
+  - Wiring: `<Route path="/planting-calendar">` in `App.tsx`, `seo/routes.ts`
+    entry (`render: "shell"`, weekly, 0.7), `Home` link "planting\ncalendar"
+    (now 7 buttons), `apiService.getPlantingCalendar()`, shared types in
+    `react-fe/src/services/planting-calendar.types.ts`, root script
+    `npm run planting:data`.
+- **Dataset moved** from `tools/planting-calendar/datasets/` to
+  `nest-server/src/planting-calendar/data/co-englewood.json`: the root
+  `Dockerfile` copies only `nest-server/dist`, `public` and `react-fe/dist`, so
+  `tools/` never reaches production; `nest-cli.json` already copies every
+  `src/**/*.json` into `dist`. The scraper's default `--out` now points there
+  (README + test updated), `out/` HTML cache stays in `tools/`.
+- **Google Calendar, without OAuth:** (1) per-task deep link
+  `calendar.google.com/calendar/render?action=TEMPLATE&…&dates=YYYYMMDD/YYYYMMDD`
+  (end + 1 day); (2) the `.ics` download + Google's Settings → Import & export
+  link for the whole season; (3) the same endpoint as an optional subscribe-URL.
+- **Verified:** 30 new backend jest tests green (`npx jest src/planting-calendar`
+  — expansion, inverted ranges, moon expansion, ICS folding/escaping, feed
+  scoping, committed dataset); `tsc --noEmit` clean in both packages; eslint
+  clean on the new files; `react-fe` `npm run build` green (prerender lists
+  `/planting-calendar shell`, sitemap + `dist/planting-calendar/index.html` with
+  the right `<title>`); live `node dist/main` + curl: JSON 200, page 200, ICS
+  200 with 235 VEVENTs; **feed parsed by python `icalendar` 6.3.2** — unique
+  UIDs, `DTEND > DTSTART` everywhere, em dashes/escaped commas decoding back;
+  FE logic exercised by compiling `utils`/`export` to `/tmp/pc-utils` and
+  running assertions (month-grid shape, month clamping, filtering, Google URL).
+- **Bug the tests caught:** the ICS writer folded a whole multi-line VEVENT
+  block as if it were one line (yielding `DT` / ` END;VALUE=DATE:` splits).
+  Fixed by emitting `eventToVeventLines()` and folding per physical line.
+- **Local gotcha:** this machine runs **Node 24.4**, not the pinned 26.12.1, so
+  *every* `@nestjs/*` import fails under jest (`Must use import to load ES
+  Module`). That breaks the three pre-existing suites too. The new specs are
+  deliberately Nest-free (pure modules), so they pass on 24.4; run
+  `nvm use` before trusting `npm test` output.
+- **Deliberate choices:** inverted source ranges never render as chips (they
+  are listed in the footer instead); moon dates are metadata on the task, with
+  the ICS feed able to emit them separately; search matches crop + operation +
+  task; days are local-date strings (never `toISOString()`) so a garden day
+  cannot shift across a time zone.
+- **Next:** optional — a table view of the raw dataset, more locations behind a
+  `?location=` param, or a "this week" digest on Home.
+
+
+
+## Session snapshot — 2026-10-29 — planting calendar scraped to JSON (new project)
+
+- **Ask:** "Can you scrape https://www.almanac.com/gardening/planting-calendar/CO/Englewood
+  into some form we can work with?" — first step of a planned, more advanced
+  planting calendar to host on the app.
+- **Answer: yes, and it's already done** — `tools/planting-calendar/scrape.mjs`
+  (Node ESM, zero dependencies, no browser) → `datasets/co-englewood.json`.
+  Raw HTML cached in git-ignored `out/`; `--no-cache` refetches.
+- **Why it's easy:** the page is server-rendered Drupal. Two tables
+  (`#seed-start-dates-table`, `#seed-start-dates-table-fall`); each dated cell is
+  `<td data-date-start data-date-end>` with two spans (`planting-frost` = the real
+  window, `planting-moon` = optional moon dates). Frost dates live on
+  `.planting-tables-wrapper` (`data-spring-frost` / `data-fall-frost`); station +
+  elevation in the `<caption>`.
+- **Payload:** `schemaVersion`, `source`, `location`, `season` (year, station,
+  elevation, both frost dates), `tables.spring` / `tables.fall`
+  (`columns[{key,label,hint}]` + `crops[{name,slug,url,hidden,dates}]`), `stats`
+  and `warnings[]`. Column keys are stable: `startIndoors`,
+  `transplantOutdoors`, `directSow`, `lastPlanting` / `startSeedsOutdoors`,
+  `transplant`, `daysToMaturity`, `frostTolerance`. Cell shapes: `{na:true}`,
+  `{label,start,end,moon?}`, `{label,days}`, `{label}`, `null`.
+- **Numbers (Englewood, 2026):** 74 spring + 22 fall crops, 235 dated windows,
+  82 N/A, 180 moon windows, 2 inverted ranges, 1 hidden row (Garlic).
+  *(Superseded by (f): 73 + 22 crops = 95, 233 windows, 81 N/A, 1 row excluded.)*
+- **Verified:** a separate Python cross-check read the cached HTML and compared
+  **all 384 cells** (dates, N/A, empty, text, moon presence) — 0 mismatches; 10
+  `node --test` cases green (`node --test tools/planting-calendar/scrape.test.mjs`);
+  `eslint` clean (needs the `/* eslint-env node */` header — root eslintrc is
+  browser-only). Colorado Springs re-scraped via `--stdout` to prove the scraper
+  is location-generic (different station, elevation, fall frost).
+- **Quirks kept, not fixed:** Kohlrabi's fall windows are backwards in the source
+  (`Aug 10-Jul 27`, `Aug 31-17`) → `inverted-range` warnings; Garlic is
+  `display:none` in the spring table with all-N/A cells → `"hidden": true`.
+- **Gotcha for later:** `/gardening/planting-calendar/<STATE>/<City>` is the only
+  URL shape that returns tables (ZIP paths serve the location form); spaces are
+  URL-encoded and hyphens do **not** work (`Colorado-Springs` → 0 rows).
+- **Next (awaiting the user's ideas):** wire it in as `nest-server` module
+  (`GET /api/planting-calendar`) + a `/planting-calendar` page + route/SEO entry;
+  the dataset is committed at `tools/planting-calendar/datasets/co-englewood.json`.
 
 - **Ask:** "`background-image: url("../../assets/front_w_border.webp")` doesn't
   load on the deployed mobile site; the back cover's background works."

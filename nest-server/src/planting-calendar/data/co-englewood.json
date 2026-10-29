@@ -1,0 +1,2471 @@
+{
+  "schemaVersion": 3,
+  "source": {
+    "site": "The Old Farmer's Almanac",
+    "url": "https://www.almanac.com/gardening/planting-calendar/CO/Englewood",
+    "fetchedAt": "2026-10-29T21:18:05Z",
+    "scraper": "tools/planting-calendar/scrape.mjs"
+  },
+  "location": {
+    "label": "Englewood, CO",
+    "city": "Englewood",
+    "state": "CO",
+    "path": "/gardening/planting-calendar/CO/Englewood",
+    "title": "Planting Calendar & Schedule for Englewood, CO"
+  },
+  "season": {
+    "year": 2026,
+    "station": "MARSTON FLTR PLT, CO",
+    "elevationFt": 5610,
+    "lastSpringFrost": "2026-05-08",
+    "firstFallFrost": "2026-10-05"
+  },
+  "tables": {
+    "spring": {
+      "id": "seed-start-dates-table",
+      "caption": "On average, your last spring frost occurs on May 8 (at MARSTON FLTR PLT, CO climate station, elevation 5610 feet).",
+      "columns": [
+        {
+          "key": "crop",
+          "label": "Crop",
+          "hint": null
+        },
+        {
+          "key": "startIndoors",
+          "label": "Start Seeds Indoors",
+          "hint": "Begin seeds inside before moving seedlings outdoors."
+        },
+        {
+          "key": "transplantOutdoors",
+          "label": "Transplant Outdoors",
+          "hint": "Move indoor-started seedlings into the garden."
+        },
+        {
+          "key": "directSow",
+          "label": "Direct Sow",
+          "hint": "Plant seeds directly in the soil outside."
+        },
+        {
+          "key": "lastPlanting",
+          "label": "Last Planting Date",
+          "hint": "Final safe date to plant so the plant matures before frost."
+        }
+      ],
+      "crops": [
+        {
+          "name": "Anise Hyssop",
+          "slug": "anise-hyssop",
+          "url": "https://www.almanac.com/plant/anise-hyssop",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 8-Jun 5",
+              "start": "2026-05-08",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Arugula",
+          "slug": "arugula",
+          "url": "https://www.almanac.com/plant/arugula",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-May 1",
+              "start": "2026-04-17",
+              "end": "2026-05-01"
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "Sep 7",
+              "start": "2026-09-07",
+              "end": "2026-09-07"
+            }
+          }
+        },
+        {
+          "name": "Asparagus",
+          "slug": "asparagus",
+          "url": "https://www.almanac.com/plant/asparagus",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "May 8",
+              "start": "2026-05-08",
+              "end": "2026-05-08"
+            }
+          }
+        },
+        {
+          "name": "Basil",
+          "slug": "basil",
+          "url": "https://www.almanac.com/plant/basil",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": {
+              "label": "Aug 24",
+              "start": "2026-08-24",
+              "end": "2026-08-24"
+            }
+          }
+        },
+        {
+          "name": "Beets",
+          "slug": "beets",
+          "url": "https://www.almanac.com/plant/beets",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "label": "May 8",
+              "start": "2026-05-08",
+              "end": "2026-05-08"
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Bell Peppers",
+          "slug": "bell-peppers",
+          "url": "https://www.almanac.com/plant/bell-peppers",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 13",
+              "start": "2026-07-13",
+              "end": "2026-07-13"
+            }
+          }
+        },
+        {
+          "name": "Bok Choy",
+          "slug": "bok-choy",
+          "url": "https://www.almanac.com/plant/bok-choy",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jun 19",
+              "start": "2026-06-19",
+              "end": "2026-06-19"
+            }
+          }
+        },
+        {
+          "name": "Borage",
+          "slug": "borage",
+          "url": "https://www.almanac.com/plant/borage",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Broccoli",
+          "slug": "broccoli",
+          "url": "https://www.almanac.com/plant/broccoli",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 24-May 8",
+              "start": "2026-04-24",
+              "end": "2026-05-08"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Aug 3",
+              "start": "2026-08-03",
+              "end": "2026-08-03"
+            }
+          }
+        },
+        {
+          "name": "Brussels Sprouts",
+          "slug": "brussels-sprouts",
+          "url": "https://www.almanac.com/plant/brussels-sprouts",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 24-May 8",
+              "start": "2026-04-24",
+              "end": "2026-05-08"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Cabbage",
+          "slug": "cabbage",
+          "url": "https://www.almanac.com/plant/cabbage",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "May 15",
+              "start": "2026-05-15",
+              "end": "2026-05-15"
+            }
+          }
+        },
+        {
+          "name": "Cantaloupes",
+          "slug": "cantaloupes",
+          "url": "https://www.almanac.com/plant/cantaloupes",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Carrots",
+          "slug": "carrots",
+          "url": "https://www.almanac.com/plant/carrots",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Cauliflower",
+          "slug": "cauliflower",
+          "url": "https://www.almanac.com/plant/cauliflower",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 1-15",
+              "start": "2026-05-01",
+              "end": "2026-05-15"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Celery",
+          "slug": "celery",
+          "url": "https://www.almanac.com/plant/celery",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 12-26",
+              "start": "2026-02-12",
+              "end": "2026-02-26"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 8",
+              "start": "2026-05-08",
+              "end": "2026-05-08"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Chamomile",
+          "slug": "chamomile",
+          "url": "https://www.almanac.com/plant/chamomile",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Chervil",
+          "slug": "chervil",
+          "url": "https://www.almanac.com/plant/chervil",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Chives",
+          "slug": "chives",
+          "url": "https://www.almanac.com/plant/chives",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "Aug 10",
+              "start": "2026-08-10",
+              "end": "2026-08-10"
+            }
+          }
+        },
+        {
+          "name": "Cilantro (Coriander)",
+          "slug": "cilantro-coriander",
+          "url": "https://www.almanac.com/plant/cilantro-coriander",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 8-22",
+              "start": "2026-05-08",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": {
+              "label": "May 29",
+              "start": "2026-05-29",
+              "end": "2026-05-29"
+            }
+          }
+        },
+        {
+          "name": "Collards",
+          "slug": "collards",
+          "url": "https://www.almanac.com/plant/collards",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Comfrey",
+          "slug": "comfrey-plant",
+          "url": "https://www.almanac.com/plant/comfrey-plant",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 12-26",
+              "start": "2026-02-12",
+              "end": "2026-02-26"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Cucumbers",
+          "slug": "cucumbers",
+          "url": "https://www.almanac.com/plant/cucumbers",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Dill",
+          "slug": "dill",
+          "url": "https://www.almanac.com/plant/dill",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 1-22",
+              "start": "2026-05-01",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": {
+              "label": "Aug 10",
+              "start": "2026-08-10",
+              "end": "2026-08-10"
+            }
+          }
+        },
+        {
+          "name": "Dry Beans",
+          "slug": "dry-beans",
+          "url": "https://www.almanac.com/plant/dry-beans",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Eggplants",
+          "slug": "eggplants",
+          "url": "https://www.almanac.com/plant/eggplants",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Fava Beans",
+          "slug": "fava-beans",
+          "url": "https://www.almanac.com/plant/fava-beans",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Fennel",
+          "slug": "fennel",
+          "url": "https://www.almanac.com/plant/fennel",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 8-22",
+              "start": "2026-05-08",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Garlic",
+          "slug": "garlic",
+          "url": "https://www.almanac.com/plant/garlic",
+          "hidden": true,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Ginger",
+          "slug": "ginger",
+          "url": "https://www.almanac.com/plant/ginger",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Green Beans",
+          "slug": "beans",
+          "url": "https://www.almanac.com/plant/beans",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 15-Jun 5",
+              "start": "2026-05-15",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Honeydew Melons",
+          "slug": "honeydew-melons",
+          "url": "https://www.almanac.com/plant/honeydew-melons",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jul 6",
+              "start": "2026-07-06",
+              "end": "2026-07-06"
+            }
+          }
+        },
+        {
+          "name": "Jalapeño Peppers",
+          "slug": "jalapeno-peppers",
+          "url": "https://www.almanac.com/plant/jalapeno-peppers",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Kale",
+          "slug": "kale",
+          "url": "https://www.almanac.com/plant/kale",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 24-May 8",
+              "start": "2026-04-24",
+              "end": "2026-05-08"
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Kohlrabi",
+          "slug": "kohlrabi",
+          "url": "https://www.almanac.com/plant/kohlrabi",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Lavender",
+          "slug": "lavender",
+          "url": "https://www.almanac.com/plant/lavender",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Leeks",
+          "slug": "leeks",
+          "url": "https://www.almanac.com/plant/leeks",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-May 1",
+              "start": "2026-04-17",
+              "end": "2026-05-01"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jun 22",
+              "start": "2026-06-22",
+              "end": "2026-06-22"
+            }
+          }
+        },
+        {
+          "name": "Lemon Balm",
+          "slug": "lemon-balm",
+          "url": "https://www.almanac.com/plant/lemon-balm",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Lemon Verbena",
+          "slug": "lemon-verbena",
+          "url": "https://www.almanac.com/plant/lemon-verbena",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Lettuce",
+          "slug": "lettuce",
+          "url": "https://www.almanac.com/plant/lettuce",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Lovage",
+          "slug": "lovage-plants",
+          "url": "https://www.almanac.com/plant/lovage-plants",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Marigolds",
+          "slug": "marigolds",
+          "url": "https://www.almanac.com/plant/marigolds",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Marjoram",
+          "slug": "marjoram",
+          "url": "https://www.almanac.com/plant/marjoram",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Mint",
+          "slug": "mint",
+          "url": "https://www.almanac.com/plant/mint",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Mustard Greens",
+          "slug": "mustard-greens",
+          "url": "https://www.almanac.com/plant/mustard-greens",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Okra",
+          "slug": "okra",
+          "url": "https://www.almanac.com/plant/okra",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Onions",
+          "slug": "onions",
+          "url": "https://www.almanac.com/plant/onions",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Oregano",
+          "slug": "oregano",
+          "url": "https://www.almanac.com/plant/oregano",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 27",
+              "start": "2026-02-26",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Parsley",
+          "slug": "parsley",
+          "url": "https://www.almanac.com/plant/parsley",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "Apr 10-May 15",
+              "start": "2026-04-10",
+              "end": "2026-05-15"
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Parsnips",
+          "slug": "parsnips",
+          "url": "https://www.almanac.com/plant/parsnips",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Peanuts",
+          "slug": "peanuts",
+          "url": "https://www.almanac.com/plant/peanuts",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 29-Jun 12",
+              "start": "2026-05-29",
+              "end": "2026-06-12"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Peas",
+          "slug": "peas",
+          "url": "https://www.almanac.com/plant/peas",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Potatoes",
+          "slug": "potatoes",
+          "url": "https://www.almanac.com/plant/potatoes",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "Jul 27",
+              "start": "2026-07-27",
+              "end": "2026-07-27"
+            }
+          }
+        },
+        {
+          "name": "Pumpkins",
+          "slug": "pumpkins",
+          "url": "https://www.almanac.com/plant/pumpkins",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-May 1",
+              "start": "2026-04-17",
+              "end": "2026-05-01"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jun 22",
+              "start": "2026-06-22",
+              "end": "2026-06-22"
+            }
+          }
+        },
+        {
+          "name": "Radishes",
+          "slug": "radishes",
+          "url": "https://www.almanac.com/plant/radishes",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "Aug 10",
+              "start": "2026-08-10",
+              "end": "2026-08-10"
+            }
+          }
+        },
+        {
+          "name": "Rosemary",
+          "slug": "rosemary",
+          "url": "https://www.almanac.com/plant/rosemary",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 12-26",
+              "start": "2026-02-12",
+              "end": "2026-02-26"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Aug 10",
+              "start": "2026-08-10",
+              "end": "2026-08-10"
+            }
+          }
+        },
+        {
+          "name": "Sage",
+          "slug": "sage",
+          "url": "https://www.almanac.com/plant/sage",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Salad Burnet",
+          "slug": "salad-burnet",
+          "url": "https://www.almanac.com/plant/salad-burnet",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 8-Jun 5",
+              "start": "2026-05-08",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Salsify",
+          "slug": "salsify",
+          "url": "https://www.almanac.com/plant/salsify",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-24",
+              "start": "2026-04-10",
+              "end": "2026-04-24"
+            },
+            "lastPlanting": {
+              "label": "Jun 29",
+              "start": "2026-06-29",
+              "end": "2026-06-29"
+            }
+          }
+        },
+        {
+          "name": "Savory",
+          "slug": "savory",
+          "url": "https://www.almanac.com/plant/savory",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Spinach",
+          "slug": "spinach",
+          "url": "https://www.almanac.com/plant/spinach",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Sweet Corn",
+          "slug": "corn",
+          "url": "https://www.almanac.com/plant/corn",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Sweet Potatoes",
+          "slug": "sweet-potatoes",
+          "url": "https://www.almanac.com/plant/sweet-potatoes",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "label": "May 29-Jun 5",
+              "start": "2026-05-29",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jun 22",
+              "start": "2026-06-22",
+              "end": "2026-06-22"
+            }
+          }
+        },
+        {
+          "name": "Swiss Chard",
+          "slug": "swiss-chard",
+          "url": "https://www.almanac.com/plant/swiss-chard",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "Apr 24-May 8",
+              "start": "2026-04-24",
+              "end": "2026-05-08"
+            },
+            "directSow": {
+              "label": "Apr 17-May 8",
+              "start": "2026-04-17",
+              "end": "2026-05-08"
+            },
+            "lastPlanting": {
+              "label": "May 22",
+              "start": "2026-05-22",
+              "end": "2026-05-22"
+            }
+          }
+        },
+        {
+          "name": "Tarragon",
+          "slug": "tarragon",
+          "url": "https://www.almanac.com/plant/tarragon",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Thyme",
+          "slug": "thyme",
+          "url": "https://www.almanac.com/plant/thyme",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Feb 26-Mar 13",
+              "start": "2026-02-26",
+              "end": "2026-03-13"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 13",
+              "start": "2026-07-13",
+              "end": "2026-07-13"
+            }
+          }
+        },
+        {
+          "name": "Tomatillos",
+          "slug": "tomatillos",
+          "url": "https://www.almanac.com/plant/tomatillos",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 27-Apr 10",
+              "start": "2026-03-27",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 20",
+              "start": "2026-07-20",
+              "end": "2026-07-20"
+            }
+          }
+        },
+        {
+          "name": "Tomatoes",
+          "slug": "tomatoes",
+          "url": "https://www.almanac.com/plant/tomatoes",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-27",
+              "start": "2026-03-13",
+              "end": "2026-03-27"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "na": true
+            },
+            "lastPlanting": {
+              "label": "Jul 6",
+              "start": "2026-07-06",
+              "end": "2026-07-06"
+            }
+          }
+        },
+        {
+          "name": "Turmeric",
+          "slug": "turmeric-root",
+          "url": "https://www.almanac.com/plant/turmeric-root",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Mar 13-Apr 10",
+              "start": "2026-03-13",
+              "end": "2026-04-10"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "directSow": {
+              "label": "May 22-Jun 5",
+              "start": "2026-05-22",
+              "end": "2026-06-05"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Turnips",
+          "slug": "turnips",
+          "url": "https://www.almanac.com/plant/turnips",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "na": true
+            },
+            "transplantOutdoors": {
+              "na": true
+            },
+            "directSow": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "lastPlanting": {
+              "label": "Sep 7",
+              "start": "2026-09-07",
+              "end": "2026-09-07"
+            }
+          }
+        },
+        {
+          "name": "Watercress",
+          "slug": "watercress",
+          "url": "https://www.almanac.com/plant/watercress",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 10-17",
+              "start": "2026-04-10",
+              "end": "2026-04-17"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "directSow": {
+              "label": "May 8-22",
+              "start": "2026-05-08",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": null
+          }
+        },
+        {
+          "name": "Watermelons",
+          "slug": "watermelons",
+          "url": "https://www.almanac.com/plant/watermelons",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-May 1",
+              "start": "2026-04-17",
+              "end": "2026-05-01"
+            },
+            "transplantOutdoors": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 15-22",
+              "start": "2026-05-15",
+              "end": "2026-05-22"
+            },
+            "lastPlanting": {
+              "label": "Jul 6",
+              "start": "2026-07-06",
+              "end": "2026-07-06"
+            }
+          }
+        },
+        {
+          "name": "Winter Squash",
+          "slug": "winter-squash",
+          "url": "https://www.almanac.com/plant/winter-squash",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Jun 15",
+              "start": "2026-06-15",
+              "end": "2026-06-15"
+            }
+          }
+        },
+        {
+          "name": "Zucchini (Summer Squash)",
+          "slug": "zucchini",
+          "url": "https://www.almanac.com/plant/zucchini",
+          "hidden": false,
+          "dates": {
+            "startIndoors": {
+              "label": "Apr 17-24",
+              "start": "2026-04-17",
+              "end": "2026-04-24"
+            },
+            "transplantOutdoors": {
+              "label": "May 15-29",
+              "start": "2026-05-15",
+              "end": "2026-05-29"
+            },
+            "directSow": {
+              "label": "May 22-29",
+              "start": "2026-05-22",
+              "end": "2026-05-29"
+            },
+            "lastPlanting": {
+              "label": "Aug 3",
+              "start": "2026-08-03",
+              "end": "2026-08-03"
+            }
+          }
+        }
+      ]
+    },
+    "fall": {
+      "id": "seed-start-dates-table-fall",
+      "caption": "On average, your first fall frost occurs on October 5 (at MARSTON FLTR PLT, CO climate station).",
+      "columns": [
+        {
+          "key": "crop",
+          "label": "Crop",
+          "hint": null
+        },
+        {
+          "key": "startSeedsOutdoors",
+          "label": "Start Seeds Outdoors",
+          "hint": "When to plant seeds directly into the outdoor soil for a fall harvest."
+        },
+        {
+          "key": "transplant",
+          "label": "Transplant",
+          "hint": "When to transplant seedlings outdoors for a fall harvest."
+        },
+        {
+          "key": "daysToMaturity",
+          "label": "Average Days to Maturity",
+          "hint": "Typical number of days from planting to harvest."
+        },
+        {
+          "key": "frostTolerance",
+          "label": "Frost Tolerance",
+          "hint": "How well this crop tolerates frost conditions."
+        }
+      ],
+      "crops": [
+        {
+          "name": "Arugula",
+          "slug": "arugula",
+          "url": "https://www.almanac.com/plant/arugula",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 17-Sep 21",
+              "start": "2026-08-17",
+              "end": "2026-09-21"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "40",
+              "days": 40
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Beets",
+          "slug": "beets",
+          "url": "https://www.almanac.com/plant/beets",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 13-Aug 10",
+              "start": "2026-07-13",
+              "end": "2026-08-10"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "50",
+              "days": 50
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Bok Choy",
+          "slug": "bok-choy",
+          "url": "https://www.almanac.com/plant/bok-choy",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 27-Aug 17",
+              "start": "2026-07-27",
+              "end": "2026-08-17"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "50",
+              "days": 50
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Broccoli",
+          "slug": "broccoli",
+          "url": "https://www.almanac.com/plant/broccoli",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 6-13",
+              "start": "2026-07-06",
+              "end": "2026-07-13"
+            },
+            "transplant": {
+              "label": "Jul 27-Aug 10",
+              "start": "2026-07-27",
+              "end": "2026-08-10"
+            },
+            "daysToMaturity": {
+              "label": "60",
+              "days": 60
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Brussels Sprouts",
+          "slug": "brussels-sprouts",
+          "url": "https://www.almanac.com/plant/brussels-sprouts",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jun 15-29",
+              "start": "2026-06-15",
+              "end": "2026-06-29"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "100",
+              "days": 100
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Cabbage",
+          "slug": "cabbage",
+          "url": "https://www.almanac.com/plant/cabbage",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "na": true
+            },
+            "transplant": {
+              "label": "Jul 13-27",
+              "start": "2026-07-13",
+              "end": "2026-07-27"
+            },
+            "daysToMaturity": {
+              "label": "90",
+              "days": 90
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Carrots",
+          "slug": "carrots",
+          "url": "https://www.almanac.com/plant/carrots",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 20-27",
+              "start": "2026-07-20",
+              "end": "2026-07-27"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "70",
+              "days": 70
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Cauliflower",
+          "slug": "cauliflower",
+          "url": "https://www.almanac.com/plant/cauliflower",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jun 29-Jul 6",
+              "start": "2026-06-29",
+              "end": "2026-07-06"
+            },
+            "transplant": {
+              "label": "Jul 13-20",
+              "start": "2026-07-13",
+              "end": "2026-07-20"
+            },
+            "daysToMaturity": {
+              "label": "75",
+              "days": 75
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Chives",
+          "slug": "chives",
+          "url": "https://www.almanac.com/plant/chives",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 13-Aug 10",
+              "start": "2026-07-13",
+              "end": "2026-08-10"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "70",
+              "days": 70
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Collards",
+          "slug": "collards",
+          "url": "https://www.almanac.com/plant/collards",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jun 29-Jul 13",
+              "start": "2026-06-29",
+              "end": "2026-07-13"
+            },
+            "transplant": {
+              "label": "Aug 10-24",
+              "start": "2026-08-10",
+              "end": "2026-08-24"
+            },
+            "daysToMaturity": {
+              "label": "75",
+              "days": 75
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Fennel",
+          "slug": "fennel",
+          "url": "https://www.almanac.com/plant/fennel",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 6-20",
+              "start": "2026-07-06",
+              "end": "2026-07-20"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "80",
+              "days": 80
+            },
+            "frostTolerance": {
+              "label": "Tender"
+            }
+          }
+        },
+        {
+          "name": "Garlic",
+          "slug": "garlic",
+          "url": "https://www.almanac.com/plant/garlic",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Oct 19-Nov 1",
+              "start": "2026-10-19",
+              "end": "2026-11-01"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "120",
+              "days": 120
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Green Beans",
+          "slug": "beans",
+          "url": "https://www.almanac.com/plant/beans",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 20-Aug 3",
+              "start": "2026-07-20",
+              "end": "2026-08-03"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "55",
+              "days": 55
+            },
+            "frostTolerance": {
+              "label": "Tender"
+            }
+          }
+        },
+        {
+          "name": "Kale",
+          "slug": "kale",
+          "url": "https://www.almanac.com/plant/kale",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 27-Aug 10",
+              "start": "2026-07-27",
+              "end": "2026-08-10"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "60",
+              "days": 60
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Kohlrabi",
+          "slug": "kohlrabi",
+          "url": "https://www.almanac.com/plant/kohlrabi",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 10-Jul 27",
+              "start": "2026-08-10",
+              "end": "2026-07-27",
+              "inverted": true
+            },
+            "transplant": {
+              "label": "Aug 31-17",
+              "start": "2026-08-31",
+              "end": "2026-08-17",
+              "inverted": true
+            },
+            "daysToMaturity": {
+              "label": "45",
+              "days": 45
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Lettuce",
+          "slug": "lettuce",
+          "url": "https://www.almanac.com/plant/lettuce",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 10-24",
+              "start": "2026-08-10",
+              "end": "2026-08-24"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "60",
+              "days": 60
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Mustard Greens",
+          "slug": "mustard-greens",
+          "url": "https://www.almanac.com/plant/mustard-greens",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 3-24",
+              "start": "2026-08-03",
+              "end": "2026-08-24"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "45",
+              "days": 45
+            },
+            "frostTolerance": {
+              "label": "Tender"
+            }
+          }
+        },
+        {
+          "name": "Peas",
+          "slug": "peas",
+          "url": "https://www.almanac.com/plant/peas",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 27-Aug 10",
+              "start": "2026-07-27",
+              "end": "2026-08-10"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "55",
+              "days": 55
+            },
+            "frostTolerance": {
+              "label": "Tender"
+            }
+          }
+        },
+        {
+          "name": "Radishes",
+          "slug": "radishes",
+          "url": "https://www.almanac.com/plant/radishes",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 24-Sep 7",
+              "start": "2026-08-24",
+              "end": "2026-09-07"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "25",
+              "days": 25
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Spinach",
+          "slug": "spinach",
+          "url": "https://www.almanac.com/plant/spinach",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 17-Sep 7",
+              "start": "2026-08-17",
+              "end": "2026-09-07"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "30",
+              "days": 30
+            },
+            "frostTolerance": {
+              "label": "Frost-hardy"
+            }
+          }
+        },
+        {
+          "name": "Swiss Chard",
+          "slug": "swiss-chard",
+          "url": "https://www.almanac.com/plant/swiss-chard",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Jul 27-Aug 10",
+              "start": "2026-07-27",
+              "end": "2026-08-10"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "60",
+              "days": 60
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        },
+        {
+          "name": "Turnips",
+          "slug": "turnips",
+          "url": "https://www.almanac.com/plant/turnips",
+          "hidden": false,
+          "dates": {
+            "startSeedsOutdoors": {
+              "label": "Aug 3-17",
+              "start": "2026-08-03",
+              "end": "2026-08-17"
+            },
+            "transplant": {
+              "na": true
+            },
+            "daysToMaturity": {
+              "label": "50",
+              "days": 50
+            },
+            "frostTolerance": {
+              "label": "Frost-tolerant"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "stats": {
+    "crops": {
+      "spring": 73,
+      "fall": 22
+    },
+    "dateCells": 233,
+    "naCells": 81,
+    "invertedRanges": 2,
+    "hiddenRows": 1
+  },
+  "excluded": [
+    {
+      "table": "spring",
+      "name": "Obedient Plant",
+      "slug": "obedient-plant",
+      "reason": "ornamental (Physostegia virginiana), not edible; its 29-day indoor window was the entire January view"
+    }
+  ],
+  "warnings": [
+    {
+      "table": "fall",
+      "crop": "Kohlrabi",
+      "column": "startSeedsOutdoors",
+      "issue": "inverted-range",
+      "detail": "2026-08-10 -> 2026-07-27 (Aug 10-Jul 27); source publishes it backwards"
+    },
+    {
+      "table": "fall",
+      "crop": "Kohlrabi",
+      "column": "transplant",
+      "issue": "inverted-range",
+      "detail": "2026-08-31 -> 2026-08-17 (Aug 31-17); source publishes it backwards"
+    }
+  ]
+}

@@ -24,6 +24,12 @@
   justify-content: center;
   text-decoration: none;
   white-space: pre-line;
+
+  // Three-line labels would overflow the 64px square at the default size.
+  &.is-small {
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
 }
 
 .home > * {
