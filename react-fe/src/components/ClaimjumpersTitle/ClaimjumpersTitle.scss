@@ -99,6 +99,9 @@
 //   --claimjumpers-title-enter-duration  length of the wipe. Default 950ms; the
 //                                        versal's light-up is derived from it
 //                                        (starts at 40%, runs 45% of it).
+//   --claimjumpers-title-stretch         how tall the word is pulled on the first
+//                                        frame, as a `scaleY` factor. Default
+//                                        2.75; `1` turns the stretch off.
 //
 // Nothing here touches layout: opacity, filter, transform, clip-path and colour
 // only. That matters on the back cover, whose panel copy is measured to fit the
@@ -110,18 +113,35 @@
 // markup changes (a split `C` + `laimjumpers` would read the same to a crawler,
 // but there is no reason to pay for it).
 //
+// The stretch is a `scaleY` about `transform-origin: 50% 100%` — the bottom of
+// the heading's box, which sits just under the baseline. Growing *upward* is what
+// makes it affordable on the back cover: the panel is a scroll container
+// (`overflow: auto`) measured to within a pixel of its frame, and overflow at a
+// scroll container's start edge is clipped, not scrolled, so a word towering over
+// the controls cannot add a scrollbar. The squash on the way down shrinks toward
+// the same origin, so nothing is pushed past the end edge either. `2.75` is
+// measured rather than guessed: the ink stands 86px above that origin at 1440
+// (47px at 390) and the panel holds 251px (141px) of itself above it, so even the
+// tallest frame keeps its ink top *inside* the cream panel — 2.9 is where it would
+// start to leave it — and the ratios match at both sizes because the rest of the
+// panel scales with the same factor.
+//
 // Everything sits behind `prefers-reduced-motion: no-preference`, so a visitor
 // who asks their OS for less motion gets the finished drawing immediately
 // rather than a shortened version of it.
 @keyframes claimjumpers-title-ink-in {
   from {
     opacity: 0;
-    filter: blur(6px);
+    // Softened, not smeared: the filter is painted before the transform, so the
+    // stretch below multiplies this radius vertically. 6px was right for the wipe
+    // on its own; at 2.75x it turned the blackletter into a vertical blur, so the
+    // ink softness is dialled back to stay legible while the word is tall.
+    filter: blur(3px);
     // A hair above the resting spot. In a scroll container the overflow of a
     // transform at the *start* edge is simply clipped, whereas one that reaches
     // past the end edge can flash a scrollbar — which the back cover's panel,
     // already measured to within a pixel of its frame, would do.
-    transform: translateY(-0.1em);
+    transform: translateY(-0.1em) scaleY(var(--claimjumpers-title-stretch, 2.75));
     // Collapsed from the left, so the word is drawn rather than faded in. The
     // -35% / 135% margins are insurance, not measurement: at `normal` leading the
     // ink sits inside the line box, but a page is free to pin
@@ -129,8 +149,24 @@
     // baseline, so the clip is kept well clear of both.
     clip-path: polygon(0% -35%, 0% -35%, 0% 135%, 0% 135%);
   }
+  // Still most of the way up while the wipe draws its first third, so the tall
+  // word is a readable shape for a beat instead of one blurred frame. Opacity is
+  // still climbing here (it only lands at 45%), which is what keeps the stretch
+  // from reading as a collision with the controls it passes over.
+  22% {
+    transform: translateY(-0.07em)
+      scaleY(calc(var(--claimjumpers-title-stretch, 2.75) * 0.82));
+  }
   45% {
     opacity: 1;
+  }
+  // Down past the resting size and back: type that is dropped onto a line
+  // compresses before it settles.
+  62% {
+    transform: translateY(0) scaleY(0.9);
+  }
+  80% {
+    transform: translateY(0) scaleY(1.03);
   }
   to {
     opacity: 1;
@@ -170,6 +206,15 @@
 .claimjumpers-title--animate {
   --claimjumpers-title-enter-delay: 0ms;
   --claimjumpers-title-enter-duration: 950ms;
+  --claimjumpers-title-stretch: 2.75;
+
+  // The stretch grows, and the squash shrinks, about the baseline end of the box:
+  // the word is pulled up off its line and dropped back onto it, instead of
+  // ballooning evenly around its middle (which would also push ink below the
+  // panel's last pixel). Harmless for a page that never animates — with no
+  // transform there is no origin to read — but declared outside the media query so
+  // the two stay together.
+  transform-origin: 50% 100%;
 
   @media (prefers-reduced-motion: no-preference) {
     // `backwards`, not `both`: the first keyframe has to hold through the delay

@@ -3,6 +3,61 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-30 (b) — the masthead is pulled tall, then lands on its line
+
+- **Ask:** "can the font characters start off absurdly long/tall and shrink to
+  their normal size as well?"
+- **What it does now.** `claimjumpers-title-ink-in` also animates a `scaleY`
+  ramp: `2.75` on the first frame → `2.25` at 22% → `0.9` (squash past the resting
+  size) at 62% → `1.03` (rebound) at 80% → `none`. So the word is drawn left→right
+  *while* it is 2–3× tall, then compresses onto its baseline with a small bounce.
+  The peak is invisible-by-design at `opacity: 0`; the tall read that a viewer
+  actually sees is the 22% hold (`2.25`, ~130ms) at 0.73–0.97 opacity.
+- **It grows upward, about `transform-origin: 50% 100%`** (the bottom of the
+  heading's box, just under the baseline). Upward is what makes it affordable: the
+  panel is a scroll container (`overflow: auto`) measured to within a pixel, and
+  overflow at a scroll container's *start* edge is clipped rather than scrolled —
+  same reasoning the rise already used. The squash shrinks toward the same origin,
+  so nothing is ever pushed past the end edge either.
+- **`2.75` is measured, not guessed.** The ink stands **86px** above that origin at
+  1440 (desktop box `326..447`, resting ink top 360) with **251px** of panel above
+  it, and **47px / 141px** at 390 — so the ceiling is `251/86 = 2.9` (and
+  `141/47 = 3.0`), identical at both sizes because the whole panel scales by
+  `--scale`. `2.75` leaves ~12px of cream above the tallest frame. New knob:
+  `--claimjumpers-title-stretch` (`1` = off), documented with the other two in the
+  entrance block; the 22% hold is expressed as `calc(stretch * 0.82)` so it tracks.
+- **Start blur came down 6px → 3px.** `filter` is painted *before* the transform,
+  so the stretch multiplies the radius vertically (6px became a ~16px vertical
+  smear at 2.75×, turning the blackletter into mush). 3px keeps the tall glyphs
+  legible and still reads as ink. Frame-compared, not guessed.
+- **Verified by freezing the timeline** (new probe: pause every animation, scrub
+  `currentTime` to 220/300/380/429/520/647/720/809/900/980/1100ms, read the
+  composed matrix + panel metrics, screenshot each frame), in Chromium at
+  1440×900 and 390×844: panel `638/638/401/401` and `347/347/218/218` on **every**
+  frame, `h1.offsetHeight` pinned at 121/66, `scaleY` walking
+  `2.75 → 2.289 → 2.255 → 1.154 → 0.921 → 0.903 → 1.027 → 1`, and the transform
+  ending on `none`. Then an **unpaused** run sampled from the host every 12ms for
+  ~1s: one single panel box value, `scaleY 0.9 → 2.75`, document `1440x972`
+  throughout. Front cover and `/music` re-checked: `0` animations on the heading,
+  default `transform-origin`, no `--claimjumpers-title-stretch` inheriting.
+- **Traps:** (1) a **headless tab throttles `requestAnimationFrame`**, so a
+  page-side sampling loop never ticks — `Runtime.evaluate` with `awaitPromise`
+  returns `{}` and the "live" numbers look empty; sample from the host instead.
+  (2) Scrub past the end (1170ms) and `getAnimations()[0]` is `undefined`: the
+  entrance fills `backwards` only, so a finished animation is dropped — expected,
+  but it breaks a naive probe.
+- **Known trade-off, deliberately accepted:** the tall word passes over the
+  controls row (they sit 7px above the heading) during the first ~200ms. It is
+  translucent for most of that, the panel's own choreography is untouched, and the
+  magnitude is one knob away (`--claimjumpers-title-stretch: 1.8` keeps the ink
+  below the buttons, `1` disables the stretch).
+- **Files:** `react-fe/src/components/ClaimjumpersTitle/ClaimjumpersTitle.scss`
+  only (plus these memory-bank notes). `npm run build` green; production CSS
+  carries `translateY(-.1em) scaleY(var(--claimjumpers-title-stretch, 2.75))`,
+  `scaleY(calc(var(--claimjumpers-title-stretch, 2.75) * .82))`,
+  `.9` / `1.03` / `none` and `transform-origin:50% 100%`; `tsc --noEmit` and
+  `eslint src/components/ClaimjumpersTitle src/Pages/Claimjumpers` clean.
+
 ## Session snapshot — 2026-10-30 — the back cover is drawn, not pasted on
 
 - **Ask:** "add a page-load animation to `/claimjumpers-back`, especially for
