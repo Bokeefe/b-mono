@@ -3,6 +3,58 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-30 (c) — the Home wall is sized to the viewport
+
+- **Ask:** "all the buttons on the Home landing page no longer fit that well — make
+  them all nicely fit in the screen for mobile/desktop."
+- **What was wrong.** The seven links were one fixed column of 64px squares with a
+  **106px pitch** (`margin: 8px` on top of the old `gap: 20px`) = **722px tall**,
+  vertically centred in `height: 93vh`. Measured in Chromium: fits at 1440×900 and
+  768×1024, but the column starts at **y = 63 above the viewport at 360×640**
+  (first button `top: -63`), `-35` at 1280×700, `-4` at 1024×768 — because
+  `justify-content: center` splits the overflow across both ends, and the half
+  above `y = 0` is unreachable. Also found in passing: `Resume.scss`'s
+  `.button-container { margin-bottom: 2rem }` is in the same eagerly-imported
+  bundle and was knocking the column off centre, and `.mobile-btn`'s styles only
+  reach Home because `MobileButton.scss` happens to be pulled in by SloMo.
+- **The fix is one budget, not a breakpoint ladder.** `.home` is a grid with
+  `place-content: center` inside `min-height: 100svh` (fallback `100vh`), and
+  `--home-btn` is `min(width budget, height budget, 128px)`, where each budget is
+  `(100vw|100svh - 2*pad - (cols-1)*gap) / cols|rows`. Every breakpoint therefore
+  *provably* fits instead of being tuned; the arrangement is the only thing the
+  media queries change: **2×4 → 3×3 (≥34rem) → 4×2 (≥56rem) → 7×1 (≥72rem)**.
+  Buttons are `box-sizing: border-box` with `margin: 0`, so `--home-btn` is the
+  outer size and the 6px 3D borders stop adding to it.
+- **Sizes measured, not guessed:** 128px squares on anything tall enough, 112px at
+  667×375, **95px at 568×320**, **109px at 320×480** — i.e. `min()` picks the
+  height budget exactly where the old layout overflowed. No clipping anywhere
+  (`scrollWidth/Height == clientWidth/Height` on every button, so the three-line
+  "denver planting calendar" still fits).
+- **A wrapping flex row, not a grid**, with its width pinned to exactly
+  `cols` columns (+2px slack against layout rounding) — that is what lets the
+  short last row centre itself: "about" sits under the middle of the 2-wide
+  arrangement instead of hanging left, and the 4×2 case reads as a 4+3 pyramid.
+- **Labels are optically centred by mirroring the borders.** `border-box` puts the
+  6px bottom/right borders *inside* the square, which pushed every label 3px up
+  and left (the old content-box version didn't); `padding: 10px 4px 4px 10px`
+  cancels it — probe reads `skew 0.00/0.00` on all seven.
+- **The entrance was inflating the document.** `slideInUp` starts at
+  `translateY(90vw)`, transforms count toward *scrollable* overflow, so the
+  document was **1818px tall on a 900px screen for the first second** (scrollbar
+  flash, page scrollable mid-animation). `.home { overflow: hidden }` fixes it —
+  the host-sampled doc height is now flat (`916/900` at every offset) and the
+  buttons rise out of the screen's bottom edge instead.
+- **Verified** in Chromium (12 viewports, 320×480 → 1920×1080, dev *and* the
+  production `vite preview` build) and cross-checked in **Firefox 159 via
+  WebDriver BiDi** (390×844, 320×568, 568×320, 1024×768, 1440×900 — identical
+  sizes, rows and `skew 0.00/0.00`). `npm run build` green (tsc + vite +
+  prerender: `/` still prerenders).
+- **Left alone on purpose:** the document is still 16px taller than the viewport
+  on Home — that is `body { min-height: 100vh }` plus the UA 8px body margin, i.e.
+  it pre-dates this work and affects every page, so it was not "fixed" here.
+- **Files:** `react-fe/src/components/Home/Home.scss` only. Knobs if the desktop
+  shelf should read chunkier: `--home-max` (128px), `--home-gap`, `--home-pad`.
+
 ## Session snapshot — 2026-10-30 (b) — the masthead is pulled tall, then lands on its line
 
 - **Ask:** "can the font characters start off absurdly long/tall and shrink to

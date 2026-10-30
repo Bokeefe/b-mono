@@ -1,37 +1,128 @@
+// The landing page is a wall of buttons and nothing else, so its geometry comes
+// from the viewport rather than from a document: the grid is centred in the
+// small viewport and the squares are sized from whichever of width or height
+// runs out first. That `min()` is what guarantees all seven links fit — the old
+// fixed 64px column was 722px tall, so on any screen shorter than ~770px it
+// overflowed *both* the top (which nothing can scroll to) and the bottom.
 .home {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 93vh;
-  margin: auto;
+  // fallback first, then the small viewport — the one a phone shows while its
+  // URL bar is still up. Sized to `100vh` (the *large* viewport) the bottom row
+  // would sit behind that chrome.
+  min-height: 100vh;
+  min-height: 100svh;
+  box-sizing: border-box; // so the padding isn't added on top of 100svh
+  display: grid;
+  place-content: center;
+  padding: var(--home-pad);
 
-  > div {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  // The entrance starts the buttons `translateY(90vw)` below their resting spot,
+  // and a transform counts toward *scrollable* overflow: unclipped, the document
+  // is 1818px tall on a 900px screen for the first second, which flashes a
+  // scrollbar and lets the page be scrolled mid-animation. Clipping here also
+  // makes the buttons rise out of the screen's bottom edge rather than from a
+  // position nobody can see.
+  overflow: hidden;
+
+  --home-pad: clamp(10px, 3vmin, 40px);
+  --home-gap: clamp(8px, 1.8vmin, 22px);
+  --home-max: 128px;
+
+  // How many across/down the seven links sit at this width (see the breakpoints
+  // at the bottom). These two numbers are the whole description of the
+  // arrangement, so `cols * rows >= links` is what stops a row from wrapping
+  // into a height the budget below didn't account for.
+  --home-cols: 2;
+  --home-rows: 4;
+
+  // One square, as large as both the width and the height allow; `--home-max`
+  // stops a desktop from stretching them into panels.
+  --home-btn: min(
+    calc(
+      (100vw - 2 * var(--home-pad) - (var(--home-cols) - 1) * var(--home-gap)) /
+        var(--home-cols)
+    ),
+    calc(
+      (100svh - 2 * var(--home-pad) - (var(--home-rows) - 1) * var(--home-gap)) /
+        var(--home-rows)
+    ),
+    var(--home-max)
+  );
+
+  // Two across on a phone, then wider as there is room to be wider: 2x4, 3x3,
+  // 4x2, and finally one shelf of seven.
+  @media (min-width: 34rem) {
+    --home-cols: 3;
+    --home-rows: 3;
+  }
+  @media (min-width: 56rem) {
+    --home-cols: 4;
+    --home-rows: 2;
+  }
+  @media (min-width: 72rem) {
+    --home-cols: 7;
+    --home-rows: 1;
   }
 }
 
 // The `<h1>` + description live in `.home > .sr-only` (App.scss) so the landing
 // page renders as buttons only while crawlers/screen readers still get them.
 
+// `Resume.scss` styles `.button-container` too (it is in the same bundle — the
+// routes are imported eagerly), and its `margin-bottom: 2rem` was enough to
+// knock this wall off centre, hence the explicit reset.
+//
+// A wrapping flex row rather than a grid so a short last row centres itself
+// (seven links leave one alone under a two-wide arrangement). The width is
+// pinned to exactly `--home-cols` columns so the wrap happens where the height
+// budget above assumed it will; the extra 2px is slack against layout rounding
+// splitting the row early, and `justify-content` keeps it centred either way.
+.home .button-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--home-gap);
+  margin: 0;
+  width: calc(
+    var(--home-cols) * var(--home-btn) + (var(--home-cols) - 1) * var(--home-gap) +
+      2px
+  );
+}
+
 // The navigation is `<Link>`s styled as buttons, so they need the box model
 // that `<button>` used to provide for free.
 .home .mobile-btn {
+  // The shared `.mobile-btn` is a fixed 64px square carrying an 8px margin and
+  // 6px borders that land *outside* it. Here the size comes from the budget
+  // above and the borders have to be inside it, or a row would be 6px wider and
+  // 6px taller than the space it was measured against.
+  box-sizing: border-box;
+  width: var(--home-btn);
+  height: var(--home-btn);
+  flex: none; // never let the pinned container shrink a column
+  margin: 0; // the flex `gap` replaces it
+
+  // Those two borders are inside the square now, so the padding mirrors them
+  // (6 + 4 = 10 on the top/left) — otherwise every label sits 3px high and left
+  // of the button's visual centre, which the old content-box version didn't.
+  padding: 10px 4px 4px 10px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   text-decoration: none;
+  line-height: 1.15;
   white-space: pre-line;
 
-  // Three-line labels would overflow the 64px square at the default size.
+  // Labels scale with the square, so "music" and "denver planting calendar" keep
+  // the same share of their button at 95px (a small landscape phone) and 128px
+  // (a desktop).
+  font-size: clamp(0.8rem, calc(var(--home-btn) * 0.14), 1.15rem);
+
+  // A third line of text ("denver / planting / calendar") is a step smaller than
+  // the rest — in `em`, so it stays proportional to the fluid size above.
   &.is-small {
-    font-size: 0.7rem;
+    font-size: 0.75em;
     line-height: 1.2;
   }
-}
-
-.home > * {
-  display: flex;
 }
