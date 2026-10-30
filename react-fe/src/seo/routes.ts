@@ -101,6 +101,15 @@ export const ROUTES: RouteSeo[] = [
     priority: "0.7",
   },
   {
+    path: "/recipes",
+    title: "Recipes from the garden — cook what you already have",
+    description:
+      "Tick off what is in the house and see which recipes you can cook right now, plus the ones that are one ingredient short. The garden list comes from the Denver planting calendar.",
+    render: "shell",
+    changefreq: "monthly",
+    priority: "0.6",
+  },
+  {
     path: "/slomo",
     title: "Slo Mo World — chopped and screwed playlist generator",
     description:

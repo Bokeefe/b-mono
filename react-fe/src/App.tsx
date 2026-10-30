@@ -12,6 +12,7 @@ import Lobby from "./Pages/Lobby/Lobby";
 import TextCorpse from "./Pages/TextCorpse/TextCorpse.component";
 import Music from "./Pages/Music/Music.component";
 import PlantingCalendar from "./Pages/PlantingCalendar/PlantingCalendar.component";
+import Recipes from "./Pages/Recipes/Recipes.component";
 import SloMo from "./Pages/SloMo/SloMo.component";
 import Backup from "./Pages/Backup/Backup.component";
 import Claimjumpers from "./Pages/Claimjumpers/Claimjumpers.component";
@@ -39,6 +40,7 @@ export function AppRoutes() {
         <Route path="/text-corpse/:roomId" element={<TextCorpse />} />
         <Route path="/music" element={<Music />} />
         <Route path="/planting-calendar" element={<PlantingCalendar />} />
+        <Route path="/recipes" element={<Recipes />} />
         <Route path="/slomo" element={<SloMo />} />
         <Route path="/claimjumpers" element={<Claimjumpers />} />
         {/* Scratch page: URL-only, not linked from anywhere. */}

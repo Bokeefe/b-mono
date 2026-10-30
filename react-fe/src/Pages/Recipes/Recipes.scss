@@ -1,0 +1,531 @@
+// Recipes page (`/recipes`).
+//
+// Every selector is `rc-`-prefixed (or scoped under `.recipes`) and nothing bare
+// is styled: Vite bundles page CSS globally, so a stray `h2 { … }` here would
+// repaint the whole site.
+
+.recipes {
+  --rc-card: var(--light-beige);
+  --rc-ink: var(--dark-grey);
+  --rc-line: rgba(51, 51, 51, 0.14);
+  --rc-ready: var(--olive);
+  --rc-swap: var(--brown);
+  --rc-missing: var(--art-red);
+  --rc-ticked: color-mix(in srgb, var(--green) 30%, white);
+
+  box-sizing: border-box;
+  max-width: 1180px;
+  margin: 0.5rem auto 3rem;
+  padding: 1.1rem 0.85rem 1.4rem;
+  background: var(--rc-card);
+  color: var(--rc-ink);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  font-family: "Quicksand", sans-serif;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  // Zero specificity, so component rules still win (see PlantingCalendar.scss).
+  :where(a) {
+    color: inherit;
+  }
+}
+
+.rc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.rc-head {
+  text-align: center;
+  padding-bottom: 0.5rem;
+
+  h1 {
+    margin: 0;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: clamp(1.6rem, 5.5vw, 2.3rem);
+    font-weight: normal;
+    letter-spacing: 0.02em;
+  }
+}
+
+.rc-sub {
+  max-width: 46rem;
+  margin: 0.35rem auto 0;
+  font-family: "Oxygen", monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  opacity: 0.78;
+}
+
+.rc-note,
+.rc-count {
+  font-family: "Oxygen", monospace;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  opacity: 0.78;
+  margin: 0.3rem 0;
+}
+
+.rc-note {
+  padding: 0.9rem 0.6rem;
+  text-align: center;
+
+  &--error {
+    color: var(--rc-missing);
+    opacity: 1;
+  }
+}
+
+.rc-body {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  margin-top: 0.6rem;
+
+  @media (max-width: 860px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rc-pantry {
+  border: 1px solid var(--rc-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  padding: 0.7rem 0.7rem 0.8rem;
+
+  // The pantry is the control panel, so it follows the scroll on desktop and
+  // becomes a normal block once the columns stack.
+  @media (min-width: 861px) {
+    position: sticky;
+    top: 0.5rem;
+    max-height: calc(100vh - 1.5rem);
+    overflow-y: auto;
+  }
+}
+
+.rc-pantry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+
+  h2 {
+    margin: 0;
+    flex: 1;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: 1.15rem;
+    font-weight: normal;
+  }
+}
+
+.rc-clear {
+  font-family: "Oxygen", monospace;
+  font-size: 0.7rem;
+  text-transform: lowercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--rc-line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.rc-search {
+  display: block;
+  margin: 0.55rem 0 0.7rem;
+
+  input {
+    width: 100%;
+    padding: 0.42rem 0.6rem;
+    font-family: "Oxygen", monospace;
+    font-size: 0.75rem;
+    color: inherit;
+    border: 1px solid var(--rc-line);
+    border-radius: 8px;
+    background: var(--rc-card);
+
+    &:focus-visible {
+      outline: 2px solid var(--lavender);
+      outline-offset: 1px;
+    }
+  }
+}
+
+.rc-group {
+  margin-bottom: 0.85rem;
+
+  h3 {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: "Oxygen", monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+  }
+}
+
+.rc-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+
+  h3 {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/**
+ * "tick all 38" — the one-press answer for the fridge & cupboard.
+ *
+ * Quieter than `clear`: dashed until you reach for it, and it never makes the
+ * heading taller than the garden heading beside it.
+ */
+.rc-bulk {
+  flex: none;
+  font-family: "Oxygen", monospace;
+  font-size: 0.64rem;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  padding: 0.14rem 0.52rem;
+  border-radius: 999px;
+  border: 1px dashed var(--rc-line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    border-style: solid;
+  }
+}
+
+.rc-group-count {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.65;
+}
+
+.rc-group-blurb {
+  margin: 0.15rem 0 0.4rem;
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  opacity: 0.6;
+}
+
+.rc-ings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.3rem;
+
+  // 71 garden crops is taller than the results beside it, so the garden (and
+  // only the garden) scrolls inside the panel.
+  .rc-group--garden & {
+    max-height: 13rem;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
+}
+
+.rc-ing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.16rem 0.45rem 0.16rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    accent-color: var(--green);
+    margin: 0;
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  &--ticked {
+    background: var(--rc-ticked);
+    border-color: color-mix(in srgb, var(--green) 55%, white);
+  }
+}
+
+.rc-staples {
+  margin: 0.4rem 0 0;
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  opacity: 0.6;
+}
+
+.rc-results {
+  min-width: 0;
+}
+
+.rc-results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin-bottom: 0.35rem;
+
+  h2 {
+    margin: 0;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: 1.15rem;
+    font-weight: normal;
+  }
+}
+
+.rc-cards {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+// The browse list under the gate. Separated so a card can never be mistaken for
+// something the page is promising.
+.rc-more {
+  margin-top: 1.1rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--rc-line);
+
+  h3 {
+    margin: 0;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: 1.05rem;
+    font-weight: normal;
+    letter-spacing: 0.01em;
+  }
+}
+
+.rc-more-blurb {
+  margin: 0.1rem 0 0;
+  font-family: "Oxygen", monospace;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  opacity: 0.66;
+}
+
+.rc-card {
+  border: 1px solid var(--rc-line);
+  border-left: 4px solid var(--pink);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0.7rem 0.8rem 0.8rem;
+
+  &--ready {
+    border-left-color: var(--rc-ready);
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  // Browse list: still readable, visibly not the promise.
+  &--far {
+    border-left-color: color-mix(in srgb, var(--pink) 55%, white);
+    background: rgba(255, 255, 255, 0.35);
+
+    .rc-blurb {
+      opacity: 0.85;
+    }
+  }
+}
+
+.rc-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.6rem;
+
+  h3 {
+    margin: 0;
+    flex: 1;
+    font-family: "Caesar", "Quicksand", sans-serif;
+    font-size: 1.05rem;
+    font-weight: normal;
+    letter-spacing: 0.01em;
+  }
+}
+
+.rc-badge {
+  font-family: "Oxygen", monospace;
+  font-size: 0.66rem;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--rc-missing);
+  border: 1px solid color-mix(in srgb, var(--rc-missing) 45%, white);
+  background: color-mix(in srgb, var(--rc-missing) 10%, white);
+
+  &--ready {
+    color: #4a5236;
+    border-color: color-mix(in srgb, var(--rc-ready) 55%, white);
+    background: color-mix(in srgb, var(--rc-ready) 25%, white);
+  }
+}
+
+.rc-blurb {
+  margin: 0.25rem 0 0.2rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.rc-meta {
+  margin: 0;
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  opacity: 0.6;
+}
+
+.rc-reqs {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.rc-req {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+
+  &--missing {
+    color: var(--rc-missing);
+  }
+}
+
+.rc-mark {
+  width: 1rem;
+  flex: 0 0 auto;
+  font-family: "Oxygen", monospace;
+  font-size: 0.78rem;
+
+  .rc-req--have & {
+    color: var(--rc-ready);
+  }
+
+  .rc-req--swap & {
+    color: var(--rc-swap);
+  }
+}
+
+.rc-req-note {
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  color: var(--rc-swap);
+  opacity: 0.9;
+}
+
+.rc-also {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-family: "Oxygen", monospace;
+  font-size: 0.68rem;
+  opacity: 0.8;
+
+  &--seasoning {
+    opacity: 0.6;
+  }
+
+  // Why this card is high on the page: the garden crops it eats, named.
+  &--garden {
+    opacity: 1;
+
+    .rc-also-label {
+      opacity: 1;
+      color: color-mix(in srgb, var(--rc-ready) 65%, black);
+    }
+  }
+}
+
+.rc-also-label {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.62rem;
+  opacity: 0.75;
+}
+
+.rc-chip {
+  padding: 0.06rem 0.4rem;
+  border-radius: 999px;
+  border: 1px dashed var(--rc-line);
+  opacity: 0.55;
+
+  &--have {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--rc-ready) 45%, white);
+    background: color-mix(in srgb, var(--rc-ready) 18%, white);
+    opacity: 1;
+  }
+}
+
+.rc-steps {
+  margin: 0.55rem 0 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.22rem;
+  font-family: "Oxygen", monospace;
+  font-size: 0.74rem;
+  line-height: 1.55;
+
+  li::marker {
+    color: var(--rc-ready);
+    font-size: 0.7rem;
+  }
+}
+
+.rc-foot {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rc-line);
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-family: "Oxygen", monospace;
+    font-size: 0.68rem;
+    line-height: 1.6;
+    opacity: 0.62;
+  }
+}

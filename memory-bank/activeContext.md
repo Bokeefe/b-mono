@@ -3,6 +3,442 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-30 (j) — recipes: 20 from bonappetit.com
+
+- **Ask:** "please take recipes from here too: https://www.bonappetit.com/recipes"
+- **Read the site instead of guessing at it.** The recipes index page (2.8MB,
+  no paywall on the HTML) links 119 recipe pages, and each recipe page carries a
+  `@type: Recipe` JSON-LD block — name, full `recipeIngredient` list, yield,
+  time. A one-off script (`/tmp/ba-harvest.mjs`) fetched all 119 and wrote
+  `/tmp/ba-recipes.json`; a second script (`/tmp/ba-fit.mjs`) matched every
+  ingredient against the pantry with a keyword map, so the shortlist was those
+  dishes whose **main** ingredient is already a pantry id. That is why the
+  titles are the magazine's own spellings (`Frico'ed Brussels sprouts`,
+  `BA's best mashed potatoes`, `Orecchiette with fresh corn alfredo`) — 47 of
+  the 119 were pasta, bread, dessert or meat-centerpiece pages we cannot cook
+  and did not take.
+- **Added 20 — 128 → 148** as a new `// bon appétit` section at the end of
+  `recipes.catalog.ts`: Perfect pasta primavera, Creamy pumpkin pasta,
+  Orecchiette with fresh corn alfredo, Pasta with fresh tomato sauce (no-cook),
+  Pasta alla norma, BA's best mashed potatoes, Spiced brown butter tomatoes,
+  Quick-pickled red onions, Frico'ed Brussels sprouts, Tiny tomato galettes,
+  Cheddar biscuits, Pumpkin enchiladas with black beans, Toasted orzo chicken
+  soup, Chicken pozole verde, Watermelon som tam, Chili crisp chicken, Spicy
+  chicken lettuce wraps, Green goddess harvest salad, Sheet-pan chicken souvlaki,
+  Pumpkin chili.
+- **The pantry did not grow again: 109 ingredients before and after, zero new
+  ids.** The section header lists what each dish cost: yogurt → mayonnaise
+  (chili crisp chicken, green goddess), cream → milk (primavera, pumpkin pasta),
+  hominy → corn (pozole), lime → lemon (som tam, pozole — `lemon` already
+  aliases lime), fish sauce → soy (som tam, lettuce wraps), beef → turkey
+  (pumpkin chili), Old Bay → the spices we stock (biscuits). Olives dropped from
+  the souvlaki. Everything with anchovies, pancetta, mussels, salmon, yeast or
+  chocolate was refused rather than approximated.
+- **One test changed, deliberately.** `recipes.match.spec.ts` "still answers a
+  single tick — the cabbage case" asserted that every `featured` entry has the
+  ticked ingredient in `match.required`. That only held while the browse window
+  was smaller than the number of cabbage-required recipes: with the catalogue at
+  148 there are now 8 of those and the 10-card window reaches recipes that name
+  cabbage as an *optional* extra (`Watermelon som tam`, `Chicken pozole verde`),
+  which the ranking counts as "uses your picks" (`fromPantry` includes optional
+  ids). The assertion now checks `required` **or** `optional`, with the comment
+  saying so. Everything else in both specs was left alone; no new ids, no
+  loosened id checks.
+- **Verified:** `npx jest src/recipes` → **31 tests** green (the 5 recipe-suite
+  specs; the three `@nestjs/testing` specs still cannot load on this machine's
+  Node 24.4.0 — `require(esm)`, unrelated and pre-existing), `tsc --noEmit`
+  clean, `eslint src/recipes` clean, `prettier --write` applied, `nest build`
+  green, API rebuilt and restarted. Live `:4171`: pantry 109 (71 garden +
+  38 kitchen), `counts.catalog` **148**; every chip ticked → **148/148
+  cookable**; fridge only → **11 ready / 40 one away** (was 10 / 37) with cards
+  `Mac and cheese`, `Crepes`, `French toast`, … plus **`Quick-pickled red
+  onions`** and **`Cheddar biscuits`**; `?have=cabbage` → 0 ready / 2 one away,
+  browse **10 of the 12** (`Coleslaw`, `Chicken tacos`, `Stuffed cabbage`,
+  `Hot and sour soup`, `Gado-gado`, `Russian cabbage borscht`, **`Chili crisp
+  chicken`**, `Ribollita`, **`Watermelon som tam`**, **`Chicken pozole
+  verde`**); all 20 new dishes COOKABLE with the 38 kitchen items + their own
+  crops.
+- **The page was finally re-mounted in jsdom** (the caveat from snapshot (i)):
+  real bundle via `esbuild __mount.tsx --bundle --loader:.scss=empty`, jsdom
+  window with a fetch proxy at `:4171`. Rendered: 109 checkboxes, groups
+  `From the garden 0 of 71` / `Fridge & cupboard 0 of 38`, bulk button
+  `tick all 38 — assume everything in Fridge & cupboard`; cabbage →
+  `0 ready to cook · 2 one ingredient away — out of 148 recipes` and
+  `10 of the 12 recipes that use your picks need two or more things`; tick all
+  → `14 ready to cook · 40 one ingredient away` (cabbage still ticked);
+  untick-all then cabbage off → storage `""`; `Anise Hyssop` →
+  `nothing in 148 recipes uses any of that yet`; six crops →
+  `2 ready to cook · 5 one ingredient away`, `12 of the 79 …`, first browse
+  card `Ribollita`; and a `Pasta alla norma` card renders blurb, `45 min · 4
+  people · dinner`, `from the garden — Tomatoes, Garlic and Oregano`, per-req
+  ✓/✗ marks, optional chips and `plus olive oil, red pepper flakes, black pepper
+  and salt`. Harness deleted afterwards; nothing left in the tree.
+- **Docs:** Recipes README "Where the recipes come from" is now three bullets
+  (Blue Zones / Moosewood / Bon Appétit) with the Bon Appétit swap list and the
+  structured-data note, and every `128` moved to `148` (data-flow diagram and
+  the three live-page lines, which now read `0 ready to cook · 2 one ingredient
+  away — out of 148 recipes`, `10 of the 12 recipes…`, `2 ready to cook · 5 one
+  ingredient away` / `12 of the 79`, `11 ready to cook · 40 one ingredient
+  away — out of 148 recipes` with eleven `cook it now` cards). `progress.md`
+  feature row + four decision-table rows; this snapshot.
+- **Not done:** no commit yet; nobody has read the new cards at 320px, and the
+  blurbs here run longer than the Moosewood ones.
+
+## Session snapshot — 2026-10-30 (i) — recipes: 20 from the Moosewood Cookbook
+
+- **Ask:** "can you add recipes from the moosewood cookbook?"
+- **Checked the names before writing them.** Candidates were run as exact
+  phrases through the Internet Archive's full-text index
+  (`https://openlibrary.org/search/inside.json?q="<dish>" moosewood`) and kept
+  only when a hit came back in one of the book's own scans
+  (`moosewoodcookboo00katz`, `…_0`, `…_2` = 1977 and its revisions,
+  `newmoosewoodcook0000katz` = 2000 edition). The index pages leak page numbers,
+  which gave real provenance for the comments: Gypsy Soup 5, Minestrone 7,
+  Onion Soup 13-14, Summer Vegetable Soup 15, Gingered Carrot Soup 22, Herbed
+  Carrot Soup 23, Russian Cabbage Borscht 27, Gazpacho 31, Crepes 45, Multi-Bean
+  Salad 54, Italian Antipasto 60, Vegetable-Walnut Pâté 90, Humus 91,
+  Gado-Gado 104, Mushroom Moussaka 116, Tostadas 144-45, Enchiladas 156-57.
+  Rejected because the phrase never appeared: Tamale Pie, Baba Ganoush, Nasi
+  Goreng, French Onion Soup, Corn Chowder, Zucchini-Feta Pie, Three-Bean Salad,
+  Tofu Burgers — several of those are real dishes, just not this book's.
+- **Added 20 — 108 → 128** as a new `// moosewood` section at the end of
+  `recipes.catalog.ts`: Gypsy soup, Russian cabbage borscht, Gingered carrot
+  soup, Black bean soup, Hot and sour soup, Gazpacho, Onion soup, Spinach-rice
+  casserole, Cauliflower-cheese pie, Eggplant enchiladas, Gado-gado, Stuffed
+  cabbage, Baked beans, Tostadas, Potato salad, Multi-bean salad, Italian
+  antipasto, Green tomato chutney, Cauliflower Marranca, Crepes.
+- **The pantry did not grow: 109 ingredients before and after, zero new ids.**
+  The book's unstocked things were dropped or stood in for — peanuts for the
+  almonds in the eggplant enchiladas, honey for molasses in the baked beans,
+  vinegar where it pours sherry in the black bean soup, milk for the sour-cream
+  swirl, mushrooms out of the hot-and-sour soup, olives out of the Marranca.
+  Tabouli, the walnut pâté and mushroom moussaka were left out altogether (no
+  bulgur / no walnuts / no mushrooms), and `couscous-salad` already covers
+  tabouli's slot. The section header states the rule, the same one the Blue
+  Zones section uses, so the next import has something to obey.
+- **Written as adaptations, not transcriptions.** Our own words, the book's
+  title for the dish, page number in a comment above the entry; no headnote,
+  no anecdote, no lifted phrasing.
+- **No schema change:** payload shape untouched, `schemaVersion` stays **4**.
+- **Verified:** `npx jest src/recipes` → **31 tests** green (id validity, garden
+  coverage, ≥3 recipes per bulk crop, no-staple rule, over 128), `tsc --noEmit`
+  clean, `prettier --write` applied (long `uses`/`optional` arrays reflowed by
+  hand first), `nest build` green, API rebuilt and restarted. Live `:4171`:
+  `counts.catalog` **128**; every chip ticked → **128/128 cookable**; full
+  kitchen (38 fridge items, no crops) → **10 / 37** out of 128 (was 8 / 32),
+  cards `Mac and cheese`, **`Crepes`**, `French toast`, …; `?have=cabbage` →
+  promise unchanged (`Buttered cabbage`, `Charred cabbage`), browse
+  **7 of 9** (`Coleslaw`, `Chicken tacos`, **`Stuffed cabbage`**, **`Hot and
+  sour soup`**, **`Gado-gado`**, **`Russian cabbage borscht`**, `Ribollita`);
+  fridge + `bok-choy` still opens the browse with `Bok choy with garlic`;
+  `anise-hyssop` still says `nothing in 128 recipes uses any of that yet`;
+  crops scenario unchanged at `2 / 4` with `Ribollita` leading the browse.
+  Spot-checked COOKABLE per dish with the fridge ticked + its own crops:
+  Gypsy soup, borscht, gingered carrot, black bean, hot and sour, gazpacho,
+  spinach-rice, cauliflower-cheese pie, eggplant enchiladas, gado-gado, stuffed
+  cabbage, baked beans, tostadas, potato salad, multi-bean salad, antipasto,
+  chutney, Marranca, crepes — all green.
+- **Docs:** `react-fe/src/Pages/Recipes/README.md` "Where the recipes come from"
+  became two bullets (Blue Zones / Moosewood) + the swap list + the
+  verification note, and every `108` moved to `128` (data-flow diagram, the two
+  live page lines, which are now `0 ready to cook · 2 one ingredient away — out
+  of 128 recipes`, `7 of the 9 recipes…`, `10 ready to cook · 37 one ingredient
+  away — out of 128 recipes`, ten `cook it now` cards starting `Mac and cheese`,
+  `Crepes`). `progress.md` row + two decision-table rows; this snapshot.
+- **Not done:** the page has not been re-mounted in jsdom since the import (the
+  numbers above came from the API plus the same `recipes.utils.ts` bundling
+  trick), and nobody has read the longer blurbs on a 320px screen.
+
+## Session snapshot — 2026-10-30 (h) — recipes: 20 more, adapted from Blue Zones
+
+- **Ask:** "https://www.bluezones.com/recipes/ can you add recipes from here? If
+  they have exotic ingredients it's okay to add the recipe if the main ingredient
+  is something we have in our garden/cupboard list but we only care about the
+  existing ingredients list we have."
+- **Added 20 recipes — 88 → 108** in `recipes.catalog.ts`, as a new
+  `// blue zones` section at the end of the file, each entry with its source page
+  in a one-line comment above it: Ribollita, Tuscan beans, Spicy eggplant with
+  garlic, Greek lemon potatoes, Roasted potatoes and green beans, Warm Brussels
+  sprouts salad, Fennel/tomato/basil salad, Sardinian spinach with pecorino, Kale
+  pesto, Baked rosemary chickpeas, Sweet potato and black bean salad, Red bean and
+  sweet potato hash, Southwestern lettuce wraps, Broccoli peanut soup, Curried
+  cauliflower soup, Cauliflower fried rice, Falafel, Toasted orzo with asparagus,
+  Mashed potatoes with golden gravy, Sweet potato cakes.
+- **The admission rule, written into the section header:** the **main** ingredient
+  must already be a pantry id, and the dish must be cookable with what the
+  catalogue can say. So their unstocked flavourings were dropped or stood in for —
+  grape syrup → honey, coconut milk → milk (curried cauliflower), apples out of the
+  broccoli-peanut soup, pineapple + mushrooms out of the cauliflower fried rice,
+  pine nuts/tahini/sumac/dried chiles dropped — and put in `seasonings` or nowhere.
+  **The pantry did not grow: 109 ingredients, 71 garden + 38 kitchen, before and
+  after.** No new ids, so the catalogue spec's "only asks for ingredients a cook
+  can tick" and "uses every household ingredient" invariants still pin the data.
+- **`uses` was trimmed to essentials, not to the original's list.** The catalogue's
+  house style is a short required list (minestrone 7, the soups 3, everything else
+  in `optional`), so five of the imports were cut back after the first pass made
+  them 7-9 deep: Ribollita lost celery/carrots, Tuscan beans lost the tomato sauce,
+  Kale pesto became kale + garlic + lemon with the herbs and cheese optional,
+  Falafel lost the lemon, Broccoli peanut soup lost carrots and lemon, and Sweet
+  potato cakes became sweet potatoes + onion + flour with the ginger/chili/avocado
+  on top. A recipe that needs nine things never reaches the promise list, which is
+  the only list most people read.
+- **No schema change:** the payload shape is untouched, so `schemaVersion` stays
+  **4**; only `counts.catalog` and the two lists changed.
+- **Scraping notes (for a future import):** the site is WordPress with a
+  `recipe` post type, but `wp-json/wp/v2/recipe` is not exposed and the pages carry
+  **no JSON-LD** `Recipe` block. `https://www.bluezones.com/recipe-sitemap.xml`
+  lists all **217** recipe URLs; each page keeps ingredients in
+  `<div class="recipe-col-ingredients">` (`<li>` *or* `<p>` items — the older posts
+  use paragraphs) and directions in `recipe-col-directions`, which is enough to
+  parse without a headless browser.
+- **Verified:** `npx jest src/recipes` → **31 tests** green (the catalogue spec
+  checks every new id, the ≥3-recipes-per-bulk-crop depth and the no-staple rule
+  over all 108), `tsc --noEmit` clean, `nest build` green, API rebuilt and
+  restarted (`node dist/main`; `npm start` does not watch). Live `:4171`:
+  `counts.catalog` **108**, `?have=cabbage` → promise `Buttered cabbage`,
+  `Charred cabbage`, browse `Coleslaw`, `Chicken tacos`, **`Ribollita`** (the first
+  Blue Zones card to show up in a single-tick browse); `?have=zucchini,tomatoes,kale,swiss-chard,cucumbers,tofu`
+  → `2 cookable / 4 one away`, browse opens `Ribollita` (three crops at once);
+  full kitchen → `8 / 32` out of 108; full kitchen + `bok-choy` still opens the
+  browse list with `Bok choy with garlic`; `anise-hyssop` still says
+  `nothing in 108 recipes uses any of that yet`. The two page lines were re-checked
+  by bundling `recipes.utils.ts` with esbuild and feeding it the live counts
+  (`0 ready to cook · 2 one ingredient away — out of 108 recipes`,
+  `3 of the 5 recipes that use your picks need two or more things`).
+- **Docs:** `react-fe/src/Pages/Recipes/README.md` gained a "Where the recipes come
+  from" section (the rule + what got swapped out) and all `88` counts moved to 108;
+  `progress.md` row + a decision-table entry; this snapshot.
+- **Not done:** nobody has eyeballed `/recipes` in a real browser — the new cards
+  reuse the existing `RecipeCard` markup, so the risk is copy length (several new
+  blurbs are full sentences) rather than new CSS.
+
+## Session snapshot — 2026-10-30 (g) — recipes: the garden ranks first
+
+- **Ask:** "Can the recipes surfaces be in order of if they use garden ingredients?
+  for example if I have everything in the fridge and cupboard, and then check bok
+  choy, I'd like bok choy recipes to be at the top of the recommendations."
+- **One new field does it:** `RecipeMatch.garden: string[]` — the **picked**
+  garden ingredients a recipe requires, computed in `recipes.match.ts` from what
+  was actually used (`have`, so a ticked chard counts for a recipe that asked for
+  kale) and from each ingredient's own `group` (no crop name in the view). It
+  rides in the payload, so the page can print the crops without a second ranking
+  implementation.
+- **Ordering now:** `matches` — `cookable` → garden crops used → `score` →
+  `fromPantry` → minutes → title. `featured` (was `byCloseness`, now
+  `byGardenThenCloseness`) — garden crops used → fewest missing → `fromPantry` →
+  minutes → title. `cookable` stays above everything in the promise list (a card
+  badged `cook it now` must never sit under `needs 2 things`), but in the browse
+  list garden use outranks closeness on purpose: a glut is the problem the page
+  solves.
+- **Surfaces:** the card prints `from the garden — Bok Choy`
+  (`.rc-also--garden`, reusing the "also nice" chips layout, tinted with
+  `--rc-ready`), and the browse blurb no longer claims "closest first". Page copy
+  is otherwise untouched — no re-sorting in React.
+- **Schema `3 → 4`** (`RecipeMatch` gained a field the SPA reads).
+- **Specs: 28 → 31.** Two existing specs were rewritten for the new order (the
+  cookable-block assertion now checks garden-then-score; the browse spec checks
+  garden-then-closeness), plus three new ones: only ticked crops count; the
+  bok-choy case (full kitchen + `bok-choy` → `Bok choy with garlic` leads
+  `featured`); and a synthetic pair proving a 4-missing garden recipe outranks a
+  2-missing cupboard-only one.
+- **Verified:** `npx jest src/recipes` → **31 tests**, `tsc --noEmit` clean in
+  both packages, eslint + prettier clean, `npm run build` green in both. API
+  restarted (`npm start` was a stale `node dist/main`); live payload is
+  `schemaVersion: 4`. Live + jsdom (`:4171`, full kitchen + `bok-choy`):
+  `matches` unchanged (Mac and cheese, French toast, Egg salad sandwich…),
+  `featured` now opens `Bok choy with garlic` (`garden=[bok-choy]
+  missing=[garlic,ginger]`), then Cold peanut noodles, Eggplant parmesan, Turkey
+  sandwich; the card renders `from the garden — Bok Choy`. Adding `garlic` +
+  `ginger` moves it to the top of the promise list (`missing=[soy-sauce]`, above
+  `Crispy tofu`); with `bread, tomatoes, garlic` ticked, `Tomato toast` and
+  `Blistered tomatoes on toast` (two crops each) lead, and `Zucchini and tomato
+  skillet` outranks `Baked stuffed tomatoes`.
+- **Note for the next session:** `npm start` in `nest-server` is
+  `npx nest start &` (build once, run `dist/main`), **not** watch — after a
+  backend change, rebuild and restart it or the live API stays stale.
+
+## Session snapshot — 2026-10-30 (f) — recipes: two pantry sections, and a "tick all"
+
+- **Ask:** "you can combine the 'Extras' section to the 'Fridge and Cupboard'
+  section. I'd also like the option to just check everything in that section."
+- **Groups: 3 → 2.** `IngredientGroupId` is now `'garden' | 'kitchen'` (backend
+  *and* the FE mirror). `EXTRA_SEEDS` is gone — its 19 items were folded into
+  `KITCHEN_SEEDS` and the whole 38-item list was rewritten in reading order with
+  section comments (protein → dairy & fat → condiments/acid/sweet → grains,
+  bread, baking → cans, stock, tomatoes → indoors produce), so the butter now
+  sits next to the milk instead of in an "Extras" drawer. Blurb: "A normal
+  kitchen: groceries, cans, dairy, condiments." Pantry stays **109** (71 garden +
+  **38** kitchen); the distinct-count invariant in `recipes.catalog.spec.ts`
+  proves no seed was lost or duplicated in the merge.
+- **The bulk control lives in the data, not the view.** `IngredientGroup` gained
+  `allAtOnce?: boolean`; only *kitchen* sets it. The page renders a
+  `tick all 38` pill in the group heading when the flag is present (the garden
+  deliberately has none — a garden is checked crop by crop), and it flips to
+  `untick all` once every id in the group is ticked. Pure helpers in
+  `recipes.utils.ts`: `allTicked`, `tickAll` (keeps existing tick order, never
+  duplicates) and `bulkLabel` (`tick all 38` / `untick all`).
+- **Decision:** the button always acts on the **whole section**, with the real
+  count in its label, even while a search narrows the list to three chips —
+  acting on the filtered set would silently contradict the number next to it.
+- **Schema `2 → 3`** (groups changed shape) with the reason recorded inline in
+  `recipes.service.ts`.
+- **Fixed a spec that hard-coded the old neighbour order:** `resolveHave`'s
+  "pantry order, not query order" test now derives the expected order from the
+  ingredient list (`eggs` still first) instead of asserting `eggs, bread, jelly`,
+  which the merge legitimately changed.
+- **Verified:** `npx jest src/recipes` → **28 tests** (the new one asserts two
+  groups, exactly one bulk-tickable, and >20 kitchen items). `tsc --noEmit` clean
+  in both packages, eslint + prettier clean, `npm run build` green. Live API
+  `schemaVersion: 3`, `garden 71 | kitchen 38`, total 109. jsdom mount of the
+  real component against `:4171`: `0 of 38` → press `tick all 38` → `38 of 38`,
+  `38 ticked of 109`, button `untick all`, `8 ready to cook · 29 one ingredient
+  away — out of 88 recipes` (8 `cook it now` cards: Mac and cheese, French toast,
+  Egg salad sandwich, …), storage = 38 unique ids in pantry order; press again →
+  `0 ticked`, storage `""`; searching `cheese` shows three chips but the button
+  still says `tick all 38` and ticks 38.
+- **Harness that finally worked** (reusable recipe for this repo): files must live
+  inside `react-fe/scripts/`, bundle with
+  `npx esbuild scripts/x.tsx --bundle --format=esm --platform=node --jsx=automatic --loader:.scss=text`,
+  set jsdom globals *before* `await import()` of the bundle, `Object.defineProperty`
+  for `navigator` (Node 24 getter), capture the real `fetch` before rewriting it,
+  and click with `new window.MouseEvent('click', { bubbles: true })`. Temp files
+  deleted afterwards.
+
+## Session snapshot — 2026-10-30 (e) — recipes: tofu, 27 more recipes, and a browse list
+
+- **Ask:** "we should add tofu, we always have that… add as many creative recipes as
+  we can that include zucchini, tomatoes, swiss chard, kale, cucumber… the
+  relational aspect is great but I should not forget that it's great to just have
+  a list of common 'cabbage' recipes if that is all I have checked. How can we add
+  recipes?"
+- **The design point that mattered.** The `isReachable` gate (0-or-1 missing) was
+  the *only* listing rule, so a one-tick pantry returned an empty column — the
+  gate punished exactly the case the user described. Fix: one ranking, **two
+  lists**, both computed in the backend.
+  `selectRecipes(ranked, catalogSize, featuredLimit = 12)` (replaces
+  `countMatches`) returns `{ matches, featured, counts }`; `matches` is the old
+  gate (the promise: `cook it now` / one ingredient away), `featured` is every
+  other recipe that uses a ticked ingredient, sorted fewest-missing-first, capped
+  at 12. `counts` gained `featured` and `using` (everything that touches the
+  selection, before the gate). Payload `schemaVersion` **1 → 2**.
+- **Page:** second section "more with what you ticked" under a dashed rule,
+  browse cards muted via `rc-card--far`, line from the new pure `featuredLine`
+  ("12 of the 50 recipes that use your picks need two or more things"). The
+  empty-promise note now points down at that list instead of telling you to go
+  shop blindly. `summaryLine` distinguishes "nothing uses that" from "nothing uses
+  that is within one ingredient" using `counts.using`.
+- **Pantry:** `tofu` added to *Fridge & cupboard* (`{ id: 'tofu', label: 'Tofu' }`
+  + aliases `bean curd`, `firm tofu`, `silken tofu`, `extra firm tofu`) → 109
+  tickable ingredients (71 garden, 19 fridge/cupboard, 19 extras).
+- **Recipes: 61 → 88** (+27, all hand-authored, grouped with banner comments at
+  the end of `recipes.catalog.ts`): zucchini 5 (`zucchini-fritters`,
+  `zucchini-and-tomato-skillet`, `zucchini-carpaccio` "Raw zucchini with lemon",
+  `stuffed-zucchini-boats`, `zucchini-pasta`); tomatoes 5 (`panzanella`,
+  `stuffed-tomatoes`, `tomato-tart`, `blistered-tomatoes`, `tomato-rice`); kale 3
+  (`kale-chips`, `massaged-kale-salad`, `kale-and-potato-soup`); swiss chard 4,
+  the first chard recipes in the catalogue (`chard-and-white-beans`,
+  `chard-frittata`, `chard-gratin`, `chard-stems-agrodolce` — uses only the
+  stems); cucumbers 3 (`smashed-cucumber-salad`, `cucumber-agua-fresca`,
+  `cucumber-and-feta-salad`); tofu 5 (`crispy-tofu`, `tofu-scramble`,
+  `tofu-lettuce-wraps`, `cold-tofu-with-tomatoes`, `tofu-and-kale-stir-fry`);
+  cabbage 2 (`buttered-cabbage`, `charred-cabbage`) so the user's own example
+  works. `kale-chips` (`uses: ['kale']`) and `crispy-tofu` (`uses: ['tofu']`) are
+  deliberately single-ingredient: ticking one thing can make something *cookable*.
+- **Guardrail added:** catalogue spec test "keeps the crops that arrive in bulk in
+  depth" — zucchini, tomatoes, kale, swiss-chard, cucumbers, cabbage and tofu must
+  each appear in ≥3 recipes (uses or optional), so the depth can't rot back to one
+  idea per crop.
+- **Verified:** `npx jest src/recipes` → **27 tests** (9 catalogue, 18 matcher);
+  new matcher tests cover no-overlap-between-lists, `counts.using`, the
+  single-tick/cabbage case, closest-first ordering and the 12-card cap.
+  `tsc --noEmit` clean in both packages, prettier clean, `npm run build` green
+  (`/recipes shell` still in the prerender list). Live API:
+  `?have=cabbage` → `matches: 2` (`Buttered cabbage`, `Charred cabbage`),
+  `featured: 2` (`Coleslaw`, `Chicken tacos`), `counts {catalog:88, matches:2,
+  cookable:0, oneAway:2, featured:2, using:4}`; six bulk crops →
+  `counts {… matches:6, cookable:2, oneAway:4, featured:12, using:50}`.
+  jsdom mount of the real bundle confirmed all of it renders, plus the
+  no-browse-section case (`anise-hyssop` → "nothing in 88 recipes uses any of
+  that yet").
+- **Harness note (re-learned):** the ad-hoc jsdom script must live inside
+  `react-fe/` (esbuild/Node cannot resolve `react-dom/client` or `jsdom` from
+  `/tmp`), `globalThis.navigator` is a getter on Node 24 (use
+  `Object.defineProperty`), and `window.fetch` must close over the *captured*
+  `globalThis.fetch` or the rewrite recurses until the stack dies. The temp
+  scripts were deleted afterwards.
+- **Next (optional, unchanged):** Home + planting-calendar links to `/recipes`, a
+  `?have=` deep link so a pantry can be shared, per-season weighting. Visual
+  review in a real browser is still outstanding.
+
+
+
+- **Ask:** build a new "Recipes" app (NestJS + React) at `/recipes` that
+  recommends recipes from the ingredient overlap between the planting-calendar
+  garden crops and the household/grocery pantry.
+- **Shape:** the *backend* owns the matching and the *page* owns the wording.
+  `GET /api/recipes?have=tomatoes,eggs` returns one payload
+  `{ schemaVersion, groups, ingredients, families, staples, have, matches, counts }`
+  — the pantry list travels with the results, so the page can render the
+  checkboxes and the answers from a single request. There is no second ranking
+  implementation in React, on purpose: two copies of "one ingredient away" would
+  drift and the page would quietly lie.
+- **Data (all hand-authored, no scraping):** `recipes.ingredients.ts` — 108
+  tickable ingredients in 3 groups (**From the garden** 71, derived from
+  `planting-calendar/data/co-englewood.json` so the garden half cannot drift from
+  the calendar; **Fridge & cupboard** 18; **Extras** 19), 8 families
+  (`onion-family`, `cheese-family`, `cooking-greens`, `salad-greens`,
+  `riced-grain`, `small-pasta`, `bread-and-tortillas`, `root-veg`), aliases
+  (`corn`, `jalapeno`, `butter`, …) and staples `salt`, `black pepper`,
+  `cooking oil`, `water` (always assumed, never tickable). `recipes.catalog.ts`
+  — 61 recipes with `uses`/`optional`/`steps`/`minutes`/`servings`/`tags`.
+- **Matching** (`recipes.match.ts`, pure, no Nest imports): `parseHave` (query
+  string → ids, repeats/commas/blanks), `resolveHave` (ids, labels, aliases,
+  near-miss spellings — `cheese-any` folds onto `Cheese (any)` — plus pantry order
+  for stable output and unknown entries dropped), `scoreRecipe` (required
+  coverage via id, family or alias; optional never blocks), `isReachable` (0 or 1
+  missing is the only listing rule), `rankRecipes` (cookable first, then by
+  coverage), `countMatches` → `{ catalog, matches, cookable, oneAway }`.
+- **Page** (`react-fe/src/Pages/Recipes/`): pantry panel of grouped checkboxes
+  with search (`fold` — accents/hyphens/spaces), `n ticked of 108`, `clear`,
+  sticky on desktop and scrolling only the 71-crop garden list; results column of
+  `RecipeCard`s with a `cook it now` / `needs …` badge, `✓`/`⇄`/`✗` requirement
+  rows (a substitution says *which* stand-in was used), optional-ingredient chips,
+  seasonings line and numbered steps. `recipes.utils.ts` is pure (no React) so it
+  can be asserted without a test harness; `Recipes.scss` is `rc-`-prefixed and
+  scoped under `.recipes` (page CSS is global in the Vite bundle).
+- **Registered** in `App.tsx` (inside `MainLayout`) and `seo/routes.ts` as
+  `render: "shell"` — the content is fetched, so prerendering would only bake
+  "reading the pantry…". Deliberately **no Home/nav button** (URL-only for now,
+  like `/claimjumpers-back` except it *is* in the sitemap).
+- **Verified:** `npx jest src/recipes` → **23 tests** (8 catalogue invariants
+  incl. garden group == planting-calendar crop list and every household
+  ingredient used by some recipe; 15 matcher/parse tests). `tsc --noEmit` clean in
+  both packages, eslint clean, `npm run build` green (`/recipes shell` in the
+  prerender list, sitemap + `dist/recipes/index.html` with the right `<title>`),
+  live `GET /api/recipes` curl checks. The page itself was exercised by
+  **mounting the real client bundle in jsdom against the running API**: 3 groups,
+  108 chips, ticking `Tomatoes, Jalapeño Peppers, Onions, Garlic` →
+  `4 ticked`, cards `Okra and tomatoes | Salsa verde | Tomato soup | Tomato toast`,
+  `localStorage["antigogglin.recipes.have"] = "tomatoes,jalapeno-peppers,onions,garlic"`,
+  searching `jalap` narrows to one chip, `clear` → empty state + storage `""`, and
+  `Eggs, Bread, Butter, Tomatoes, Cheese (any)` →
+  `1 ready to cook · 5 one ingredient away — out of 61 recipes` with
+  `Grilled cheese` marked `cook it now`.
+- **Bugs the checks caught:** (1) the results column rendered stale cards next to
+  "Nothing ticked yet" for the 150 ms debounce after `clear` — cards are now
+  gated on `have.length > 0`; (2) jsdom's `input.value = x` does not fire React's
+  `onChange` (React's value tracker) — the harness must set through
+  `HTMLInputElement.prototype`'s setter; (3) catalog/ingredient mismatches
+  (chili flakes belonged to `seasonings`, `corn`/`butter` needed aliases,
+  `jalapeno-peppers` id).
+- **Gotcha (already known, hit again):** `@nestjs/testing` cannot load under this
+  machine's Node 24.4, so specs stay Nest-free; the controller spec was written,
+  tried, and deleted in favour of asserting the service payload directly.
+- **Next (optional):** link `/recipes` from Home and from the planting-calendar
+  page ("cook what you're growing"), a `?have=` deep link so a pantry can be
+  shared, and per-season weighting (prefer recipes whose garden crops are in
+  harvest this month).
+
 ## Session snapshot — 2026-10-30 (c) — the Home wall is sized to the viewport
 
 - **Ask:** "all the buttons on the Home landing page no longer fit that well — make

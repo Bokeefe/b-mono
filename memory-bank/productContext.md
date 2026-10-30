@@ -22,6 +22,7 @@ up work cold.
 | Friend group | Decide lunch together, fast, on phones | `/lunch` real-time ranked-choice vote |
 | Friends / collaborators | Play a low-friction writing game | `/text-corpse` shared writing rooms |
 | The author | Listen to own music at work | `/slomo`, `/claimjumpers` |
+| Gardener / cook | Decide dinner from what's already growing and in the cupboard | `/recipes` |
 | The author | Rehearse API patterns | `/fetch`, `/axios`, `/sandbox` (legacy) |
 
 ## How it should work (experience goals)
@@ -36,8 +37,9 @@ up work cold.
 
 ### Home
 A wall of big buttons — the only navigation primitive. Currently live:
-`music`, `slomo`, `lunch`, `text-corpse`, `about`. `/resume` and `/claimjumpers`
-are reachable by URL but not surfaced on Home (see `progress.md`).
+`music`, `slomo`, `lunch`, `text-corpse`, `about`, `planting-calendar`.
+`/resume`, `/claimjumpers` and the newest app, `/recipes`, are reachable by URL but
+not surfaced on Home (see `progress.md`).
 
 ### Lunch
 - A group opens `/lunch`, creates or joins a room, adds places, votes, and after a
@@ -66,6 +68,17 @@ are reachable by URL but not surfaced on Home (see `progress.md`).
 ### Resume
 - Readable in one scroll; exports to PDF (`jsPDF`, `react-to-print`) and TXT
   (`Blob`).
+
+### Recipes
+- The question is **"what can I cook right now?"**, not "browse a cookbook":
+  only recipes that need nothing more, or exactly one more thing, are listed.
+- The pantry is **ticked, not typed** — big checkboxes, searchable, remembered in
+  `localStorage` because what is in the house is a standing fact. The garden half
+  is the planting calendar's own crop list, so it moves with what can be grown.
+- **The server decides, the page phrases.** Matching, families, aliases and
+  staples live in `nest-server/src/recipes/`, never in React.
+- A substitution is **announced** (`using shallots for onions`), and anything the
+  recipe merely *likes* is an optional chip, never a blocker.
 
 ## Product principles to preserve
 

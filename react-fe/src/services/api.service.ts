@@ -1,5 +1,6 @@
 import { baseUrl } from "../environment";
 import type { PlantingCalendarPayload } from "./planting-calendar.types";
+import type { RecipesPayload } from "./recipes.types";
 
 class ApiService {
   async healthCheck() {
@@ -86,6 +87,29 @@ class ApiService {
       return await response.json();
     } catch (error) {
       console.error("Failed to fetch the planting calendar:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Recipe recommendations for a pantry selection.
+   *
+   * `have` is the list of ticked ingredient ids; the backend resolves aliases
+   * and does all of the matching, so an empty list simply asks for the pantry
+   * (which is how the page bootstraps its checkboxes).
+   */
+  async getRecipes(have: string[] = []): Promise<RecipesPayload> {
+    try {
+      const query = have.length
+        ? `?have=${have.map((id) => encodeURIComponent(id)).join(",")}`
+        : "";
+      const response = await fetch(`${baseUrl}/api/recipes${query}`);
+      if (!response.ok) {
+        throw new Error(`Recipes request failed (${response.status})`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Failed to fetch recipes:", error);
       throw error;
     }
   }

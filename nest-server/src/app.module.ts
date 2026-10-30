@@ -7,6 +7,7 @@ import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { LunchModule } from './lunch/lunch.module';
 import { PlantingCalendarModule } from './planting-calendar/planting-calendar.module';
+import { RecipesModule } from './recipes/recipes.module';
 import { TextCorpseModule } from './text-corpse/text-corpse.module';
 import { SlomoModule } from './slomo/slomo.module';
 
@@ -18,6 +19,7 @@ import { SlomoModule } from './slomo/slomo.module';
     SlomoModule,
     ClaimjumpersModule,
     PlantingCalendarModule,
+    RecipesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, HealthService],

@@ -24,6 +24,7 @@ areas are automated deployment reliability and test coverage.
 | Claimjumpers | ⚠️ Newest feature; routes + audio API work, still not linked from Home |
 | Claimjumpers back (`/claimjumpers-back`) | 🧪 Scratch page for the author: works (200 + shell), unlinked and `noindex` (kept out of the sitemap). The back-cover art (`back_w_border.webp`) is now the full-bleed page background with a text panel positioned over the art's blank centre panel. It now **animates on load** (masthead pulled 2.75× tall then shrinking onto its line while it is inked in left→right, + staggered rise for controls / rows / fine print, stage settling out of a slight zoom), opt-in via `<ClaimjumpersTitle animate />` and quiet under `prefers-reduced-motion: reduce` |
 | Backup (`/backup`) | ⛔ Route commented out in `App.tsx` |
+| Recipes (`/recipes`) | ✅ App (2026-10-30): garden crops + pantry → dinner. `GET /api/recipes?have=` returns the **109** tickable ingredients in **two** sections (71 garden crops derived from the planting calendar, 38 fridge & cupboard), 8 families, 4 staples, the **promise** list (`matches`: cookable or one ingredient away) and the **browse** list (`featured`: uses a ticked ingredient, needs 2+, **garden crops first** then closest, capped at 12) — so one tick ("cabbage") still returns cabbage recipes, and a ticked crop pushes its own recipes to the top (`RecipeMatch.garden`). The fridge section carries a `tick all 38` / `untick all` control (driven by `group.allAtOnce`), one press = "assume a normal kitchen". Page = tickable checkboxes + search + `cook it now` / `needs …` cards in two clearly-separated sections, with `from the garden — …` on any card that eats a picked crop. **148** hand-written recipes (20 of them adapted from the Blue Zones archive, 20 from the Moosewood Cookbook, 20 from bonappetit.com/recipes), 31 backend tests; URL-only (no Home button) |
 | Faker API | ✅ `nest-server/src/faker` |
 | Planting calendar (`tools/planting-calendar`) | ✅ Scraped (Englewood, CO JSON committed) **and** served: `/api/planting-calendar` + `/calendar.ics` (legend-aware `?columns=`, `?year=` re-dating), "Denver planting calendar" page at `/planting-calendar` with a colour-coded task legend that doubles as the filter, linked from Home. **Perennial:** frost-based month/day windows are re-dated to the current year on every request, and the page re-fetches `?year=` as you page into other years (with an empty-month hand-off), so no moon data and no annual re-scrape. **Harvest windows** are derived (planting date + days to maturity) and tagged with their provenance: 43 rows use the Almanac's own "Average Days to Maturity" column, 51 use a seed-packet table, and only the second kind is drawn as an estimate (`~`). **Tobacco and Cannabis** are local additions (not in the Almanac): their windows are copied from Tomatoes and picking runs to `season.firstFallFrost`, with `origin`/`derivedFrom` carried into the page footer, the `.ics` description and the Google hand-off |
 | Examples (`/fetch`,`/axios`,`/sandbox`) | ⛔ Page files removed; not routed |
@@ -39,6 +40,24 @@ areas are automated deployment reliability and test coverage.
 - Modules wired in `app.module.ts`: Faker, Lunch, TextCorpse, Slomo, Claimjumpers
   + `AppController` / `HealthController`.
 - `GET /api/health` → `{ status: 'UP' }` (also duplicated on `AppController`).
+- `GET /api/recipes?have=tomatoes,eggs` → `{ schemaVersion: 4, groups, ingredients,
+  families, staples, have, matches, featured, counts }`: 109 tickable ingredients
+  in two groups (71 garden crops derived from the planting-calendar dataset, 38
+  fridge & cupboard), 8 substitution families, 4 staples, 148 hand-written
+  recipes (88 of our own, plus 20 adapted from the Blue Zones archive, 20 from
+  the Moosewood Cookbook and 20 from bonappetit.com/recipes — see the decision
+  table). `matches` is the promise
+  (cookable or one ingredient
+  away); `featured`
+  is the browse list (uses a ticked ingredient, needs two or more, **garden
+  crops first** then closest, capped at 12); `counts` carries `catalog`,
+  `matches`, `cookable`, `oneAway`, `featured`, `using`. Every match also carries
+  `garden` — the ticked garden crops that recipe requires — because the garden is
+  the half of the pantry that arrives in a glut, so it is the ordering signal
+  behind "cook it now". The fridge group ships `allAtOnce: true`, which is what
+  makes the page render its `tick all` control. Matching and the split are pure
+  (`recipes.match.ts`: `rankRecipes` → `selectRecipes`) with no Nest imports, so
+  its 31 tests run even on this machine's Node 24.4.
 - `GET /api/slomo/genres`, `GET /api/slomo/genres/:genre/tracks` — recursive mp3
   scan, prefers `react-fe/dist/...` when present, else `react-fe/public/...`.
 - `GET /api/claimjumpers` → sorted mp3 filenames; `GET /api/claimjumpers/:filename`
@@ -52,8 +71,13 @@ areas are automated deployment reliability and test coverage.
   (dev `src/text-corpse/`, prod `/usr/src/app/data`).
 
 ### Frontend
-- `App.tsx` router with 10 active routes + MainLayout shell.
-- Singleton `apiService` (health, slomo, claimjumpers) and `faker.api.service`.
+- `App.tsx` router with 13 page routes + MainLayout shell (404 fallback).
+- Singleton `apiService` (health, slomo, claimjumpers, planting-calendar, recipes)
+  and `faker.api.service`.
+- `/recipes` (`Pages/Recipes/`): grouped pantry checkboxes + search + remembered
+  selection (`localStorage["antigogglin.recipes.have"]`), and a results column of
+  `cook it now` / `needs …` cards. All matching comes from the API; the page only
+  phrases it (`recipes.utils.ts`, pure).
 - Singleton socket client with polling-only transport and reconnect logging.
 - SloMo player (1225 lines) with speed/reverb and persisted prefs.
 - Resume export via jsPDF / react-to-print / Blob.
@@ -86,13 +110,28 @@ areas are automated deployment reliability and test coverage.
   `faker.service.spec.ts` (jest 30, `rootDir: src`) — **6/6 passing** on Node 26.
   Scripts run `node --experimental-vm-modules .../jest.js` because Nest 12 is
   ESM-only.
+- Recipes: `src/recipes/recipes.catalog.spec.ts` + `recipes.match.spec.ts` —
+  **31/31**, Nest-free by design (imports only the pure data/matcher modules, so
+  they pass on Node 24.4 where `@nestjs/testing` cannot load). The catalogue spec
+  also pins recipe *depth*: zucchini, tomatoes, kale, swiss-chard, cucumbers,
+  cabbage and tofu each need ≥3 recipes, and the pantry to exactly two groups
+  with exactly one bulk-tickable. The matcher spec pins the ordering: cookable
+  before one-away, garden crops before substitution score, and — the bok-choy
+  case — a garden recipe above a nearer cupboard-only one on the browse list.
+- Planting calendar: `src/planting-calendar/*.spec.ts` — 51 tests.
+- Frontend has **no test harness**: pure helpers are bundled with
+  `npx esbuild … --format=esm --platform=node` and asserted from a node script
+  (`planting-calendar.utils`, `recipes.utils`), and whole pages are checked by
+  mounting the real client bundle in **jsdom** against the running API.
 - e2e config exists at `nest-server/test/jest-e2e.json`.
 
 ### SEO / crawlability (added 2026-10-24)
 - **Prerendered HTML** for `/`, `/about`, `/resume`, `/music`, `/claimjumpers`
   (`react-fe/dist/<route>/index.html`), metadata-only shells for `/slomo`,
-  `/lunch`, `/text-corpse`. Built by `scripts/prerender.mjs` →
-  `src/entry-server.tsx` (`renderToString` + `StaticRouter` + Emotion critical CSS).
+  `/lunch`, `/text-corpse` and the data-fetching pages (`/planting-calendar`,
+  `/recipes`). Built by `scripts/prerender.mjs` →
+  `src/entry-server.tsx` (`renderToString` + `StaticRouter` + Emotion critical CSS);
+  it also fails the build if `App.tsx` and `seo/routes.ts` disagree.
 - **Per-route metadata** comes from `react-fe/src/seo/routes.ts` (title,
   description, canonical, OG/Twitter, changefreq, priority) and is mirrored in the
   browser by `SeoManager` on every navigation.
@@ -189,8 +228,9 @@ areas are automated deployment reliability and test coverage.
 5. **Hardcoded master password** `corpseunlock` in `text-corpse.service.ts`.
 6. **Duplicate `/api/health`** definitions (`AppController` and
    `HealthController`) — unpredictable precedence.
-7. **URL-only feature**: `/claimjumpers` still has no Home button (`/resume`
-   gained one in the 2026-10-24 SEO pass).
+7. **URL-only features**: `/claimjumpers` and `/recipes` still have no Home
+   button (`/resume` gained one in the 2026-10-24 SEO pass). `/recipes` also has
+   no link from `/planting-calendar`, which is the natural way in.
 8. **`.steering/` docs drifted** (`domains/` → `Pages/`, `Examples` removed,
    Claimjumpers missing).
 
@@ -233,6 +273,17 @@ areas are automated deployment reliability and test coverage.
 | Oct 2026 | `createRoot` retained (no `hydrateRoot`) | Avoids hydration mismatches on live pages; prerendered DOM is for crawlers/social bots, then discarded |
 | Oct 2026 | `seo:start`/`seo:end` **meta** markers instead of HTML comments | Vite's production HTML minifier strips comments |
 | Oct 2026 | Canonical host `antigogglin.org`; `www` + `http` 301 to it | One host avoids split ranking signals; Cloudflare + nginx previously served both |
+| Oct 2026 | `/recipes` does **all matching in the backend** and the page only phrases it | Two copies of "within one ingredient" would drift, and the page would quietly lie; the payload also carries the pantry list so one request renders both the checkboxes and the answers |
+| Oct 2026 | Recipe requirements are **families + aliases over a flat ingredient list**, not a per-recipe free-text list | `cheese` covers cheddar/mozzarella/parmesan/feta/cream cheese, `onion-family` covers shallots/leeks; the catalogue can only name things a cook can actually tick (enforced by a spec), so no recipe is unreachable |
+| Oct 2026 | `salt`, `black pepper`, `cooking oil`, `water` are **always-have staples** and never tickable | Nobody wants to tick salt; treating it as an ingredient would make every savoury recipe "one away" for the wrong reason |
+| Oct 2026 | The garden half of the pantry is **derived from the planting-calendar dataset** | One source of truth: the recipes app can only ask for crops the calendar grows, and a new scrape updates both |
+| Oct 2026 | `/recipes` ranks **garden crops first**, then closeness (`RecipeMatch.garden`) | The garden is the half of the pantry that arrives in a glut, so "uses your bok choy" beats "shelf-stable and nearer" on the browse list; `cookable` still outranks both in the promise list, because a card badged `cook it now` must never sit under `needs 2 things` |
+| Oct 2026 | Recipes may be **adapted from an outside archive** (Blue Zones) but never *extended* by one | 20 entries in `recipes.catalog.ts` come from bluezones.com/recipes (ribollita, Tuscan beans, Greek lemon potatoes, falafel, sweet potato cakes…), admitted on one rule: the **main** ingredient must already be a pantry id, so the dish is cookable with what a cook can tick. Their unstocked flavourings are dropped or swapped (grape syrup → honey, coconut milk → milk, pineapple + mushrooms out of the cauliflower fried rice) and go in `seasonings` or nowhere — never into the pantry, which would have turned "here is a recipe you can almost cook" into "here is another shopping list". Each entry keeps its source page in a comment, so an adaptation is checkable against the original |
+| Oct 2026 | A **cookbook** import works the same way, and the dish names are checked before they are written | 20 entries come from The Moosewood Cookbook (Katzen, 1977/2000). Each candidate title was looked up as an exact phrase in the Internet Archive's full-text index of both editions (`openlibrary.org/search/inside.json`, filtered to the book's own scans) before it was admitted, so the catalogue carries the book's names — `Gypsy soup`, `Gado-gado`, `Cauliflower Marranca` — with the book's page number in a comment, and the dishes that lean on things the pantry cannot name (mushroom moussaka, tabouli, walnut pâté, tamale pie) are simply absent. The pantry did not grow: mushrooms, sour cream, yogurt, tahini, bulgur, walnuts, almonds, molasses and cornmeal are still not ids. Swaps: peanuts for almonds, honey for molasses, vinegar where the book pours sherry, milk for the sour-cream swirl |
+| Oct 2026 | A **website** import reads the recipe's own structured data, not a human summary of it | bonappetit.com's list page links 119 recipe pages and each carries a `@type: Recipe` JSON-LD block (name, `recipeIngredient`, yield, time); those 119 were fetched once, matched ingredient-by-ingredient against the pantry, and the 20 that survived the same one rule as Blue Zones and Moosewood were written as adaptations under the magazine's own titles. A keyword matcher over the ingredient lists is what makes the admission rule auditable — "main ingredient is already a pantry id" stops being a judgement call. What it cost: yogurt → mayonnaise, cream → milk, hominy → corn, fish sauce → soy, beef → turkey, Old Bay → stocked spices, olives dropped; anchovy/pancetta/mussel/salmon/yeast/chocolate pages refused outright |
+| Oct 2026 | `featured` membership is **"uses your picks", required *or* optional** — and the cabbage spec now says so | The browse window is 12 cards; once the catalogue grew past the number of cabbage-*required* recipes, the window began reaching dishes that name cabbage on the side (`Watermelon som tam`, `Chicken pozole verde`). That is correct behaviour — `fromPantry` counts optional ids and the card does use the tick — so the spec's "everything on the browse list actually uses the thing that was ticked" was widened to check `required` ∪ `optional` rather than quietly dropping useful optional entries from recipes |
+| Oct 2026 | `/recipes` uses `render: "shell"` and has **no Home button** | Its content is fetched from the API, so a prerender would bake a loading state; the app is URL-only until it has earned a square (same reasoning as `/claimjumpers-back`) |
+| Oct 2026 | Recipes specs deliberately **avoid `@nestjs/testing`** | On this machine's Node 24.4 every `@nestjs/*` import fails under jest; the controller spec was written, found to be unrunnable, and deleted in favour of asserting the service payload directly |
 | Oct 2026 | Planting calendar is parsed from the `data-date-start/end` **attributes**, not the printed labels | The labels are lossy ("Aug 31-17", "May") and some rows are `display:none`; the ISO attributes are the only machine-readable source, and label/attribute disagreements are surfaced as `warnings[]` instead of being silently reconciled |
 | Oct 2026 | Planting calendar **dataset moved into `nest-server/src/planting-calendar/data/`** | `tools/` is never copied into the runtime Docker image, while `nest-cli.json` copies every `src/**/*.json` into `dist`; the scraper's default `--out` follows, so `npm run planting:data` refreshes what actually ships |
 | Oct 2026 | Dates are **expanded to events in the backend**, not in React | One expansion (`buildEvents`) feeds the JSON API, the ICS feed and the page, so the calendar and the export can never disagree; the page only formats |
