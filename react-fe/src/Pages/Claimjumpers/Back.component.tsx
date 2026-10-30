@@ -172,7 +172,7 @@ const Back = () => {
               <FontAwesomeIcon icon={faForwardStep} />
             </button>
           </div>
-          <ClaimjumpersTitle />
+          <ClaimjumpersTitle animate />
           <ol>
             {TRACKLIST.map((track, index) => {
               const isLoaded = index < allAlbumFiles.length;

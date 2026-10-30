@@ -28,6 +28,11 @@
 
   // The artwork's own cream margin, so a cover crop never shows a seam.
   background-color: #fff7d6;
+  // The page-load settle (bottom of this file) scales the stage about its centre
+  // for ~1.1s. For that second the stage's painted box is larger than the box it
+  // was sized to, so this wrapper keeps the overflow off the document instead of
+  // letting it flash horizontal scrollbars. No effect once the animation ends.
+  overflow: hidden;
 }
 
 .claimjumpers-back-stage {
@@ -44,6 +49,16 @@
 // cover, so keep copy short — anything taller than the panel scrolls inside it
 // (overflow-y) instead of spilling over the painted border.
 .claimjumpers-back-panel {
+  // Page-load choreography (bottom of this file): when each group of the panel's
+  // copy arrives, and how long one row takes to settle. Kept together so the whole
+  // sequence can be retimed in one place.
+  --back-enter-controls-delay: 140ms;
+  --back-enter-title-delay: 220ms;
+  --back-enter-tracks-delay: 820ms;
+  --back-enter-track-step: 55ms;
+  --back-enter-fine-delay: 1360ms;
+  --back-enter-rise-duration: 420ms;
+
   position: absolute;
   left: calc(50% + (var(--panel-x) - var(--art-cx)) * var(--scale));
   top: calc(50% + (var(--panel-y) - var(--art-cy)) * var(--scale));
@@ -92,6 +107,15 @@
   // component keeps letter-spacing at 0 and the versal at 1.8em.
   .claimjumpers-title {
     --claimjumpers-title-size: calc(65 * var(--scale));
+
+    // Entrance: `<ClaimjumpersTitle animate />` wipes the word in from the left
+    // and lights the versal up behind it (see the entrance block in
+    // `components/ClaimjumpersTitle/ClaimjumpersTitle.scss`). The delay is the
+    // panel's, so the masthead lands while the sleeve is still settling and the
+    // track rows follow it; the wipe's own 950ms then overruns the first rows by
+    // design — with the easing it uses, the writing is visually done in about
+    // half of that.
+    --claimjumpers-title-enter-delay: var(--back-enter-title-delay);
 
     // The negative top margin pulls the masthead up into the panel's own bit of
     // breathing room. The bottom margin is smaller than the top one because the
@@ -225,5 +249,93 @@
 
   &:disabled {
     cursor: default;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page-load choreography
+// ---------------------------------------------------------------------------
+
+// The back cover is a painting, so left alone it reads to a visitor as a still
+// image. On load the sleeve settles out of a slight zoom and the panel's copy
+// arrives in reading order — controls, masthead, track rows, fine print — each
+// group a step behind the one above it. The masthead runs its own ink-in wipe
+// (see `components/ClaimjumpersTitle/ClaimjumpersTitle.scss`); everything else
+// here is a short rise-and-fade.
+//
+// Only layout-neutral properties are animated — opacity, transform, filter,
+// clip-path — because the panel is measured to fit its painted frame to within a
+// pixel. The rise goes *up* from the resting spot rather than down: overflow at a
+// scroll container's start edge is just clipped, while overflow past its end edge
+// can flash the scrollbar that the panel's `overflow-y: auto` brings with it.
+//
+// Timings live on the panel as `--back-enter-*` (top of this file). The row step
+// covers the eight entries in `TRACKLIST`; a ninth would keep row 1's delay and
+// land with it, rather than nowhere.
+@keyframes claimjumpers-back-settle {
+  from {
+    opacity: 0.55;
+    transform: scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes claimjumpers-back-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-8 * var(--scale)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  // `backwards` throughout, never `both`: every end keyframe here *is* the
+  // resting style, so the animation only has to hold its first frame during the
+  // delay. Nothing stays applied afterwards — no leftover transform keeping the
+  // stage (or a list row) a containing block, no stale compositor layer.
+  //
+  // The stage scales about its own centre, which is also where the panel is
+  // measured from (`50% + (… - --art-cx) * --scale`), so the copy rides the
+  // sleeve into registration instead of sliding across it.
+  .claimjumpers-back-stage {
+    animation: claimjumpers-back-settle 1100ms cubic-bezier(0.16, 1, 0.3, 1)
+      backwards;
+  }
+
+  .claimjumpers-back-panel .controls-container,
+  .claimjumpers-back-panel .fine-text,
+  .claimjumpers-back-panel ol > li {
+    animation: claimjumpers-back-rise-in var(--back-enter-rise-duration)
+      cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .claimjumpers-back-panel .controls-container {
+    animation-delay: var(--back-enter-controls-delay);
+  }
+
+  .claimjumpers-back-panel .fine-text {
+    animation-delay: var(--back-enter-fine-delay);
+  }
+
+  // Row 1 keeps the base delay; the rest step down the list. `:nth-child` beats
+  // the grouped rule above on specificity, so it can override the delay that the
+  // `animation` shorthand zeroed.
+  .claimjumpers-back-panel ol > li {
+    animation-delay: var(--back-enter-tracks-delay);
+
+    @for $i from 2 through 8 {
+      &:nth-child(#{$i}) {
+        animation-delay: calc(
+          var(--back-enter-tracks-delay) +
+            (var(--back-enter-track-step) * #{$i - 1})
+        );
+      }
+    }
   }
 }

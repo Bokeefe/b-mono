@@ -3,6 +3,97 @@
 > Current work focus, recent changes, next steps. Update this file at the end of
 > every meaningful session.
 
+## Session snapshot — 2026-10-30 — the back cover is drawn, not pasted on
+
+- **Ask:** "add a page-load animation to `/claimjumpers-back`, especially for
+  `<ClaimjumpersTitle />`, so the page doesn't read as a static drawing."
+- **The masthead animation is opt-in.** `ClaimjumpersTitle` grew `animate?: boolean`
+  (default `false`) that only appends `claimjumpers-title--animate`, so
+  `/claimjumpers` and `/music` keep byte-identical markup and no animation —
+  verified in the browser: the front cover still renders
+  `claimjumpers-title claimjumpers-title--versal` with `animation-name: none`.
+- **The wipe *is* the animation.** `@keyframes claimjumpers-title-ink-in` (950ms,
+  `cubic-bezier(0.16, 1, 0.3, 1)`, 220ms delay) reaches `opacity: 1` at 45%,
+  unblurs 6px → the heading's own resting `blur(0.3px)` (not `0`, so there is no
+  snap at the end), rises `-0.1em` and reveals the word with
+  `clip-path: polygon(0% -35%, X% -35%, X% 135%, 0% 135%)` — a left→right write
+  rather than a fade. The `-35% / 135%` margins are insurance for a page that
+  pins `--claimjumpers-title-leading` or hangs the versal under the baseline.
+- **The versal blushes after the word lands — and it genuinely blushes now:**
+  `claimjumpers-title-versal-light-in` runs on the *heading* and walks a
+  registered `@property --claimjumpers-title-versal-mix` (`<number>`,
+  `inherits: true`, initial `1`) from `0` to `1`, while the pseudo's colour is
+  written `color-mix(in oklab, var(--art-red) calc(mix * 100%), currentColor)`:
+  0 is the word's own ink, 1 is the painted red. It starts at 40% of the wipe and
+  lasts 45% of it, both derived from `--claimjumpers-title-enter-duration`, so
+  retiming is still one number. `currentColor` keeps the ink end palette-free,
+  scoping to `--versal` keeps a stray red initial off pages that turn it off, and
+  the initial value *is* the resting style — so reduced-motion, prerendered and
+  non-animating pages keep the plain `color: var(--art-red)` above it.
+- **Panel choreography, retimable in one place.** `--back-enter-controls-delay`
+  140ms, `-title-delay` 220ms, `-tracks-delay` 820ms, `-track-step` 55ms,
+  `-fine-delay` 1360ms, `-rise-duration` 420ms on `.claimjumpers-back-panel`;
+  controls, masthead, the eight `TRACKLIST` rows (`@for $i from 2 through 8`
+  `:nth-child` delays) and the fine print rise `calc(-8 * var(--scale))` into
+  place. The stage settles out of `scale(1.035)` + `opacity 0.55` over 1100ms
+  about the same centre the panel is measured from, so the copy rides the sleeve
+  into registration instead of sliding across it.
+- **Only layout-neutral properties** (opacity / transform / filter / clip-path /
+  colour). The panel is measured to the painted frame to within a pixel and the
+  versal's `line-height: 0` + `vertical-align` recipe only holds while the line
+  box is untouched, so nothing may rewrap or grow mid-animation. The rise starts
+  *above* the resting spot because overflow at a scroll container's start edge is
+  clipped, while overflow past its end edge can flash the panel's `overflow-y`
+  scrollbar; `.claimjumpers-back` also got `overflow: hidden` so the settle's
+  extra 1.7% never reaches the document.
+- **`backwards` fill everywhere, never `both`.** Every `to` keyframe *is* the
+  resting style (`transform: none`, `clip-path` gone, `opacity: 1`), so nothing is
+  left applied afterwards — no leftover transform making the stage or a row a
+  containing block, no stale compositor layer.
+- **Reduced motion is free:** everything is inside
+  `@media (prefers-reduced-motion: no-preference)`, so a visitor who asks for less
+  motion gets the finished drawing immediately rather than a shortened version.
+- **Verified in headless Firefox over WebDriver BiDi** (framing per earlier
+  sessions' recipe). Two things worth re-learning: this headless build **ignores
+  `--window-size`** — `browsingContext.setViewport` is the only way to resize —
+  and `emulation.setEmulatedMedia` is not implemented, so reduced motion was
+  tested by launching a profile with `user_pref("ui.prefersReducedMotion", 1)`.
+  Frames at 80/380/700/1000/1500/2600ms at 1366×683 and 390×844: title
+  `opacity 0 → 1`, `blur 6px → 0.3px`, clip `0% → 91% → 100%`, panel
+  `scrollHeight == clientHeight` (599/599 and 344/344) on *every* frame, document
+  `scrollWidth` pinned to the viewport on every frame (the settle never flashes a
+  scrollbar), rows arriving in 55ms steps, fine print last. Front cover and the
+  reduced-motion profile both stay completely static. `tsc --noEmit` and
+  `eslint src/components/ClaimjumpersTitle src/Pages/Claimjumpers` clean.
+- **Cross-checked in Blink too**, by driving the Playwright
+  `chromium_headless_shell` (Chrome for Testing 156) over raw CDP — no `playwright`
+  package needed, `--remote-debugging-port` + `Target.attachToTarget` with
+  `flatten: true` is enough: at 1440×900 the title reads
+  `opacity 0.53 → 1`, `blur 4.4px → 0.3px`, clip `27.6% → 99.96% → none`, panel
+  `638/638` and `document.scrollWidth` 1440 on every frame, and
+  `Emulation.setEmulatedMedia({features:[{name:'prefers-reduced-motion',
+  value:'reduce'}]})` *is* implemented there, so the reduced-motion path was
+  re-verified without a profile. Front cover: `animation-name: none`, mix pinned
+  at `1`, still red.
+- **Traps:** (1) **`::first-letter` cannot be animated at all** — a `@keyframes`
+  aimed at it is a no-op: Blink *and* Gecko both report `animation-name: none` on
+  the pseudo even where `&.claimjumpers-title--versal::first-letter` plainly
+  matches, so the first version's `color: currentColor → var(--art-red)` keyframe
+  never ran and the versal just sat red through the wipe. Hence the registered
+  custom property above, which *is* interpolated (measured: Chrome-for-Testing
+  156 mix 0 → 0.552 → 1, Firefox 159 0 → 0.888 → 1, the pseudo's computed colour
+  walking `oklab(0.321 0 0)` (#333 ink) → `oklab(0.584 0.129 0.097)`, which is
+  exactly what `color-mix(... #c8502c 100%, …)` yields — the resting paint is
+  unchanged). (2) `document.scrollHeight` is
+  `viewport + 72px` on every Claimjumpers route (the body is `100dvh` tall but
+  starts 64px down, plus its 8px margins) — pre-existing, not the animation:
+  hiding `.claimjumpers-back` leaves it at 755.
+- **Files:** `react-fe/src/components/ClaimjumpersTitle/ClaimjumpersTitle.component.tsx`,
+  `.../ClaimjumpersTitle.scss`,
+  `react-fe/src/Pages/Claimjumpers/Back.component.tsx` (`<ClaimjumpersTitle animate />`),
+  `.../Back.scss`.
+
+
 ## Session snapshot — 2026-10-29 (h) — tobacco and cannabis, without inventing a single date
 
 - **Ask:** "add tobacco and cannabis to the planting calendar: both share Tomato

@@ -15,6 +15,15 @@ export interface ClaimjumpersTitleProps {
    * with the mark's initial — see the note in `ClaimjumpersTitle.scss`.
    */
   versal?: boolean;
+  /**
+   * Play the mark's entrance (ink-in wipe, versal blushing red) when the
+   * component mounts — i.e. on page load or route change. Off by default: it is
+   * a page-load gesture, not part of how the type is painted, so pages that just
+   * want the mark on screen keep a static heading (and their prerendered HTML
+   * unchanged). See the entrance block in `ClaimjumpersTitle.scss` for the
+   * `--claimjumpers-title-enter-*` timing knobs.
+   */
+  animate?: boolean;
   /** Extra classes for the page's own layout (spacing, margins, …). */
   className?: string;
 }
@@ -36,6 +45,7 @@ const ClaimjumpersTitle = ({
   children = "Claimjumpers",
   as: Heading = "h1",
   versal = true,
+  animate = false,
   className,
 }: ClaimjumpersTitleProps) => {
   return (
@@ -43,6 +53,7 @@ const ClaimjumpersTitle = ({
       className={[
         "claimjumpers-title",
         versal && "claimjumpers-title--versal",
+        animate && "claimjumpers-title--animate",
         className,
       ]
         .filter(Boolean)
