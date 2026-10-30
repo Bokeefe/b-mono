@@ -141,7 +141,8 @@
     // transform at the *start* edge is simply clipped, whereas one that reaches
     // past the end edge can flash a scrollbar — which the back cover's panel,
     // already measured to within a pixel of its frame, would do.
-    transform: translateY(-0.1em) scaleY(var(--claimjumpers-title-stretch, 2.75));
+    transform: translateY(-0.1em)
+      scaleY(var(--claimjumpers-title-stretch, 2.75));
     // Collapsed from the left, so the word is drawn rather than faded in. The
     // -35% / 135% margins are insurance, not measurement: at `normal` leading the
     // ink sits inside the line box, but a page is free to pin
@@ -156,14 +157,6 @@
   22% {
     transform: translateY(-0.07em)
       scaleY(calc(var(--claimjumpers-title-stretch, 2.75) * 0.82));
-  }
-  45% {
-    opacity: 1;
-  }
-  // Down past the resting size and back: type that is dropped onto a line
-  // compresses before it settles.
-  62% {
-    transform: translateY(0) scaleY(0.9);
   }
   80% {
     transform: translateY(0) scaleY(1.03);
@@ -205,8 +198,8 @@
 
 .claimjumpers-title--animate {
   --claimjumpers-title-enter-delay: 0ms;
-  --claimjumpers-title-enter-duration: 950ms;
-  --claimjumpers-title-stretch: 2.75;
+  --claimjumpers-title-enter-duration: 2000ms;
+  --claimjumpers-title-stretch: 3.75;
 
   // The stretch grows, and the squash shrinks, about the baseline end of the box:
   // the word is pulled up off its line and dropped back onto it, instead of
@@ -222,8 +215,8 @@
     // keyframe *is* the resting style, so there is no reason to keep an
     // animation-level clip-path, filter and opacity on the heading afterwards.
     animation: claimjumpers-title-ink-in
-      var(--claimjumpers-title-enter-duration)
-      cubic-bezier(0.16, 1, 0.3, 1) var(--claimjumpers-title-enter-delay) backwards;
+      var(--claimjumpers-title-enter-duration) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--claimjumpers-title-enter-delay) backwards;
 
     // Painted last: the light-up starts at 40% of the wipe — just as the C has
     // been written — and takes 45% of the wipe's length to reach red. Scoped to
@@ -233,8 +226,8 @@
     &.claimjumpers-title--versal {
       animation:
         claimjumpers-title-ink-in var(--claimjumpers-title-enter-duration)
-          cubic-bezier(0.16, 1, 0.3, 1)
-          var(--claimjumpers-title-enter-delay) backwards,
+          cubic-bezier(0.16, 1, 0.3, 1) var(--claimjumpers-title-enter-delay)
+          backwards,
         claimjumpers-title-versal-light-in
           calc(var(--claimjumpers-title-enter-duration) * 0.45)
           cubic-bezier(0.16, 1, 0.3, 1)
